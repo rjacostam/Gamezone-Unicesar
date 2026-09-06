@@ -10,13 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * File-based storage for persons.
+ * Guarda personas en CSV.
  */
 public class PersonRepository {
     private String filePath;
 
     /**
-     * Creates repository.
+     * Crea el repositorio con su ruta.
      * @param filePath csv path
      */
     public PersonRepository(String filePath) {

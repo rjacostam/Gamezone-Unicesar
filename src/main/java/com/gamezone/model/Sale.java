@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Sale transaction with customer, seller and products.
+ * Venta con cliente, vendedor y productos.
  */
 public class Sale {
     private String id;
@@ -14,7 +14,7 @@ public class Sale {
     private List<Product> products;
 
     /**
-     * Creates a sale. Requires at least one product.
+     * Crea una venta, exige al menos un producto.
      * @param id sale id
      * @param date date as text
      * @param customer customer
@@ -44,7 +44,7 @@ public class Sale {
     public List<Product> getProducts() { return new ArrayList<>(products); }
 
     /**
-     * Calculates total by summing product prices.
+     * Suma precios para sacar el total.
      * @return total amount
      */
     public double calculateTotal() {

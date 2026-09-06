@@ -1,14 +1,14 @@
 package com.gamezone.model;
 
 /**
- * Store customer who buys products.
+ * Cliente que compra en la tienda.
  */
 public class Customer extends Person {
     private String email;
 
     /**
-     * Creates a customer.
-     * @param name full name
+     * Crea un cliente nuevo.
+     * @param name nombre completo
      * @param nationalId identification
      * @param phone phone
      * @param email email address

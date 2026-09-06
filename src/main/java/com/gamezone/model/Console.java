@@ -1,7 +1,7 @@
 package com.gamezone.model;
 
 /**
- * Console product.
+ * Consola de la tienda.
  */
 public class Console extends Product {
     private String brand;
@@ -9,7 +9,7 @@ public class Console extends Product {
     private String generation;
 
     /**
-     * Creates a console.
+     * Crea una consola nueva.
      * @param id id
      * @param title title
      * @param price price
