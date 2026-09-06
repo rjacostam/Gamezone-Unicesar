@@ -11,176 +11,181 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JOptionPane;
 
-// Menú con ventanitas (JOptionPane) para la prueba.
-// Ojo: el taller pide menú de consola y JavaDoc en inglés,
-// esto es solo versión de prueba, no para entregar así.
+// Menú con ventanas para la prueba. La UI solo habla con servicios, nunca con repositorios.
 public class ConsoleMenu {
-    // Servicios inyectados, la UI nunca toca los repositorios directo
+    // Servicios que nos pasa el Main ya cargados
     private ProductService productService;
     private PersonService personService;
     private SaleService saleService;
 
-    // Armamos el menú con lo que ya viene cargado del Main
+    // Guardamos los servicios para usarlos en todo el menú
     public ConsoleMenu(ProductService productService, PersonService personService, SaleService saleService) {
         this.productService = productService;
         this.personService = personService;
         this.saleService = saleService;
     }
 
-    // Bucle principal, muestra las 10 opciones que pide el taller
+    // Bucle principal con las 10 operaciones que pide el taller
     public void start() {
         String menu = "GameZone Unicesar\n"
-            + "1. Registrar videojuego\n2. Registrar consola\n3. Listar productos\n"
-            + "4. Registrar cliente\n5. Listar clientes\n6. Listar vendedores\n"
-            + "7. Registrar venta\n8. Ver todas las ventas\n"
-            + "9. Compras por cliente\n10. Ventas por vendedor\n0. Salir";
-        int op = -1;
-        while (op != 0) {
+            + "1. Register video game\n2. Register console\n3. List products\n"
+            + "4. Register customer\n5. List customers\n6. List sellers\n"
+            + "7. Register sale\n8. List all sales\n"
+            + "9. Sales by customer\n10. Sales by seller\n0. Exit";
+        int option = -1;
+        while (option != 0) {
             try {
-                String input = JOptionPane.showInputDialog(null, menu + "\nElige opción:");
+                String input = JOptionPane.showInputDialog(null, menu + "\nChoose option:");
                 if (input == null) {
-                    break; // cerró la ventana
+                    break; // cerró la ventana, salimos sin pelear
                 }
-                op = Integer.parseInt(input.trim());
-                switch (op) {
-                    case 1 -> registrarJuego();
-                    case 2 -> registrarConsola();
-                    case 3 -> listarProductos();
-                    case 4 -> registrarCliente();
-                    case 5 -> listarClientes();
-                    case 6 -> listarVendedores();
-                    case 7 -> registrarVenta();
-                    case 8 -> listarVentas(saleService.findAll());
-                    case 9 -> ventasPorCliente();
-                    case 10 -> ventasPorVendedor();
-                    case 0 -> JOptionPane.showMessageDialog(null, "Nos vemos, gracias por usar GameZone");
-                    default -> JOptionPane.showMessageDialog(null, "Esa opción no existe");
+                option = Integer.parseInt(input.trim());
+                switch (option) {
+                    case 1 -> registerGame();
+                    case 2 -> registerConsole();
+                    case 3 -> listProducts();
+                    case 4 -> registerCustomer();
+                    case 5 -> listCustomers();
+                    case 6 -> listSellers();
+                    case 7 -> registerSale();
+                    case 8 -> listSales(saleService.findAll());
+                    case 9 -> salesByCustomer();
+                    case 10 -> salesBySeller();
+                    case 0 -> JOptionPane.showMessageDialog(null, "Bye, thanks for using GameZone");
+                    default -> JOptionPane.showMessageDialog(null, "Unknown option");
                 }
             } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(null, "Mete un número válido, ej: 3");
+                // Si mete letras en vez de número, le avisamos en buena onda
+                JOptionPane.showMessageDialog(null, "Please enter a valid number, e.g. 3");
             } catch (Exception e) {
-                // Mostramos el error en cristiano para no asustar al usuario
-                JOptionPane.showMessageDialog(null, "Ups, pasó algo: " + e.getMessage());
+                // Cualquier otro error lo mostramos sin tecnicismos raros
+                JOptionPane.showMessageDialog(null, "Something went wrong: " + e.getMessage());
             }
         }
     }
 
     // Pide los datos del juego por ventanitas y lo guarda
-    private void registrarJuego() {
-        String id = pedir("ID del juego (ej: G001):");
-        String titulo = pedir("Título:");
-        double precio = Double.parseDouble(pedir("Precio:"));
-        int stock = Integer.parseInt(pedir("Stock:"));
-        String plat = pedir("Plataforma (PS5/Xbox/Switch/PC):");
-        String genero = pedir("Género:");
-        String edad = pedir("Clasificación edad (E/T/M):");
-        Product p = productService.registerVideoGame(id, titulo, precio, stock, plat, genero, edad);
-        mostrar(p.getFullDescription());
+    private void registerGame() {
+        String id = ask("Game id (e.g. G001):");
+        String title = ask("Title:");
+        double price = Double.parseDouble(ask("Price:"));
+        int stock = Integer.parseInt(ask("Stock:"));
+        String platform = ask("Platform (PS5/Xbox/Switch/PC):");
+        String genre = ask("Genre:");
+        String ageRating = ask("Age rating (E/T/M):");
+        Product created = productService.registerVideoGame(id, title, price, stock, platform, genre, ageRating);
+        show(created.getFullDescription());
     }
 
     // Lo mismo pero para consolas
-    private void registrarConsola() {
-        String id = pedir("ID consola (ej: C001):");
-        String titulo = pedir("Título (ej: PlayStation 5):");
-        double precio = Double.parseDouble(pedir("Precio:"));
-        int stock = Integer.parseInt(pedir("Stock:"));
-        String marca = pedir("Marca:");
-        String modelo = pedir("Modelo:");
-        String gen = pedir("Generación:");
-        Product p = productService.registerConsole(id, titulo, precio, stock, marca, modelo, gen);
-        mostrar(p.getFullDescription());
+    private void registerConsole() {
+        String id = ask("Console id (e.g. C001):");
+        String title = ask("Title (e.g. PlayStation 5):");
+        double price = Double.parseDouble(ask("Price:"));
+        int stock = Integer.parseInt(ask("Stock:"));
+        String brand = ask("Brand:");
+        String model = ask("Model:");
+        String generation = ask("Generation:");
+        Product created = productService.registerConsole(id, title, price, stock, brand, model, generation);
+        show(created.getFullDescription());
     }
 
-    // Muestra todo el inventario junto
-    private void listarProductos() {
-        StringBuilder sb = new StringBuilder("Inventario:\n");
-        for (Product p : productService.findAll()) {
-            sb.append(p.getFullDescription()).append("\n");
+    // Junta todo el inventario en un solo mensaje
+    private void listProducts() {
+        StringBuilder builder = new StringBuilder("Inventory:\n");
+        for (Product current : productService.findAll()) {
+            builder.append(current.getFullDescription()).append("\n");
         }
-        mostrar(sb.toString());
+        show(builder.toString());
     }
 
     // Registra un cliente nuevo
-    private void registrarCliente() {
-        String nombre = pedir("Nombre completo:");
-        String cedula = pedir("Identificación:");
-        String tel = pedir("Teléfono:");
-        String correo = pedir("Correo:");
-        Customer c = personService.registerCustomer(nombre, cedula, tel, correo);
-        mostrar("Listo: " + c.getRoleLabel());
+    private void registerCustomer() {
+        String name = ask("Full name:");
+        String nationalId = ask("National id:");
+        String phone = ask("Phone:");
+        String email = ask("Email:");
+        Customer created = personService.registerCustomer(name, nationalId, phone, email);
+        show("Done: " + created.getRoleLabel());
     }
 
-    private void listarClientes() {
-        StringBuilder sb = new StringBuilder("Clientes:\n");
-        for (Customer c : personService.findAllCustomers()) {
-            sb.append(c.getRoleLabel()).append(" id:").append(c.getNationalId()).append("\n");
+    // Lista solo los clientes
+    private void listCustomers() {
+        StringBuilder builder = new StringBuilder("Customers:\n");
+        for (Customer current : personService.findAllCustomers()) {
+            builder.append(current.getRoleLabel()).append(" id:").append(current.getNationalId()).append("\n");
         }
-        mostrar(sb.toString());
+        show(builder.toString());
     }
 
-    private void listarVendedores() {
-        StringBuilder sb = new StringBuilder("Vendedores:\n");
-        for (Seller s : personService.findAllSellers()) {
-            sb.append(s.getRoleLabel()).append("\n");
+    // Lista solo los vendedores que ya estaban contratados
+    private void listSellers() {
+        StringBuilder builder = new StringBuilder("Sellers:\n");
+        for (Seller current : personService.findAllSellers()) {
+            builder.append(current.getRoleLabel()).append("\n");
         }
-        mostrar(sb.toString());
+        show(builder.toString());
     }
 
-    // La parte más delicada: armar la venta y descontar stock
-    private void registrarVenta() {
-        Customer cli = personService.findCustomerById(pedir("ID del cliente:"));
-        if (cli == null) {
-            mostrar("Ese cliente no existe");
+    // Arma la venta: busca cliente y vendedor y va sumando productos
+    private void registerSale() {
+        Customer customer = personService.findCustomerById(ask("Customer national id:"));
+        if (customer == null) {
+            show("Customer not found");
             return;
         }
-        Seller ven = personService.findSellerByCode(pedir("Código vendedor (ej: EMP-001):"));
-        if (ven == null) {
-            mostrar("Ese vendedor no existe");
+        Seller seller = personService.findSellerByCode(ask("Seller code (e.g. EMP-001):"));
+        if (seller == null) {
+            show("Seller not found");
             return;
         }
         List<Product> items = new ArrayList<>();
         while (true) {
-            String pid = JOptionPane.showInputDialog(null, "ID producto (vacío para terminar):");
-            if (pid == null || pid.trim().isEmpty()) {
-                break;
+            String productId = JOptionPane.showInputDialog(null, "Product id (empty to finish):");
+            if (productId == null || productId.trim().isEmpty()) {
+                break; // ya terminó de agregar
             }
-            Product p = productService.findById(pid.trim());
-            if (p == null) {
-                mostrar("No encontré ese producto");
+            Product found = productService.findById(productId.trim());
+            if (found == null) {
+                show("Product not found");
             } else {
-                items.add(p);
+                items.add(found);
             }
         }
-        Sale s = saleService.registerSale(cli, ven, items);
-        mostrar("Venta " + s.getId() + " total $" + s.calculateTotal());
+        Sale created = saleService.registerSale(customer, seller, items);
+        show("Sale " + created.getId() + " total $" + created.calculateTotal());
     }
 
-    private void listarVentas(List<Sale> ventas) {
-        StringBuilder sb = new StringBuilder("Ventas:\n");
-        for (Sale s : ventas) {
-            sb.append(s.getId()).append(" ").append(s.getDate())
-              .append(" cli:").append(s.getCustomer().getNationalId())
-              .append(" vend:").append(s.getSeller().getEmployeeCode())
-              .append(" total:$").append(s.calculateTotal()).append("\n");
+    // Muestra cualquier lista de ventas en el mismo formato
+    private void listSales(List<Sale> sales) {
+        StringBuilder builder = new StringBuilder("Sales:\n");
+        for (Sale current : sales) {
+            builder.append(current.getId()).append(" ").append(current.getDate())
+              .append(" cust:").append(current.getCustomer().getNationalId())
+              .append(" seller:").append(current.getSeller().getEmployeeCode())
+              .append(" total:$").append(current.calculateTotal()).append("\n");
         }
-        mostrar(sb.toString());
+        show(builder.toString());
     }
 
-    private void ventasPorCliente() {
-        listarVentas(saleService.findByCustomer(pedir("ID del cliente:")));
+    // Filtra por cliente
+    private void salesByCustomer() {
+        listSales(saleService.findByCustomer(ask("Customer national id:")));
     }
 
-    private void ventasPorVendedor() {
-        listarVentas(saleService.findBySeller(pedir("Código vendedor:")));
+    // Filtra por vendedor
+    private void salesBySeller() {
+        listSales(saleService.findBySeller(ask("Seller code:")));
     }
 
-    // Atajos para no repetir JOptionPane a cada rato
-    private String pedir(String msg) {
-        String v = JOptionPane.showInputDialog(null, msg);
-        return v == null ? "" : v.trim();
+    // Atajo para pedir un dato sin repetir el JOptionPane
+    private String ask(String message) {
+        String value = JOptionPane.showInputDialog(null, message);
+        return value == null ? "" : value.trim();
     }
 
-    private void mostrar(String msg) {
-        JOptionPane.showMessageDialog(null, msg);
+    // Atajo para mostrar un mensaje
+    private void show(String message) {
+        JOptionPane.showMessageDialog(null, message);
     }
 }
