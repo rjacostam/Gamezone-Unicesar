@@ -1,9 +1,34 @@
-# Layers diagram (Mermaid) — TODO
+# Layers diagram
 
 ```mermaid
 flowchart TB
-    UI["ui: ConsoleMenu"] --> SVC["service: ProductService, PersonService, SaleService"]
-    SVC --> PERS["persistence: ProductRepository, PersonRepository, SaleRepository"]
-    PERS --> MOD["model: Person, Customer, Seller, Product, VideoGame, Console, Sale"]
+    subgraph UI["ui layer"]
+        CM[ConsoleMenu]
+        MN[Main]
+    end
+    subgraph SVC["service layer"]
+        PS[ProductService]
+        PES[PersonService]
+        SS[SaleService]
+    end
+    subgraph PER["persistence layer"]
+        PR[ProductRepository]
+        PER2[PersonRepository]
+        SR[SaleRepository]
+    end
+    subgraph MOD["model layer"]
+        MO[Person, Customer, Seller, Product, VideoGame, Console, Sale]
+    end
+    CM --> PS
+    CM --> PES
+    CM --> SS
+    MN --> CM
+    PS --> PR
+    PES --> PER2
+    SS --> SR
+    SS --> PS
+    PR --> MO
+    PER2 --> MO
+    SR --> MO
 ```
-Allowed: ui->service, service->model+persistence, persistence->model. Forbidden: model->any, ui->persistence direct, file I/O in model.
+Allowed only: ui->service, service->persistence+model, persistence->model. Model depends on none. UI never touches persistence directly.
