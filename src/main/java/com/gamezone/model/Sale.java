@@ -5,6 +5,7 @@ import java.util.List;
 
 /**
  * Sale transaction with customer, seller and products.
+ * Total is derived from items to keep inventory consistent.
  */
 public class Sale {
     private String id;
