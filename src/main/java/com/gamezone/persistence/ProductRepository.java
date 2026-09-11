@@ -10,13 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Guarda productos en CSV.
+ * File-based storage for products using CSV.
  */
 public class ProductRepository {
     private String filePath;
 
     /**
-     * Crea el repositorio con su ruta.
+     * Creates repository.
      * @param filePath csv path
      */
     public ProductRepository(String filePath) {
@@ -24,7 +24,7 @@ public class ProductRepository {
     }
 
     /**
-     * Lee todos los productos.
+     * Loads all products.
      * @return product list
      */
     public List<Product> loadAll() {
@@ -54,7 +54,7 @@ public class ProductRepository {
     }
 
     /**
-     * Guarda todos los productos.
+     * Saves all products.
      * @param products products to save
      */
     public void saveAll(List<Product> products) {

@@ -1,4 +1,4 @@
-# TEAM.md — Prueba3
+# TEAM.md — GameZone Unicesar
 
 > TODO: replace with real data before delivery. Required: exactly 3 members.
 

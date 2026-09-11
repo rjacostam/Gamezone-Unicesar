@@ -1,8 +1,8 @@
 package com.gamezone.model;
 
 /**
- * Clase base de la gente de la tienda.
- * Guarda datos comunes. Es abstracta porque solo hay roles concretos.
+ * Base class for people interacting with the store.
+ * Holds common contact data. Abstract because only concrete roles exist.
  */
 public abstract class Person {
     private String name;
@@ -10,8 +10,8 @@ public abstract class Person {
     private String phone;
 
     /**
-     * Crea una persona con datos basicos.
-     * @param name nombre completo
+     * Creates a person.
+     * @param name full name
      * @param nationalId identification number
      * @param phone contact phone
      */
@@ -21,9 +21,9 @@ public abstract class Person {
         this.phone = phone;
     }
 
-    /** @return nombre completo */
+    /** @return full name */
     public String getName() { return name; }
-    /** @param name nombre completo */
+    /** @param name full name */
     public void setName(String name) { this.name = name; }
     /** @return identification */
     public String getNationalId() { return nationalId; }

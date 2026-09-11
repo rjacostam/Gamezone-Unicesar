@@ -1,7 +1,7 @@
 package com.gamezone.model;
 
 /**
- * Clase base de productos con inventario.
+ * Base class for store products with inventory control.
  */
 public abstract class Product {
     private String id;
@@ -10,7 +10,7 @@ public abstract class Product {
     private int stock;
 
     /**
-     * Crea un producto base.
+     * Creates a product.
      * @param id identifier
      * @param title title
      * @param price price

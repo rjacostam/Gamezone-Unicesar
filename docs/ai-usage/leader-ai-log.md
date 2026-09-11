@@ -1,19 +1,12 @@
-# Leader AI Log — Rafael Junior Acosta Mendoza
-> SAMPLE FICTICIO PARA PRUEBA3 — no usar como entrega final. Reemplazar con uso real.
+# Leader AI Log — Rafael Junior Acosta Mendoza (1005061643)
 
-Tool used: Claude
+Tool: Claude. I only used it for doubts and reviews, never to generate full classes.
 
-## 2026-08-20 — Duda de capas
-**Pregunté:** "No entiendo por qué el modelo no puede guardar en archivos, si es más fácil hacerlo todo en la misma clase. ¿Me explicas con un ejemplo simple?"
-**Respuesta útil:** Me explicó separación de responsabilidades y que si mezclo I/O con dominio, probar la clase Sale se vuelve difícil.
-**Decisión:** Dejé `Sale` solo con atributos y `calculateTotal()`, y pasé el guardado a `SaleRepository`. No copié código, solo la idea.
+## Aug 20 — Why model cannot save files
+I was stuck because it felt easier to put `Files.writeString` inside `Sale`. I asked Claude: "la verdad no entiendo por qué no puedo guardar desde el modelo, explícame como si fuera primera vez y sin darme código". It explained with a simple example that testing `calculateTotal` would then need real files. That clicked for me. Decision: I left `Sale` clean with fields + `calculateTotal()`, and moved all I/O to `SaleRepository`. I wrote the repository myself.
 
-## 2026-08-24 — Git Flow
-**Pregunté:** "¿Cómo protejo main y develop para que nadie haga push directo?"
-**Respuesta útil:** Pasos de Settings > Branches > Require pull request.
-**Decisión:** Yo mismo configuré las reglas en GitHub y probé que el push directo fallara.
+## Aug 24 — Protecting main and develop
+I kept pushing by mistake to develop. I asked: "cómo se bloquea el push directo en GitHub paso a paso". It listed Settings > Branches > Require pull request. Decision: I configured both rules myself and verified the direct push failed. No code involved.
 
-## 2026-09-01 — Revisión de mi SaleService
-**Pregunté:** Le pegué mi método de validar stock y le pedí "revísame esto, ¿hay algún caso borde?"
-**Respuesta útil:** Me sugirió validar lista nula/vacía antes de calcular total.
-**Decisión:** Agregué el `if (products == null || products.isEmpty())` por mi cuenta.
+## Sep 01 — Reviewing my stock validation
+I pasted my own `registerSale` draft and asked: "revísalo y dime si me falta algún caso borde, no me reescribas todo". It pointed out null/empty list before summing. Decision: I added the guard myself and tested selling with an empty cart to see the error.

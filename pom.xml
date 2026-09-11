@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.gamezone</groupId>
-    <artifactId>prueba3-gamezone</artifactId>
+    <artifactId>gamezone-unicesar</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 

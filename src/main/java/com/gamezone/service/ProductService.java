@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Reglas de productos y stock.
+ * Business rules for products and stock.
  */
 public class ProductService {
     private ProductRepository repository;
@@ -24,7 +24,7 @@ public class ProductService {
     }
 
     /**
-     * Registra un videojuego.
+     * Registers a video game.
      * @param id id
      * @param title title
      * @param price price
@@ -46,7 +46,7 @@ public class ProductService {
     }
 
     /**
-     * Registra una consola.
+     * Registers a console.
      * @param id id
      * @param title title
      * @param price price
@@ -68,7 +68,7 @@ public class ProductService {
     }
 
     /**
-     * Lista todo el inventario.
+     * Lists all products.
      * @return copy of inventory
      */
     public List<Product> findAll() {
@@ -76,7 +76,7 @@ public class ProductService {
     }
 
     /**
-     * Busca producto por id.
+     * Finds product by id.
      * @param id product id
      * @return product or null
      */
@@ -90,7 +90,7 @@ public class ProductService {
     }
 
     /**
-     * Baja stock en uno validando que haya.
+     * Decreases stock by one, validating availability.
      * @param id product id
      */
     public void decreaseStock(String id) {

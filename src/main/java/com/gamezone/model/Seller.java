@@ -1,15 +1,15 @@
 package com.gamezone.model;
 
 /**
- * Vendedor que atiende ventas.
+ * Store employee who attends sales.
  */
 public class Seller extends Person {
     private String employeeCode;
     private String shift;
 
     /**
-     * Crea un vendedor nuevo.
-     * @param name nombre completo
+     * Creates a seller.
+     * @param name full name
      * @param nationalId identification
      * @param phone phone
      * @param employeeCode employee code

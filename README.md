@@ -1,15 +1,15 @@
-# Prueba3 — GameZone Unicesar (test reference)
+# GameZone Unicesar — Programación III
 
-Private test repo mirroring Taller 2 - GameZone Unicesar, Programacion III.
+Sistema de información para tienda de videojuegos y consolas. Taller 2, Universidad Popular del Cesar.
 
-## Team (test, codes pending)
-- Lead Sales + Integration: Rafael Junior Acosta Mendoza — `feature/sale-module`
+## Team
+- Lead Sales + Integration: Rafael Junior Acosta Mendoza (1005061643) — `feature/sale-module`
 - Dev1 Products: Andres Daniel Cuello Blanco — `feature/product-module`
 - Dev2 Persons: Jose David Cervantes Solano — `feature/person-module`
 
 ## Structure
 ```
-Prueba3/
+Gamezone-Unicesar/
 ├── README.md / TEAM.md / LICENSE / pom.xml / .gitignore
 ├── src/main/java/com/gamezone/model/ (Person,Customer,Seller,Product,VideoGame,Console,Sale)
 ├── src/main/java/com/gamezone/persistence/ (3 repositories CSV)
@@ -30,4 +30,4 @@ javac -d target/classes (Get-ChildItem -Recurse -Filter "*.java" src/main/java |
 ```
 
 ## Branches
-`main` estable, `develop` integración, 3 `feature/*` conservadas para prueba (en entrega real se borran tras merge).
+`main` stable, `develop` integration.

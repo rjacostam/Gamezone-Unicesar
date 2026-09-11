@@ -1,6 +1,6 @@
 # GameZone Unicesar — Analysis (English)
 
-Team Prueba3 (test reference). Decisions below guide implementation in `com.gamezone`.
+Team GameZone Unicesar. Decisions below guide implementation in `com.gamezone`.
 
 ## 1. People: common vs specific attributes
 All people share `name`, `nationalId` and `phone`. A `Customer` adds `email` (contact + purchase history is derived from sales, not stored twice). A `Seller` adds `employeeCode` and `shift`. This maps to a hierarchy: abstract `Person` holds common state and behavior, `Customer` and `Seller` extend it with their own fields. It avoids duplication and lets services handle any `Person` polymorphically.

@@ -1,18 +1,12 @@
 # Developer2 AI Log — Jose David Cervantes Solano
-> SAMPLE FICTICIO PARA PRUEBA3 — no usar como entrega final. Reemplazar con uso real.
 
-Tools used: Gemini + GitHub Copilot
+Tools: Gemini for doubts, Copilot only as autocomplete while typing.
 
-## 2026-08-22 — Encapsulamiento (Gemini)
-**Pregunté:** "¿Por qué todos los atributos en private y no en public? ¿No es más trabajo hacer getters?"
-**Respuesta útil:** Me explicó con ejemplo que si cambio validación del teléfono, con setter solo cambio un lugar.
-**Decisión:** Puse todo en `private` en `Person, Customer, Seller` con getters/setters.
+## Aug 22 — Why private everywhere (Gemini)
+I thought `public` was faster than getters. I asked: "de verdad por qué todo en private, dame un ejemplo de la vida real". It showed what happens if phone validation changes and you have setters in one place. Decision: I put all `Person/Customer/Seller` fields in `private` and wrote getters/setters by hand.
 
-## 2026-08-28 — CSV persistencia (Gemini)
-**Pregunté:** "¿Cómo leo un CSV con ; sin usar librerías externas?"
-**Respuesta útil:** Me mostró idea con BufferedReader + split(";").
-**Decisión:** Implementé mi `PersonRepository` a mi manera, sin copiar tal cual.
+## Aug 28 — Reading CSV without libraries (Gemini)
+I needed `;`-separated files. I asked: "idea general para leer CSV con BufferedReader y split, sin código completo". It outlined the loop + skip header. Decision: I implemented `PersonRepository` my own way and tested with a broken line to see it skip.
 
-## 2026-09-03 — Autocompletado (Copilot)
-**Uso:** Solo autocompletado de getters y JavaDoc en inglés mientras yo escribía.
-**Decisión:** Revisé cada sugerencia y corregí dos comentarios que estaban mal. No generé clases completas.
+## Sep 03 — Copilot while writing (Copilot)
+I left autocomplete on while writing JavaDoc. Sometimes it suggested a wrong `@return`. Decision: I accepted only getter bodies, fixed two wrong comments myself, and never asked it for a whole class.

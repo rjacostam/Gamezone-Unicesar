@@ -10,11 +10,11 @@ import com.gamezone.service.SaleService;
 import com.gamezone.ui.ConsoleMenu;
 
 /**
- * Arranque que conecta todas las capas.
+ * Application entry point wiring all layers.
  */
 public class Main {
     /**
-     * Arranca cargando datos y abriendo el menu.
+     * Starts the application loading persisted data and opening the menu.
      * @param args command line arguments (not used)
      */
     public static void main(String[] args) {

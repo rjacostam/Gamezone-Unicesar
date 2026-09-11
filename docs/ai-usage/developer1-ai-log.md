@@ -1,19 +1,12 @@
-# Developer1 AI Log — Andres Daniel Cuello Blanco
-> SAMPLE FICTICIO PARA PRUEBA3 — no usar como entrega final. Reemplazar con uso real.
+# Developer1 AI Log — Andres Daniel Cuello Blanco (1120243014)
 
-Tool used: ChatGPT
+Tool: ChatGPT. Used for concepts, compiler errors and name suggestions.
 
-## 2026-08-21 — Abstractas
-**Pregunté:** "Estoy confundido con abstract en Java, ¿cuándo una clase debe ser abstracta? Dame un ejemplo con productos, no me des el código completo."
-**Respuesta útil:** Me dio la regla: si es categoría general que no tiene sentido instanciar, va abstracta.
-**Decisión:** Declaré `Product` abstracta y `getFullDescription()` abstracto, las hijas lo implementan.
+## Aug 21 — When to use abstract
+I confused abstract class vs interface. I asked: "explícame cuándo una clase debe ser abstracta con un ejemplo de tienda, sin darme el código completo". It gave the rule: general category with no real instances. Decision: I declared `Product` abstract with `getFullDescription()` abstract, and wrote `VideoGame` and `Console` myself with `@Override`.
 
-## 2026-08-26 — Error Maven
-**Pregunté:** "Me sale 'package org.codehaus.mojo does not exist' al correr exec:java, ¿qué hago?"
-**Respuesta útil:** Me explicó que faltaba el plugin exec-maven-plugin en el pom.
-**Decisión:** Agregué el plugin yo mismo al pom.xml y compiló.
+## Aug 26 — Maven exec error
+I got `Failed to execute goal exec-maven-plugin` and got lost. I pasted only the error and asked what it usually means. It suggested the missing plugin block in `pom.xml`. Decision: I opened the pom and added the block myself, then `mvn compile` passed.
 
-## 2026-09-02 — Nombres en inglés
-**Pregunté:** "¿Cómo nombro en inglés plataforma, género y clasificación de edad siguiendo camelCase?"
-**Respuesta útil:** Me sugirió `platform, genre, ageRating`.
-**Decisión:** Usé esos nombres en `VideoGame`.
+## Sep 02 — English names
+I did not want to mess up camelCase. I asked: "cómo se dice plataforma, género y clasificación en inglés para atributos". It suggested `platform, genre, ageRating`. Decision: I used those exact names in `VideoGame` and kept the rest in English.

@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Reglas de negocio de personas.
+ * Business rules for persons.
  */
 public class PersonService {
     private PersonRepository repository;

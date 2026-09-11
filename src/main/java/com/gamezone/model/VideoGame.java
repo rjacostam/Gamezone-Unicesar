@@ -1,7 +1,7 @@
 package com.gamezone.model;
 
 /**
- * Videojuego de la tienda.
+ * Video game product.
  */
 public class VideoGame extends Product {
     private String platform;
@@ -9,7 +9,7 @@ public class VideoGame extends Product {
     private String ageRating;
 
     /**
-     * Crea un videojuego nuevo.
+     * Creates a video game.
      * @param id id
      * @param title title
      * @param price price

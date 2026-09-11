@@ -17,7 +17,7 @@ public class SaleRepository {
     private String filePath;
 
     /**
-     * Crea el repositorio con su ruta.
+     * Creates repository.
      * @param filePath csv path
      */
     public SaleRepository(String filePath) {
