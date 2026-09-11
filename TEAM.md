@@ -13,3 +13,4 @@ See Taller pages 7-9. Each member must do >=12 atomic commits in English (Conven
 - Lead: repo setup, branches protection, pom + packages, TEAM.md, Sale domain + total, SaleRepository, SaleService (validations/stock), UI menu + submenus, Main with DI, PR reviews, final README.
 - Dev1: product branch, abstract Product + abstract getDescription, VideoGame, Console, ProductRepository, ProductService, JavaDoc, PRs.
 - Dev2: person branch, abstract Person, Customer, Seller, PersonRepository, PersonService, JavaDoc, PRs.
+
