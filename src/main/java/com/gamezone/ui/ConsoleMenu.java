@@ -196,3 +196,4 @@ public class ConsoleMenu {
         listSales(saleService.findBySeller(scanner.nextLine().trim()));
     }
 }
+

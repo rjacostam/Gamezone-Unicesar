@@ -43,3 +43,4 @@ public class VideoGame extends Product {
             + " | stock:" + getStock() + " | " + platform + " / " + genre + " / " + ageRating;
     }
 }
+

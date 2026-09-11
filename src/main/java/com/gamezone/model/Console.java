@@ -43,3 +43,4 @@ public class Console extends Product {
             + " | stock:" + getStock() + " | " + brand + " " + model + " (" + generation + ")";
     }
 }
+
