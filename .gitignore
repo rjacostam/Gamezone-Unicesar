@@ -8,10 +8,7 @@ target/
 .vscode/
 .DS_Store
 
-# Data generated at runtime (keep data/sellers.csv seed, ignore rest)
+# Data: keep seed persons.csv versioned, ignore runtime files
 data/products.csv
-data/persons.csv
 data/sales.csv
-
-# Keep seed files - uncomment if you want to ignore everything except seed:
-# !data/sellers.csv
+!data/persons.csv
