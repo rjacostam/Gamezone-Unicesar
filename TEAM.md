@@ -4,8 +4,8 @@
 
 | Role | Full Name | Student Code | Module | Branch |
 |------|-----------|--------------|--------|--------|
-| Tech Lead — Sales & Integration | Rafael Junior Acosta Mendoza | TODO-CODIGO-LEADER | Sales (`model/Sale`, `persistence/SaleRepository`, `service/SaleService`, `ui/ConsoleMenu`, `Main`) | `feature/sale-module` |
-| Developer 1 — Products | Andres Daniel Cuello Blanco | TODO-CODIGO-DEV1 | Products (`model/Product`, `model/VideoGame`, `model/Console`, `persistence/ProductRepository`, `service/ProductService`) | `feature/product-module` |
+| Tech Lead — Sales & Integration | Rafael Junior Acosta Mendoza | 1005061643 | Sales (`model/Sale`, `persistence/SaleRepository`, `service/SaleService`, `ui/ConsoleMenu`, `Main`) | `feature/sale-module` |
+| Developer 1 — Products | Andres Daniel Cuello Blanco | 1120243014 | Products (`model/Product`, `model/VideoGame`, `model/Console`, `persistence/ProductRepository`, `service/ProductService`) | `feature/product-module` |
 | Developer 2 — Persons | Jose David Cervantes Solano | TODO-CODIGO-DEV2 | Persons (`model/Person`, `model/Customer`, `model/Seller`, `persistence/PersonRepository`, `service/PersonService`) | `feature/person-module` |
 
 ## Committed activities per member
