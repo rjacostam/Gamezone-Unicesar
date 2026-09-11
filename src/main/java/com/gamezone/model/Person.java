@@ -38,3 +38,4 @@ public abstract class Person {
      */
     public abstract String getRoleLabel();
 }
+

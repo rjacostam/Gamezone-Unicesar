@@ -32,3 +32,4 @@ public class Customer extends Person {
         return "Customer: " + getName() + " <" + email + ">";
     }
 }
+

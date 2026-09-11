@@ -36,3 +36,4 @@ public class Main {
         new ConsoleMenu(productService, personService, saleService).start();
     }
 }
+

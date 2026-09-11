@@ -37,3 +37,4 @@ public class Seller extends Person {
         return "Seller: " + getName() + " [" + employeeCode + ", " + shift + "]";
     }
 }
+
