@@ -10,3 +10,4 @@ I needed `;`-separated files. I asked: "idea general para leer CSV con BufferedR
 
 ## Sep 03 — Copilot while writing (Copilot)
 I left autocomplete on while writing JavaDoc. Sometimes it suggested a wrong `@return`. Decision: I accepted only getter bodies, fixed two wrong comments myself, and never asked it for a whole class.
+

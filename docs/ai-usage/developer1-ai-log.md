@@ -10,3 +10,4 @@ I got `Failed to execute goal exec-maven-plugin` and got lost. I pasted only the
 
 ## Sep 02 — English names
 I did not want to mess up camelCase. I asked: "cómo se dice plataforma, género y clasificación en inglés para atributos". It suggested `platform, genre, ageRating`. Decision: I used those exact names in `VideoGame` and kept the rest in English.
+

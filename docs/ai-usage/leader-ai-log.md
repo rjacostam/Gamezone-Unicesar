@@ -10,3 +10,4 @@ I kept pushing by mistake to develop. I asked: "cómo se bloquea el push directo
 
 ## Sep 01 — Reviewing my stock validation
 I pasted my own `registerSale` draft and asked: "revísalo y dime si me falta algún caso borde, no me reescribas todo". It pointed out null/empty list before summing. Decision: I added the guard myself and tested selling with an empty cart to see the error.
+
