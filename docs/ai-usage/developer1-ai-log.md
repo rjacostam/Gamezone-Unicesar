@@ -362,3 +362,24 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | Yes. The file loaded four promotions, including P-04 Accesorios al 15%. Registering a category promotion with ACCESSORY was accepted, an invalid category was still rejected with "La categoría debe ser VIDEOGAME, CONSOLE o ACCESSORY", and on a sale with one video game, one controller and one cable the discount was 64500, which is exactly fifteen percent of the two accessories and leaves the video game out of the base. |
 | Decision | Accepted. The new preloaded promotion follows the same format and the same validity period as the other three. |
 | Related commit | feat: add preloaded accessory category promotion |
+---
+
+## Requirement 5 - Integration adjustment A5
+
+### Entry 26
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 5, phase 4 - `fix/return-discounted-refund` (A5) | Find why a store that granted a discount would refund more than the customer paid | Requirement 3 refunds the sum of the list prices. What happens when the original sale had a promotion? | The customer paid the discounted price, but the return gave back the full list price, so the store lost the difference on every single return of a discounted sale. | Accepted refunding each unit at its list price minus the same proportion of the discount, using sale.getDiscountAmount() divided by sale.getSubtotal(), which is the only data the model already has. | fix: refund discounted sale proportionally to the applied discount |
+
+### Entry 27
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 5, phase 4 - `fix/return-discounted-refund` (A5) | Decide how the discount ratio is computed and when there is no discount | Should the ratio be stored, passed as a parameter or read from the sale? | It must be read from the sale, because Return already keeps the reference and the constructor computes the refund before any service runs. | Accepted a private discountRatio method that returns zero when the sale is null, when the subtotal is not positive or when there is no discount, and otherwise returns the discount divided by the subtotal, capped at one so a refunded amount can never go negative. | fix: refund discounted sale proportionally to the applied discount |
+
+### Entry 28
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 5, phase 4 - `fix/return-discounted-refund` (A5) | Check the result against the example the leader gave | Does a console of 2500000 in a sale with 125000 of discount refund 2375000 and show the three figures per unit? | Yes. The receipt printed "- C-01 PlayStation 5 Slim &#124; Precio: $2,500,000.00 &#124; Descuento: -$125,000.00 &#124; Reembolso: $2,375,000.00", a sale without discount refunded the full 2500000, and a partial return of a video game in a sale with a 5 percent discount refunded 237500. | Accepted showing the discount with a minus sign, because the receipt must say how much is taken away from the list price. Prices keep Locale.US with two decimals, the same as the other modules. | fix: show list price proportional discount and refund per item |
