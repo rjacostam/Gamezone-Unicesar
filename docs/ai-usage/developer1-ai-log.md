@@ -416,3 +416,14 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
 |---|---|---|---|---|---|---|---|
 | 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Decide how a validator checks that a console really is a console | Should validateCompatibleConsole use instanceof on Console? | The rule is about the category, and every product reports its category through getCategory(), which avoids importing the concrete classes. | Accepted comparing the category with CONSOLE, the same way CategoryDiscount does, and kept the two failures apart: null gives ResourceNotFoundException and a product that exists but is not a console gives BusinessRuleException. | feat: add AccessoryValidator and SaleValidator |
+### Entry 34
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Corregir una diferencia entre el validador y el servicio al rejecting la cantidad cero | validateQuantity solo rechazaba las cantidades negativas, pero restoreStock ya rechaza el cero. ¿Cual de las dos reglas es la correcta? | La regla del servicio es la correcta: una cantidad de cero unidades no es una operación, es un no-op que el usuario no debería poder ejecutar, y ademas el mensaje ya dice "debe ser mayor que cero". | Accepted cambiar la condición a quantity <= 0 y unificar el mensaje con el del servicio, de modo que el usuario lea lo mismo sin importar por donde entra la llamada. | fix: reject zero quantity in validateQuantity |
+
+### Entry 35
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Quitar el aviso del compilador sobre las excepciones | ¿Por qué javac avisa que las clases serializables no declaran serialVersionUID? | RuntimeException implementa Serializable, así que las cinco clases heredan esa obligación y el compilador avisa con -Xlint:serial. Sin ese campo, un cambio en la estructura de la clase rompe la deserialización de excepciones antiguas. | Accepted declarar private static final long serialVersionUID = 1L en las cinco, con un comentario que explica que mantiene la misma versión al recompilar. Verifiqué que el aviso desaparece. | fix: declare serialVersionUID in the exception hierarchy |
