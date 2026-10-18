@@ -135,6 +135,10 @@ public class PersonService {
     /**
      * Searches a seller by its identification or by its employee code, because
      * both values identify a seller in the daily work of the store.
+     * <p>
+     * The comparison ignores the capitalisation and the surrounding spaces of
+     * the searched value, so the menu accepts what the user types without
+     * forcing an exact capitalisation.
      *
      * @param idOrEmployeeCode identification or employee code to search
      * @return the seller found, or null when no seller matches
@@ -145,7 +149,8 @@ public class PersonService {
         }
         String searched = idOrEmployeeCode.trim();
         for (Seller seller : sellers) {
-            if (seller.getId().equals(searched) || seller.getEmployeeCode().equals(searched)) {
+            if (seller.getId().trim().equalsIgnoreCase(searched)
+                    || seller.getEmployeeCode().trim().equalsIgnoreCase(searched)) {
                 return seller;
             }
         }
