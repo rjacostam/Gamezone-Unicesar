@@ -1,0 +1,4 @@
+type;id;name;startDate;endDate;percentage;extra
+PERCENTAGE;P-01;Descuento de temporada;2026-10-01;2026-12-31;5;
+CATEGORY;P-02;Videojuegos al 20%;2026-10-01;2026-12-31;20;VIDEOGAME
+BULK;P-03;Lleva 3 o más;2026-10-01;2026-12-31;10;3
