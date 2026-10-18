@@ -1,6 +1,6 @@
-# AI Usage Log — Developer 2
+﻿# AI Usage Log â€” Developer 2
 
-Owner: José David Cervantes Solano
+Owner: JosÃ© David Cervantes Solano
 
 Each interaction with an AI tool is recorded as one entry with the fields below.
 
@@ -19,7 +19,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 001 — Implementation of the people module
+## Entry 001 â€” Implementation of the people module
 
 | Field | Content |
 |---|---|
@@ -34,7 +34,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 002 — Improvements to the people module
+## Entry 002 â€” Improvements to the people module
 
 | Field | Content |
 |---|---|
@@ -46,3 +46,18 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | The model applied the seven changes as one commit each, pushed after every commit, and verified the result statically because the machine has no Java 17 and no Maven: brace and parenthesis balance on every file of the whole project, detection of unused imports, and confirmation that no public signature, attribute or `throws` clause changed. The model also reviewed every call site of the module in `Main`, `SaleService` and `ConsoleMenu` to confirm that the behaviour changes are compatible with the code of the other members. |
 | Decision | **Accepted:** the phone validation was placed in `PersonService`, because the analysis document states that the validation lives in the services and not in the domain classes; the digits were compared against the ASCII range `'0'` to `'9'` instead of using `Character.isDigit(char)`, because that method also accepts digits of other writing systems; the e-mail normalisation was placed in `Customer.setEmail(String)` and the constructor was changed to call that setter, so the address is normalised no matter how the customer is built; `Locale.ROOT` was used for the lower casing, because the default locale of the machine would change the result for some letters; the role prefix of `getSummary()` was written in each subclass instead of in a shared helper, to keep `Person` exactly as it appears in `docs/class-diagram.md`; and the damaged record check was implemented as a private helper that rejects records with an empty field, since the field count was already being verified. **Modified:** nothing outside the five assigned files was touched, and `docs/` was not modified apart from this log, which is not a diagram document. `data/sellers.csv` was left untouched and no test data was committed. **Discarded:** the idea of making `findCustomerById(String)` case-insensitive as well. It was not requested, and it is reported to the Technical Leader as an open question, because `ProductService.findById(String)` already ignores capitalisation and the two searches would otherwise behave differently. |
 | Related commit | `3285d3c` (phone validation), `213fd77` (e-mail in lower case), `b7278da` (role in the summary line), `533fe36` (skip damaged records), `6f24e6f` (seller search ignoring capitalisation), `b95ceb0` (JavaDoc), plus the commit that carries this log |
+
+---
+
+## Entry 003 â€” Accessory module repository and service
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requerimiento 1 del Parcial Primer Corte (mÃ³dulo de accesorios). Branch `feature/accessory-module`, taken from the updated `develop` with the model classes of Developer 1 already merged. |
+| Goal | Implement the two classes of the accessory module assigned to Developer 2 in `docs/accessory-class-diagram.md`: `AccessoryRepository` and `AccessoryService`, together with `data/accessories.csv`, following the specification of the Technical Leader exactly. |
+| Query | "Create `data/accessories.csv` with the header and the three preloaded accessories." / "Implement `AccessoryRepository` with `saveAll` and `loadAll` that declare `throws IOException`, rebuild the right subclass from the first column, return an empty list when the file is missing, skip the header and ignore damaged lines." / "Implement `AccessoryService` with the constructor loading the accessories and turning an `IOException` into an `IllegalStateException` like `ProductService` does." / "Add the three register methods, the four queries and `updateStock`, saving after every change." / "Reject invalid data with `IllegalArgumentException` and a Spanish message." |
+| Answer | The model read the accessory class diagram and the model classes of Developer 1 to use their exact API, read `ProductService` to copy the `IllegalStateException` pattern, and implemented the two classes and the data file with one commit per logical unit, six commits in total, each pushed right after it was created. Because the machine has no Java 17 and no Maven, the code could not be compiled, so it was verified statically: brace and parenthesis balance on every file, detection of unused imports, and confirmation of the twelve signatures and three attributes against the class diagram. The preload file was also checked to have eight columns per line and to be saved in UTF-8. |
+| Decision | **Accepted:** the file errors of `AccessoryService` become `IllegalStateException` in the constructor and in a private save method, exactly like `ProductService`, instead of propagating the checked exception. `updateStock` removes units by delegating to `Product.decreaseStock(int)`, because that method already rejects a negative quantity and an insufficient stock, and duplicating those checks would have repeated logic that already lives in the domain. The type check of `listAccessoriesByType` compares against the three constants instead of accepting any string, so a typo is reported instead of silently returning an empty list. Records of the accessories file are accepted with seven or eight columns, so a line that lost its trailing semicolon for a controller is still read. **Modified:** the compatible console identifiers are trimmed before being validated and before being stored. **Discarded:** validating the attributes specific to each type, such as the connection type of a controller, because the diagram and the instructions of the Technical Leader do not define a rule for them, and a rule that was not requested would be an invented requirement. |
+| Related commit | `5679e6a` (preload data file), `fd33932` (`AccessoryRepository`), `d49440a` (`AccessoryService` registration rules), `916101b` (`AccessoryService` queries), `26e41cf` (`updateStock`), plus the commit that carries this log |
