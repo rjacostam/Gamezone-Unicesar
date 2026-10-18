@@ -205,6 +205,7 @@ public class ConsoleMenu {
         System.out.println("2. Historial de ventas");
         System.out.println("3. Historial de compras de un cliente");
         System.out.println("4. Ventas atendidas por un vendedor");
+        System.out.println("5. Ver detalle de una venta");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
         try {
@@ -213,6 +214,7 @@ public class ConsoleMenu {
                 case 2 -> printSales(saleService.listAllSales());
                 case 3 -> printSales(saleService.findSalesByCustomer(readText("Identificación del cliente: ")));
                 case 4 -> printSales(saleService.findSalesBySeller(readText("Identificación o código del vendedor: ")));
+                case 5 -> showSaleDetail();
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
@@ -251,6 +253,16 @@ public class ConsoleMenu {
         for (Product item : catalog) {
             System.out.println(item.getDescription());
         }
+    }
+
+    private void showSaleDetail() {
+        String saleId = readText("Identificador de la venta (por ejemplo S0001): ");
+        Sale sale = saleService.findById(saleId);
+        if (sale == null) {
+            System.out.println("No existe una venta con el identificador " + saleId + ".");
+            return;
+        }
+        System.out.println(sale.generateReceipt());
     }
 
     private void printSales(List<Sale> sales) {

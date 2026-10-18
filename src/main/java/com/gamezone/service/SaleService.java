@@ -132,6 +132,21 @@ public class SaleService {
     }
 
     /**
+     * Looks for a sale by its identifier, ignoring letter case.
+     *
+     * @param saleId sale identifier
+     * @return the sale, or {@code null} if it does not exist
+     */
+    public Sale findById(String saleId) {
+        for (Sale sale : sales) {
+            if (sale.getId().equalsIgnoreCase(saleId)) {
+                return sale;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns the purchase history of a customer.
      *
      * @param customerId customer identification
