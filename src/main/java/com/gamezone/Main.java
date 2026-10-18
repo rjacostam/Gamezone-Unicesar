@@ -54,7 +54,7 @@ public class Main {
             warrantyService.loadWarranties(saleService.listAllSales(), saleService.getCatalog());
 
             ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService, accessoryService,
-                    promotionService);
+                    promotionService, warrantyService);
             menu.start();
         } catch (IOException | IllegalStateException e) {
             System.out.println("No fue posible cargar los datos del sistema: " + e.getMessage());
