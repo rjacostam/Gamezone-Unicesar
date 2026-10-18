@@ -44,6 +44,7 @@ public class ProductService {
      */
     public VideoGame registerVideoGame(String id, String title, double price, int stock,
                                        String platform, String genre, String ageRating) {
+        validateProductData(id, title, price, stock);
         if (findById(id) != null) {
             throw new IllegalArgumentException("Ya existe un producto con el identificador " + id);
         }
@@ -67,6 +68,7 @@ public class ProductService {
      */
     public Console registerConsole(String id, String title, double price, int stock,
                                    String brand, String model, String generation) {
+        validateProductData(id, title, price, stock);
         if (findById(id) != null) {
             throw new IllegalArgumentException("Ya existe un producto con el identificador " + id);
         }
@@ -74,6 +76,28 @@ public class ProductService {
         products.add(console);
         saveCatalogue();
         return console;
+    }
+
+    /**
+     * Checks the common data of a product before it is registered.
+     * @param id product identifier
+     * @param title product title
+     * @param price unit price
+     * @param stock available stock
+     */
+    private void validateProductData(String id, String title, double price, int stock) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("El identificador del producto es obligatorio");
+        }
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("El titulo del producto es obligatorio");
+        }
+        if (price < 0) {
+            throw new IllegalArgumentException("El precio no puede ser negativo");
+        }
+        if (stock < 0) {
+            throw new IllegalArgumentException("El stock no puede ser negativo");
+        }
     }
 
     /**
