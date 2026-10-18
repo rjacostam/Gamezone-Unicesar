@@ -300,6 +300,11 @@ public class WarrantyService {
      * The warranties are cancelled because the covered product is going back to
      * the store: a console that is no longer with the customer cannot be covered
      * any more, so it must not keep showing as active.
+     * <p>
+     * The file is written whenever a warranty was actually removed, and not when
+     * the amount to refund is greater than zero. A basic warranty costs nothing,
+     * so cancelling only a basic warranty removes a row and refunds zero; saving
+     * on the amount alone would drop that removal when the application restarts.
      *
      * @param productId identifier of the product whose warranties are cancelled
      * @param saleId    identifier of the sale the warranties come from
@@ -312,9 +317,10 @@ public class WarrantyService {
                 || saleId == null || saleId.isBlank()) {
             return 0;
         }
+        int before = warranties.size();
         double refund = removeOneWarranty(productId, saleId, BasicWarranty.class)
                 + removeOneWarranty(productId, saleId, ExtendedWarranty.class);
-        if (refund != 0) {
+        if (warranties.size() != before) {
             saveCatalogue();
         }
         return refund;
