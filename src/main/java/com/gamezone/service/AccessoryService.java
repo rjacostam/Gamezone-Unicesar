@@ -251,6 +251,31 @@ public class AccessoryService {
     }
 
     /**
+ * Adds returned units back to the stock of an accessory and saves the catalogue.
+ * It is used by the return module, so the inventory of the accessories is only
+ * changed here. The method mirrors {@code ProductService.restoreStock}, so both
+ * kinds of stock behave in the same way.
+ *
+ * @param accessoryId identifier of the accessory to update
+ * @param quantity    amount of units to add to the stock
+ * @throws IllegalArgumentException if the quantity is not greater than zero or
+ *                                  if the accessory does not exist
+ * @throws IllegalStateException    if the accessories file cannot be written
+ */
+    public void restoreStock(String accessoryId, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("La cantidad a restaurar debe ser mayor que cero");
+        }
+        Accessory accessory = findById(accessoryId);
+        if (accessory == null) {
+            throw new IllegalArgumentException(
+                    "No existe un accesorio con el identificador " + accessoryId);
+        }
+        accessory.setStock(accessory.getStock() + quantity);
+        saveCatalogue();
+    }
+
+    /**
      * Checks the data shared by every accessory before it is registered.
      *
      * @param id    accessory identifier
