@@ -1,6 +1,7 @@
 package com.gamezone.model;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -228,5 +229,20 @@ public class Sale {
     public void setDiscountAmount(double discountAmount) {
         this.discountAmount = discountAmount;
         calculateTotal();
+    }
+
+    /**
+     * Tells whether this sale is still inside the 30 day window for a return.
+     * The window is counted in calendar days from the date of the sale until
+     * today, and both the same day and exactly 30 days later are still valid.
+     *
+     * @return {@code true} when the sale can still be returned
+     */
+    public boolean canBeReturned() {
+        if (date == null) {
+            return false;
+        }
+        long days = ChronoUnit.DAYS.between(date, LocalDate.now());
+        return days >= 0 && days <= 30;
     }
 }
