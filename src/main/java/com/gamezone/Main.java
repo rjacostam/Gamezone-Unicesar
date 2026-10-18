@@ -55,7 +55,8 @@ public class Main {
             SaleService saleService = new SaleService(saleRepository, productService, personService,
                     accessoryService, promotionService, warrantyService);
             warrantyService.loadWarranties(saleService.listAllSales());
-            ReturnService returnService = new ReturnService(returnRepository, saleService, productService);
+            ReturnService returnService = new ReturnService(returnRepository, saleService, productService,
+                    accessoryService);
 
             ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService, accessoryService,
                     promotionService, warrantyService, returnService);
