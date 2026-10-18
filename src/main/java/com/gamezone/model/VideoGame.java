@@ -44,6 +44,16 @@ public class VideoGame extends Product {
     }
 
     /**
+     * Returns the category of this product, so a promotion can target video
+     * games only.
+     * @return VIDEOGAME
+     */
+    @Override
+    public String getCategory() {
+        return "VIDEOGAME";
+    }
+
+    /**
      * Returns the platform this game runs on.
      * @return platform of the game
      */

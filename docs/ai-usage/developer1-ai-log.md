@@ -111,3 +111,102 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | The workshop asks for at least twelve atomic commits per member. The branch now has eleven code and data commits plus this documentation entry, and each one changes a single logical thing. |
 | Decision | Accepted splitting the work into small steps, such as separating the registration methods from the listing and stock methods, instead of committing the whole service at once. |
 | Related commit | docs: record product module work in developer1 AI usage log |
+
+---
+
+## Requirement 1 - Accessories
+
+### Entry 8
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 1 - `feature/accessory-module` |
+| Goal | Decide how to build the accessory hierarchy so the sales keep working unchanged |
+| Query | Should the accessories extend Product or form a separate hierarchy? |
+| Answer | They must extend Product, because an accessory is sold the same way as a video game or a console and Sale already keeps a List&lt;Product&gt;. A separate hierarchy would duplicate the four common attributes and would force Sale to keep a second list. |
+| Decision | Accepted. Accessory extends Product and adds only compatibleConsoleIds. The compatibility is stored as console ids and not as Console objects, so Console does not change and the products module is not touched. |
+| Related commit | feat: add Accessory abstract class with console compatibility |
+
+### Entry 9
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 1 - `feature/accessory-module` |
+| Goal | Avoid a warning the compiler reported when compiling the new base class |
+| Query | Why does javac warn about a possible this escape in the Accessory constructor? |
+| Answer | The constructor called addCompatibleConsole, which is a public method a subclass could override, so an overridden version could run before the subclass was fully initialized. |
+| Decision | Accepted moving the check into a private containsConsoleId method that the constructor reuses, so the constructor no longer calls an overridable method. Rejected making the add methods final, because the class diagram does not ask for that. |
+| Related commit | fix: avoid calling overridable method from Accessory constructor |
+
+### Entry 10
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 1 - `feature/accessory-module` |
+| Goal | Verify the accessory hierarchy behaves as the diagram describes |
+| Query | Does the description, the type discriminator and the compatibility behave correctly on the three accessory types? |
+| Answer | Yes. The descriptions come out as "Accesorio [A-01] Control DualSense | Precio: $350,000.00 | Stock: 8 | Compatible con: [C-01] | Conexion: Inalambrico", the discriminators return CONTROLLER, CABLE and MEMORY, isCompatibleWith ignores letter case, duplicated and blank ids are ignored, and removing a console works ignoring case too. |
+| Decision | Accepted. The price uses Locale.US so the format does not depend on the language of the machine, and it matches the format the leader asked for. |
+| Related commit | feat: add Memory accessory with capacity and memory type |
+
+---
+
+## Requirement 2 - Promotions
+
+### Entry 11
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 2 - `feature/promotion-module` |
+| Goal | Decide how the three promotion types share their data without repeating code |
+| Query | How do the three promotions keep their common data while each one calculates its discount in a different way? |
+| Answer | An abstract Promotion class holds id, name, startDate and endDate, declares isActive as a concrete method because the rule is the same for all, and declares calculateDiscount and getDescription as abstract so each subclass writes its own. |
+| Decision | Accepted. isActive compares startDate &lt;= date &lt;= endDate with !isBefore and !isAfter, both limits included, and returns false when a date is missing. |
+| Related commit | feat: add Promotion abstract class with validity period |
+
+### Entry 12
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 2 - `feature/promotion-module` |
+| Goal | Know how CategoryDiscount can tell which products belong to the target category |
+| Query | Should CategoryDiscount use instanceof on the product types, or ask the product for its category? |
+| Answer | The class diagram adds an abstract getCategory() to Product, implemented as VIDEOGAME, CONSOLE and ACCESSORY, and CategoryDiscount compares product.getCategory() with the target category. Using instanceof would couple the promotion to every product class, so a new product type would force a change in CategoryDiscount. |
+| Decision | Accepted getCategory() and put it in Product, VideoGame, Console and Accessory. Accessory answers in the abstract class because every accessory shares the same category, so the three accessory types do not repeat it. Comparison uses equalsIgnoreCase so the target category works with any letter case. |
+| Related commit | feat: add getCategory discriminator to the product hierarchy |
+
+### Entry 13
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 2 - `feature/promotion-module` |
+| Goal | Confirm the three discount rules calculate the right amount |
+| Query | Do the three calculateDiscount implementations return the right value on a real sale? |
+| Answer | Yes. On a sale of two video games and a console, PercentageDiscount 5 percent returned 150000; CategoryDiscount 20 percent on VIDEOGAME returned 100000, ignoring the console; BulkPurchaseDiscount 10 percent with a minimum of 3 returned 0 on a sale of 2 units and 310000 on a sale of 3 units. A sale outside the validity period and a null sale both returned 0. |
+| Decision | Accepted computing the base by summing sale.getProducts() instead of using the sale total, so a promotion never depends on a discount already applied. |
+| Related commit | feat: add BulkPurchaseDiscount promotion type with minimum quantity |
+
+### Entry 14
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 2 - `feature/promotion-module` |
+| Goal | Fix the percentage shown in the promotion descriptions |
+| Query | The description printed "5,00000%" instead of a clean percentage. Which format should be used? |
+| Answer | The %g format printed five decimals and used the decimal separator of the machine. The %.2f format with Locale.US prints 5.00% and 12.50% and does not depend on the language of the machine. |
+| Decision | Accepted String.format(Locale.US, "%.2f%%", percentage) in the three classes, the same approach already used for the accessory price, so the two modules print prices and percentages in the same way. |
+| Related commit | fix: format promotion percentage with two decimals in descriptions |

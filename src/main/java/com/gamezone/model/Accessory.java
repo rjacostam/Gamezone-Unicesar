@@ -38,6 +38,16 @@ public abstract class Accessory extends Product {
     }
 
     /**
+     * Returns the category of this accessory. It is defined once in Accessory
+     * because every accessory belongs to the same category, whatever its type.
+     * @return ACCESSORY
+     */
+    @Override
+    public String getCategory() {
+        return "ACCESSORY";
+    }
+
+    /**
      * Returns the type marker of this accessory, used to filter the catalogue
      * and to rebuild the correct class when the catalogue file is read.
      * @return CONTROLLER, CABLE or MEMORY
