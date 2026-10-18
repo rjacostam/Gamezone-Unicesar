@@ -253,6 +253,8 @@ public class ConsoleMenu {
         System.out.println("2. Registrar cable");
         System.out.println("3. Registrar memoria");
         System.out.println("4. Listar todos los accesorios");
+        System.out.println("5. Listar accesorios por tipo");
+        System.out.println("6. Consultar accesorios compatibles con una consola");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
         try {
@@ -261,6 +263,9 @@ public class ConsoleMenu {
                 case 2 -> registerCable();
                 case 3 -> registerMemory();
                 case 4 -> listAccessories(accessoryService.listAllAccessories());
+                case 5 -> listAccessories(accessoryService.listAccessoriesByType(readAccessoryType()));
+                case 6 -> listAccessories(accessoryService.findAccessoriesCompatibleWith(
+                        readText("Identificador de la consola: ")));
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
@@ -319,6 +324,16 @@ public class ConsoleMenu {
             }
         }
         return ids;
+    }
+
+    private String readAccessoryType() {
+        System.out.println("1. Controles  2. Cables  3. Memorias");
+        return switch (readInt("Tipo: ")) {
+            case 1 -> "CONTROLLER";
+            case 2 -> "CABLE";
+            case 3 -> "MEMORY";
+            default -> "";
+        };
     }
 
     private void listAccessories(List<Accessory> accessories) {
