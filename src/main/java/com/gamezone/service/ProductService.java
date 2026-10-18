@@ -109,13 +109,14 @@ public class ProductService {
     }
 
     /**
-     * Searches a product by its identifier.
+     * Searches a product by its identifier, ignoring letter case, so a user can
+     * type "vg-01" and still find the product registered as "VG-01".
      * @param id identifier to look for
      * @return the product found, or null when no product uses that identifier
      */
     public Product findById(String id) {
         for (Product product : products) {
-            if (product.getId().equals(id)) {
+            if (product.getId().equalsIgnoreCase(id)) {
                 return product;
             }
         }
