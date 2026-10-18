@@ -57,6 +57,21 @@ public abstract class Warranty {
     public abstract double getAdditionalCost();
 
     /**
+     * Tells whether the warranty is in force on the given date, which happens
+     * when the date is between the start date and the end date, both included.
+     * It returns false when the date is missing or when the warranty has no
+     * period at all.
+     * @param date date to check
+     * @return true when the warranty covers that date
+     */
+    public boolean isActive(LocalDate date) {
+        if (date == null || startDate == null || endDate == null) {
+            return false;
+        }
+        return !date.isBefore(startDate) && !date.isAfter(endDate);
+    }
+
+    /**
      * Returns the identifier of this warranty.
      * @return warranty identifier
      */
