@@ -30,3 +30,7 @@ nbactions.xml
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Runtime data (created by the application)
+data/customers.csv
+data/sales.csv
