@@ -90,14 +90,8 @@ public class SaleService {
         if (productIds == null || productIds.isEmpty()) {
             throw new IllegalArgumentException("La venta debe contener al menos un producto.");
         }
-        Customer customer = personService.findCustomerById(customerId);
-        if (customer == null) {
-            throw new IllegalArgumentException("El cliente con identificación " + customerId + " no existe.");
-        }
-        Seller seller = personService.findSellerById(sellerId);
-        if (seller == null) {
-            throw new IllegalArgumentException("El vendedor " + sellerId + " no existe.");
-        }
+        Customer customer = requireCustomer(customerId);
+        Seller seller = requireSeller(sellerId);
 
         Map<Product, Integer> unitsByProduct = new LinkedHashMap<>();
         List<Product> soldProducts = new ArrayList<>();
@@ -220,6 +214,22 @@ public class SaleService {
         List<Product> catalog = new ArrayList<>(productService.listAllProducts());
         catalog.addAll(accessoryService.listAllAccessories());
         return catalog;
+    }
+
+    private Customer requireCustomer(String customerId) {
+        Customer customer = personService.findCustomerById(customerId);
+        if (customer == null) {
+            throw new IllegalArgumentException("El cliente con identificación " + customerId + " no existe.");
+        }
+        return customer;
+    }
+
+    private Seller requireSeller(String sellerId) {
+        Seller seller = personService.findSellerById(sellerId);
+        if (seller == null) {
+            throw new IllegalArgumentException("El vendedor " + sellerId + " no existe.");
+        }
+        return seller;
     }
 
     private boolean containsConsole(List<Product> products, String id) {
