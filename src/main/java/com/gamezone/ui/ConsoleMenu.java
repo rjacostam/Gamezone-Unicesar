@@ -136,7 +136,7 @@ public class ConsoleMenu {
         System.out.println("3. Listar inventario");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerVideoGame();
                 case 2 -> registerConsole();
@@ -144,9 +144,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerVideoGame() {
@@ -194,18 +192,24 @@ public class ConsoleMenu {
         System.out.println("3. Listar vendedores");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
-                case 1 -> registerCustomer();
+                case 1 -> registerCustomerOrFail();
                 case 2 -> listCustomers();
                 case 3 -> listSellers();
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        });
+    }
+
+    private void registerCustomerOrFail() {
+        // Temporary: PersonService still declares IOException until its repository throws
+        // PersistenceException.
+        try {
+            registerCustomer();
         } catch (IOException e) {
-            System.out.println("Error: no se pudo guardar el cliente en el archivo de datos.");
+            throw new PersistenceException("Error de escritura en el archivo de clientes", e);
         }
     }
 
@@ -252,7 +256,7 @@ public class ConsoleMenu {
         System.out.println("5. Ver detalle de una venta");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerSale();
                 case 2 -> printSales(saleService.listAllSales());
@@ -262,9 +266,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerSale() {
