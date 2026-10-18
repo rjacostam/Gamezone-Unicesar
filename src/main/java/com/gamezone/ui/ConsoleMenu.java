@@ -239,7 +239,7 @@ public class ConsoleMenu {
                 productIds.add(productId);
             }
         }
-        Sale sale = saleService.registerSale(customerId, sellerId, productIds);
+        Sale sale = saleService.registerSale(customerId, sellerId, productIds, new ArrayList<>());
         System.out.println("Venta registrada con éxito.");
         System.out.println(sale.generateReceipt());
     }
