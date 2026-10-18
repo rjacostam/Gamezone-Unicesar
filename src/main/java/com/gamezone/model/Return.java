@@ -49,18 +49,53 @@ public class Return {
     }
 
     /**
-     * Adds up the prices of the returned units, stores the result in the
-     * refunded amount and returns it. It is called by the constructor, so a
-     * return always knows how much was refunded.
+     * Adds up what is really owed to the customer for the returned units, stores
+     * the result in the refunded amount and returns it. Each unit is refunded at
+     * its list price minus the same proportion of the discount the customer got
+     * in the original sale, because the store never charged the full price for
+     * it. When the original sale has no subtotal, or no discount, nothing is
+     * discounted. It is called by the constructor, so a return always knows how
+     * much was refunded.
      * @return refunded amount in pesos
      */
     public double calculateRefundAmount() {
         double total = 0;
         for (Product product : returnedProducts) {
-            total += product.getPrice();
+            total += refundableAmount(product);
         }
         this.refundAmount = total;
         return total;
+    }
+
+    /**
+     * Returns how much is owed for one returned unit, which is its list price
+     * minus the proportional part of the discount applied in the original sale.
+     * A sale without subtotal, without discount or with a null link gives the
+     * full list price.
+     * @param product returned unit
+     * @return amount to refund for that unit
+     */
+    private double refundableAmount(Product product) {
+        double listPrice = product.getPrice();
+        return listPrice * (1 - discountRatio());
+    }
+
+    /**
+     * Returns the proportion of the original sale that was discounted, which is
+     * its discount divided by its subtotal. The result is never negative and
+     * never above one, so a refunded amount can never go below zero.
+     * @return discount ratio between zero and one
+     */
+    private double discountRatio() {
+        if (sale == null) {
+            return 0;
+        }
+        double subtotal = sale.getSubtotal();
+        double discount = sale.getDiscountAmount();
+        if (subtotal <= 0 || discount <= 0) {
+            return 0;
+        }
+        return Math.min(discount / subtotal, 1.0);
     }
 
     /**
