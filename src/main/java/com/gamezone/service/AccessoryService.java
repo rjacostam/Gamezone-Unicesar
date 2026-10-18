@@ -147,6 +147,85 @@ public class AccessoryService {
     }
 
     /**
+     * Returns a copy of every accessory currently registered, in registration
+     * order.
+     *
+     * @return accessories currently registered
+     */
+    public List<Accessory> listAllAccessories() {
+        return new ArrayList<>(accessories);
+    }
+
+    /**
+     * Returns the accessories of one concrete type. The type is compared
+     * ignoring letter case, so the menu can pass the value the user typed.
+     *
+     * @param type type to filter by, {@code CONTROLLER}, {@code CABLE} or
+     *             {@code MEMORY}
+     * @return accessories of the given type, empty when there is none
+     * @throws IllegalArgumentException if the type is not one of the three
+     *                                  types of accessory
+     */
+    public List<Accessory> listAccessoriesByType(String type) {
+        if (!TYPE_CONTROLLER.equalsIgnoreCase(type)
+                && !TYPE_CABLE.equalsIgnoreCase(type)
+                && !TYPE_MEMORY.equalsIgnoreCase(type)) {
+            throw new IllegalArgumentException(
+                    "El tipo de accesorio debe ser CONTROLLER, CABLE o MEMORY");
+        }
+        String searched = type.trim();
+        List<Accessory> result = new ArrayList<>();
+        for (Accessory accessory : accessories) {
+            if (accessory.getAccessoryType().equalsIgnoreCase(searched)) {
+                result.add(accessory);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the accessories that work with a given console, so the seller can
+     * answer the question of a customer before the purchase.
+     *
+     * @param consoleId identifier of the console
+     * @return accessories compatible with the console, empty when there is none
+     */
+    public List<Accessory> findAccessoriesCompatibleWith(String consoleId) {
+        List<Accessory> result = new ArrayList<>();
+        if (consoleId == null || consoleId.isBlank()) {
+            return result;
+        }
+        String searched = consoleId.trim();
+        for (Accessory accessory : accessories) {
+            if (accessory.isCompatibleWith(searched)) {
+                result.add(accessory);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Searches an accessory by its identifier, ignoring letter case, so a user
+     * can type "a-01" and still find the accessory registered as "A-01".
+     *
+     * @param id identifier to look for
+     * @return the accessory found, or null when no accessory uses that
+     *         identifier
+     */
+    public Accessory findById(String id) {
+        if (id == null || id.isBlank()) {
+            return null;
+        }
+        String searched = id.trim();
+        for (Accessory accessory : accessories) {
+            if (accessory.getId().equalsIgnoreCase(searched)) {
+                return accessory;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Checks the data shared by every accessory before it is registered.
      *
      * @param id    accessory identifier
