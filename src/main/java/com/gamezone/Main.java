@@ -1,8 +1,10 @@
 package com.gamezone;
 
+import com.gamezone.persistence.AccessoryRepository;
 import com.gamezone.persistence.PersonRepository;
 import com.gamezone.persistence.ProductRepository;
 import com.gamezone.persistence.SaleRepository;
+import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.SaleService;
@@ -33,12 +35,15 @@ public class Main {
             PersonRepository personRepository = new PersonRepository(
                     DATA_FOLDER + "customers.csv", DATA_FOLDER + "sellers.csv");
             SaleRepository saleRepository = new SaleRepository(DATA_FOLDER + "sales.csv");
+            AccessoryRepository accessoryRepository = new AccessoryRepository(DATA_FOLDER + "accessories.csv");
 
             ProductService productService = new ProductService(productRepository);
             PersonService personService = new PersonService(personRepository);
-            SaleService saleService = new SaleService(saleRepository, productService, personService);
+            AccessoryService accessoryService = new AccessoryService(accessoryRepository, productService);
+            SaleService saleService = new SaleService(saleRepository, productService, personService,
+                    accessoryService);
 
-            ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService);
+            ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService, accessoryService);
             menu.start();
         } catch (IOException | IllegalStateException e) {
             System.out.println("No fue posible cargar los datos del sistema: " + e.getMessage());
