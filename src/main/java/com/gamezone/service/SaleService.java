@@ -1,5 +1,6 @@
 package com.gamezone.service;
 
+import com.gamezone.model.Accessory;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
@@ -55,13 +56,14 @@ public class SaleService {
     }
 
     /**
-     * Registers a sale, discounts the sold units from the inventory and saves it. Every
-     * rule is checked before changing anything, so a rejected sale leaves the inventory
-     * untouched.
+     * Registers a sale, discounts the sold units from the inventory and saves it. The
+     * items can be video games, consoles or accessories. Every rule is checked before
+     * changing anything, so a rejected sale leaves the inventory untouched.
      *
      * @param customerId customer identification
      * @param sellerId   seller identification or employee code
-     * @param productIds identifiers of the units sold, one entry per unit
+     * @param productIds identifiers of the units sold (products or accessories), one entry
+     *                   per unit
      * @return the registered sale
      * @throws IllegalArgumentException if there are no products, if the customer, the
      *                                  seller or a product does not exist, or if there is
@@ -83,9 +85,10 @@ public class SaleService {
         Map<Product, Integer> unitsByProduct = new LinkedHashMap<>();
         List<Product> soldProducts = new ArrayList<>();
         for (String productId : productIds) {
-            Product product = productService.findById(productId);
+            Product product = findItem(productId);
             if (product == null) {
-                throw new IllegalArgumentException("El producto con identificador " + productId + " no existe.");
+                throw new IllegalArgumentException(
+                        "El producto o accesorio con identificador " + productId + " no existe.");
             }
             unitsByProduct.merge(product, 1, Integer::sum);
             soldProducts.add(product);
@@ -99,7 +102,11 @@ public class SaleService {
 
         Sale sale = new Sale(nextSaleId(), LocalDate.now(), customer, seller, soldProducts);
         for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
-            productService.updateStock(entry.getKey().getId(), entry.getValue());
+            if (entry.getKey() instanceof Accessory) {
+                accessoryService.updateStock(entry.getKey().getId(), entry.getValue());
+            } else {
+                productService.updateStock(entry.getKey().getId(), entry.getValue());
+            }
         }
         sales.add(sale);
         saveSales();
@@ -160,6 +167,14 @@ public class SaleService {
         List<Product> catalog = new ArrayList<>(productService.listAllProducts());
         catalog.addAll(accessoryService.listAllAccessories());
         return catalog;
+    }
+
+    private Product findItem(String id) {
+        Product product = productService.findById(id);
+        if (product == null) {
+            product = accessoryService.findById(id);
+        }
+        return product;
     }
 
     private void saveSales() {
