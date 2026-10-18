@@ -15,6 +15,13 @@ import java.util.List;
  * the file is loaded, followed by the common attributes and the specific ones
  * of that type. This class is the only place in the system that knows how the
  * product data is stored on disk.
+ *
+ * <p>Column layout of the file, separated by semicolons:</p>
+ * <pre>
+ * type;id;title;price;stock;extra1;extra2;extra3
+ * VIDEOGAME rows use platform, genre and age rating in the extra columns.
+ * CONSOLE rows use brand, model and generation in the extra columns.
+ * </pre>
  */
 public class ProductRepository {
     private Path filePath;
