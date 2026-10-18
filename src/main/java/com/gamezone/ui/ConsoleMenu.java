@@ -4,14 +4,18 @@ import com.gamezone.model.Accessory;
 import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
+import com.gamezone.model.Promotion;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
+import com.gamezone.service.PromotionService;
 import com.gamezone.service.SaleService;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -29,6 +33,7 @@ public class ConsoleMenu {
     private final PersonService personService;
     private final SaleService saleService;
     private final AccessoryService accessoryService;
+    private final PromotionService promotionService;
     private final Scanner scanner;
 
     /**
@@ -38,13 +43,15 @@ public class ConsoleMenu {
      * @param personService  service for customers and sellers
      * @param saleService      service for sales
      * @param accessoryService service for accessories
+     * @param promotionService service for promotions
      */
     public ConsoleMenu(ProductService productService, PersonService personService, SaleService saleService,
-                       AccessoryService accessoryService) {
+                       AccessoryService accessoryService, PromotionService promotionService) {
         this.productService = productService;
         this.personService = personService;
         this.saleService = saleService;
         this.accessoryService = accessoryService;
+        this.promotionService = promotionService;
         this.scanner = new Scanner(System.in);
     }
 
@@ -60,6 +67,7 @@ public class ConsoleMenu {
             System.out.println("2. Gestión de personas");
             System.out.println("3. Gestión de ventas");
             System.out.println("4. Gestión de accesorios");
+            System.out.println("5. Gestión de promociones");
             System.out.println("0. Salir");
             option = readInt("Seleccione una opción: ");
             switch (option) {
@@ -67,6 +75,7 @@ public class ConsoleMenu {
                 case 2 -> personMenu();
                 case 3 -> saleMenu();
                 case 4 -> accessoryMenu();
+                case 5 -> promotionMenu();
                 case 0 -> System.out.println("Hasta pronto.");
                 default -> System.out.println("Opción no válida.");
             }
@@ -357,6 +366,80 @@ public class ConsoleMenu {
         }
     }
 
+    // ---------------------------------------------------------------- promotions
+
+    private void promotionMenu() {
+        System.out.println();
+        System.out.println("--- Gestión de promociones ---");
+        System.out.println("1. Registrar promoción por porcentaje");
+        System.out.println("2. Registrar promoción por categoría");
+        System.out.println("3. Registrar promoción por volumen");
+        System.out.println("4. Listar todas las promociones");
+        System.out.println("5. Listar promociones vigentes");
+        System.out.println("0. Volver");
+        int option = readInt("Seleccione una opción: ");
+        try {
+            switch (option) {
+                case 1 -> registerPercentagePromotion();
+                case 2 -> registerCategoryPromotion();
+                case 3 -> registerBulkPromotion();
+                case 4 -> listPromotions(promotionService.listAllPromotions());
+                case 5 -> listPromotions(promotionService.listActivePromotions());
+                case 0 -> { }
+                default -> System.out.println("Opción no válida.");
+            }
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void registerPercentagePromotion() {
+        String id = readText("Identificador (por ejemplo P-04): ");
+        String name = readText("Nombre: ");
+        LocalDate start = readDate("Fecha de inicio (AAAA-MM-DD): ");
+        LocalDate end = readDate("Fecha de fin (AAAA-MM-DD): ");
+        double percentage = readDouble("Porcentaje de descuento: ");
+        Promotion promotion = promotionService.registerPercentageDiscount(id, name, start, end, percentage);
+        System.out.println("Promoción registrada: " + promotion.getDescription());
+    }
+
+    private void registerCategoryPromotion() {
+        String id = readText("Identificador (por ejemplo P-04): ");
+        String name = readText("Nombre: ");
+        LocalDate start = readDate("Fecha de inicio (AAAA-MM-DD): ");
+        LocalDate end = readDate("Fecha de fin (AAAA-MM-DD): ");
+        double percentage = readDouble("Porcentaje de descuento: ");
+        System.out.println("1. Videojuegos  2. Consolas");
+        String category = switch (readInt("Categoría: ")) {
+            case 1 -> "VIDEOGAME";
+            case 2 -> "CONSOLE";
+            default -> "";
+        };
+        Promotion promotion = promotionService.registerCategoryDiscount(id, name, start, end, percentage, category);
+        System.out.println("Promoción registrada: " + promotion.getDescription());
+    }
+
+    private void registerBulkPromotion() {
+        String id = readText("Identificador (por ejemplo P-04): ");
+        String name = readText("Nombre: ");
+        LocalDate start = readDate("Fecha de inicio (AAAA-MM-DD): ");
+        LocalDate end = readDate("Fecha de fin (AAAA-MM-DD): ");
+        int minimum = readInt("Cantidad mínima de productos: ");
+        double percentage = readDouble("Porcentaje de descuento: ");
+        Promotion promotion = promotionService.registerBulkPurchaseDiscount(id, name, start, end, minimum, percentage);
+        System.out.println("Promoción registrada: " + promotion.getDescription());
+    }
+
+    private void listPromotions(List<Promotion> promotions) {
+        if (promotions.isEmpty()) {
+            System.out.println("No hay promociones para mostrar.");
+            return;
+        }
+        for (Promotion promotion : promotions) {
+            System.out.println(promotion.getDescription());
+        }
+    }
+
     // ---------------------------------------------------------------- input helpers
 
     private String readText(String prompt) {
@@ -401,6 +484,20 @@ public class ConsoleMenu {
                 return Double.parseDouble(value.replace(",", "."));
             } catch (NumberFormatException e) {
                 System.out.println("Debe ingresar un número válido.");
+            }
+        }
+    }
+
+    private LocalDate readDate(String prompt) {
+        while (true) {
+            String value = readText(prompt);
+            if (value.isEmpty()) {
+                return null;
+            }
+            try {
+                return LocalDate.parse(value);
+            } catch (DateTimeParseException e) {
+                System.out.println("La fecha debe tener el formato AAAA-MM-DD.");
             }
         }
     }
