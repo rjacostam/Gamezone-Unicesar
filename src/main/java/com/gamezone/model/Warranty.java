@@ -1,6 +1,7 @@
 package com.gamezone.model;
 
 import java.time.LocalDate;
+import java.util.Locale;
 
 /**
  * Base class for the warranties granted by the store. A warranty links the
@@ -110,5 +111,51 @@ public abstract class Warranty {
      */
     public LocalDate getEndDate() {
         return endDate;
+    }
+
+    /**
+     * Builds the certificate the customer receives, in Spanish. It shows the
+     * identifier and the type of the warranty, the product it covers, the sale
+     * it comes from with the customer who bought it, the period it is in force,
+     * what it covers and whether it is still active today.
+     * @return certificate ready to be shown to the user
+     */
+    public String generateWarrantyCertificate() {
+        boolean vigente = isActive(LocalDate.now());
+        StringBuilder certificate = new StringBuilder();
+        certificate.append("=== GameZone Unicesar - Certificado de garantia ===\n");
+        certificate.append("Garantia: ").append(id)
+                .append(" (").append(getWarrantyType()).append(")\n");
+        if (product != null) {
+            certificate.append("Producto: ").append(product.getId())
+                    .append(" - ").append(product.getTitle()).append("\n");
+        }
+        if (sale != null) {
+            certificate.append("Venta: ").append(sale.getId()).append("\n");
+            if (sale.getCustomer() != null) {
+                certificate.append("Cliente: ").append(sale.getCustomer().getName()).append("\n");
+            }
+        }
+        certificate.append("Inicio: ").append(startDate)
+                .append(" | Fin: ").append(endDate).append("\n");
+        certificate.append("Cobertura: ").append(coverageDescription()).append("\n");
+        certificate.append("Costo adicional: ")
+                .append(String.format(Locale.US, "$%,.2f", getAdditionalCost())).append("\n");
+        certificate.append("Estado: ")
+                .append(vigente ? "Vigente" : "No vigente").append("\n");
+        return certificate.toString();
+    }
+
+    /**
+     * Returns the text describing what this warranty covers. It is read from the
+     * type name, so it stays correct without adding another abstract method to
+     * the class diagram: only the extended warranty covers accidental damage.
+     * @return coverage of this warranty, in Spanish
+     */
+    private String coverageDescription() {
+        if ("Garantía Extendida".equals(getWarrantyType())) {
+            return "defectos de fábrica y daños accidentales";
+        }
+        return "defectos de fábrica";
     }
 }
