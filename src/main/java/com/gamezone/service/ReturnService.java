@@ -416,6 +416,66 @@ public class ReturnService {
     }
 
     /**
+     * Sums the total of every sale of a month, that is the final amount of the
+     * sale with its discount and its warranties already applied.
+     * <p>
+     * Each sale is grouped by its own date, so a sale made in September and
+     * returned in October counts as income in September only.
+     *
+     * @param month number of the month, from 1 to 12
+     * @param year  number of the year
+     * @return total of the sales of that month
+     * @throws IllegalArgumentException if the month is not between 1 and 12
+     */
+    public double calculateMonthlySales(int month, int year) {
+        validateMonth(month);
+        double total = 0;
+        for (Sale sale : saleService.listAllSales()) {
+            if (isInMonth(sale.getDate(), month, year)) {
+                total += sale.getTotal();
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Sums the refunded amount of every return of a month, that is the money the
+     * store gave back.
+     * <p>
+     * Each return is grouped by its own date, so the refund of a sale made in a
+     * previous month counts in the month the customer handed the product back.
+     *
+     * @param month number of the month, from 1 to 12
+     * @param year  number of the year
+     * @return total of the refunds of that month
+     * @throws IllegalArgumentException if the month is not between 1 and 12
+     */
+    public double calculateMonthlyReturns(int month, int year) {
+        validateMonth(month);
+        double total = 0;
+        for (Return registeredReturn : returns) {
+            if (isInMonth(registeredReturn.getDate(), month, year)) {
+                total += registeredReturn.getRefundAmount();
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Checks that a month number is one of the twelve months of a year. The rule
+     * and its message are written only once and shared by the three reports of the
+     * month.
+     *
+     * @param month number of the month
+     * @throws IllegalArgumentException if the month is not between 1 and 12
+     */
+    private void validateMonth(int month) {
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("El mes debe estar entre 1 y 12");
+        }
+    }
+
+    /**
  * Builds the balance of a month: the money the store took in that month minus
  * the money it gave back in that month.
  * <p>
