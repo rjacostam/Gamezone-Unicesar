@@ -9,7 +9,8 @@ import java.util.List;
  * Sale registered in the store.
  * <p>
  * Each entry in the product list is one unit sold, so a product that appears twice was
- * sold twice.
+ * sold twice. The sale owns the product list, which makes it the right place to compute
+ * its own total.
  */
 public class Sale {
 
@@ -18,9 +19,10 @@ public class Sale {
     private Customer customer;
     private Seller seller;
     private List<Product> products;
+    private double total;
 
     /**
-     * Creates a sale.
+     * Creates a sale and computes its total.
      *
      * @param id       unique sale identifier
      * @param date     date of the sale
@@ -34,6 +36,21 @@ public class Sale {
         this.customer = customer;
         this.seller = seller;
         this.products = new ArrayList<>(products);
+        this.total = calculateTotal();
+    }
+
+    /**
+     * Adds up the price of every unit sold and stores the result as the sale total.
+     *
+     * @return sale total
+     */
+    public double calculateTotal() {
+        double sum = 0;
+        for (Product product : products) {
+            sum += product.getPrice();
+        }
+        total = sum;
+        return total;
     }
 
     /**
@@ -79,5 +96,14 @@ public class Sale {
      */
     public List<Product> getProducts() {
         return Collections.unmodifiableList(products);
+    }
+
+    /**
+     * Returns the sale total.
+     *
+     * @return total
+     */
+    public double getTotal() {
+        return total;
     }
 }
