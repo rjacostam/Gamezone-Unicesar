@@ -31,6 +31,15 @@ public class Return {
      */
     public Return(String id, LocalDate date, Sale sale,
                   List<Product> returnedProducts, String reason) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("El identificador de la devolucion es obligatorio");
+        }
+        if (sale == null) {
+            throw new IllegalArgumentException("La venta original es obligatoria");
+        }
+        if (returnedProducts == null || returnedProducts.isEmpty()) {
+            throw new IllegalArgumentException("La devolucion debe tener al menos un producto");
+        }
         this.id = id;
         this.date = date;
         this.sale = sale;
