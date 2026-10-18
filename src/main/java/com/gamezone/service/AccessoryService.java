@@ -226,6 +226,31 @@ public class AccessoryService {
     }
 
     /**
+     * Removes sold units from the stock of an accessory and saves the catalogue.
+     * <p>
+     * The accessory itself rejects the update when the quantity is negative or
+     * when the stock is not enough, so this method does not repeat that check.
+     * The meaning of the operation is the same as in {@code ProductService}:
+     * the quantity is what the store sells.
+     *
+     * @param accessoryId identifier of the accessory to update
+     * @param quantity    units being removed from the stock
+     * @throws IllegalArgumentException if the accessory does not exist, if the
+     *                                  quantity is negative or if the stock is
+     *                                  not enough
+     * @throws IllegalStateException    if the accessories file cannot be written
+     */
+    public void updateStock(String accessoryId, int quantity) {
+        Accessory accessory = findById(accessoryId);
+        if (accessory == null) {
+            throw new IllegalArgumentException(
+                    "No existe un accesorio con el identificador " + accessoryId);
+        }
+        accessory.decreaseStock(quantity);
+        saveCatalogue();
+    }
+
+    /**
      * Checks the data shared by every accessory before it is registered.
      *
      * @param id    accessory identifier
