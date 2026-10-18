@@ -24,7 +24,12 @@ import java.util.List;
  * Every record uses the semicolon character as the field delimiter, because
  * names may legitimately contain commas. The format of a customer record is
  * {@code id;name;phone;email} and the format of a seller record is
- * {@code id;name;phone;employeeCode;shift}.
+ * {@code id;name;phone;employeeCode;shift}. Both formats are plain text, so the
+ * files can be inspected and edited without running the application.
+ * <p>
+ * The values are stored exactly as the application produced them: the trimming
+ * and the lower casing of the e-mail address are done by the domain classes, so
+ * this repository never changes the content of a record.
  * <p>
  * This class belongs to the persistence layer and therefore is one of the few
  * classes allowed to perform file access. It depends only on the model layer,
@@ -81,6 +86,9 @@ public class PersonRepository {
 
     /**
      * Loads every customer stored in the customers file.
+     * <p>
+     * A damaged record is ignored instead of interrupting the load, so a single
+     * corrupted line never prevents the application from starting.
      *
      * @return list of the stored customers, empty when the file does not exist
      * @throws IOException if the file cannot be read
@@ -89,7 +97,7 @@ public class PersonRepository {
         List<Customer> customers = new ArrayList<>();
         for (String record : read(customersFile)) {
             String[] fields = record.split(DELIMITER, -1);
-            if (fields.length == CUSTOMER_FIELD_COUNT) {
+            if (fields.length == CUSTOMER_FIELD_COUNT && hasContent(fields)) {
                 customers.add(new Customer(
                         fields[0].trim(),
                         fields[1].trim(),
@@ -121,6 +129,9 @@ public class PersonRepository {
 
     /**
      * Loads every seller stored in the sellers file.
+     * <p>
+     * A damaged record is ignored instead of interrupting the load, so a single
+     * corrupted line never prevents the application from starting.
      *
      * @return list of the stored sellers, empty when the file does not exist
      * @throws IOException if the file cannot be read
@@ -129,7 +140,7 @@ public class PersonRepository {
         List<Seller> sellers = new ArrayList<>();
         for (String record : read(sellersFile)) {
             String[] fields = record.split(DELIMITER, -1);
-            if (fields.length == SELLER_FIELD_COUNT) {
+            if (fields.length == SELLER_FIELD_COUNT && hasContent(fields)) {
                 sellers.add(new Seller(
                         fields[0].trim(),
                         fields[1].trim(),
@@ -139,6 +150,26 @@ public class PersonRepository {
             }
         }
         return sellers;
+    }
+
+    /**
+     * Checks that every field of a record holds actual content.
+     * <p>
+     * A record with a blank field is considered damaged and is ignored by the
+     * load methods, because it would produce a person with missing information.
+     * The domain constructors do not validate, so skipping these records here
+     * is what keeps a damaged file from reaching the rest of the system.
+     *
+     * @param fields fields of the record
+     * @return true when every field has content
+     */
+    private static boolean hasContent(String[] fields) {
+        for (String field : fields) {
+            if (field.trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -160,9 +191,8 @@ public class PersonRepository {
     /**
      * Reads every record of a file. An empty list is returned when the file
      * does not exist yet, so the first execution of the system works without
-     * pre-existing data. Blank lines and records with an unexpected number of
-     * fields are ignored, so a single corrupted line does not prevent the
-     * application from starting.
+     * pre-existing data. Blank lines are ignored here, and the load methods
+     * ignore the records whose fields are incomplete.
      *
      * @param file file to read
      * @return the records contained in the file

@@ -11,6 +11,12 @@ package com.gamezone.model;
  * Sellers belong to the preload data of the system: they are already hired and
  * working in the store, so they are not registered through the console menu but
  * loaded from {@code data/sellers.csv} when the application starts.
+ * <p>
+ * Because of that, this class has no registration method in
+ * {@code PersonService}. The only way to add a seller is to include it in the
+ * preload file, and both values that identify a seller, the identification and
+ * the employee code, are accepted by
+ * {@code PersonService.findSellerById(String)}.
  *
  * @author Jose Cervantes
  * @since 1.0.0
@@ -50,19 +56,23 @@ public class Seller extends Person {
     }
 
     /**
-     * Returns the description line of the seller, adding the employee code and
-     * the shift to the information shared by every person.
+     * Returns the description line of the seller, prefixed with its role and
+     * adding the employee code and the shift to the information shared by every
+     * person.
      *
      * @return the description line of the seller
      */
     @Override
     public String getSummary() {
-        return getId() + " | " + getName() + " | " + getPhone()
-                + " | " + employeeCode + " | " + shift;
+        return "[" + getRole() + "] " + getId() + " | " + getName()
+                + " | " + getPhone() + " | " + employeeCode + " | " + shift;
     }
 
     /**
      * Returns the employee code of the seller.
+     * <p>
+     * Together with the identification, this value identifies the seller, so
+     * {@code PersonService.findSellerById(String)} accepts either of the two.
      *
      * @return employee code of the seller
      */
