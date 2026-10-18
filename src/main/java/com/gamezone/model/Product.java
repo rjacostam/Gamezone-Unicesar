@@ -34,10 +34,14 @@ public abstract class Product {
 
     /**
      * Tells whether the store has enough units to sell the requested quantity.
+     * A negative quantity is never valid, so it is always rejected.
      * @param quantity units the store wants to sell
-     * @return true when the available stock covers the request
+     * @return true when the quantity is valid and the available stock covers it
      */
     public boolean hasStock(int quantity) {
+        if (quantity < 0) {
+            throw new IllegalArgumentException("La cantidad no puede ser negativa");
+        }
         return stock >= quantity;
     }
 
