@@ -104,11 +104,25 @@ classDiagram
 classDiagram
     direction TB
 
+    class WarrantyRecord {
+        -String type
+        -String id
+        -String productId
+        -String saleId
+        -LocalDate startDate
+        +WarrantyRecord(String, String, String, String, LocalDate)
+        +getType() String
+        +getId() String
+        +getProductId() String
+        +getSaleId() String
+        +getStartDate() LocalDate
+    }
+
     class WarrantyRepository {
         -Path filePath
         +WarrantyRepository(String filePath)
         +saveAll(List~Warranty~ warranties) void
-        +loadAll(List~Sale~ sales, List~Product~ catalog) List~Warranty~
+        +loadAll() List~WarrantyRecord~
     }
 
     class SaleRepository {
@@ -116,11 +130,16 @@ classDiagram
         +loadAll(List~Product~ products, List~Customer~ customers, List~Seller~ sellers) List~Sale~
     }
 
-    WarrantyRepository ..> BasicWarranty : saves and loads
-    WarrantyRepository ..> ExtendedWarranty : saves and loads
-    WarrantyRepository ..> Sale : links by id
-    WarrantyRepository ..> Product : links by id
+    WarrantyRepository ..> WarrantyRecord : builds when reading
+    WarrantyRepository ..> BasicWarranty : writes the type when saving
+    WarrantyRepository ..> ExtendedWarranty : writes the type when saving
 ```
+
+**`WarrantyRecord`**
+- Plain data holder: only identifiers, no behaviour. All the fields are final and there are no
+  setters.
+- It exists so the persistence layer never builds a domain object. Reading the file produces
+  records; `WarrantyService` turns each record into a `Warranty`.
 
 **`WarrantyRepository`**
 - File: `data/warranties.csv`, with a header line. No preloaded data is needed.
@@ -130,11 +149,14 @@ classDiagram
   BASIC;W0001;C-01;S0003;2026-10-18
   EXTENDED;W0002;C-01;S0003;2026-10-18
   ```
-- The type (`BASIC` or `EXTENDED`) tells which subclass to rebuild. The end date is not
-  stored, because the constructor computes it again.
-- `loadAll(sales, catalog)` receives the objects already loaded and links each warranty to
-  them by id. It skips lines whose sale or product no longer exist, skips damaged lines,
-  and returns an empty list when the file does not exist.
+- The end date is not stored, because the constructor computes it again.
+- `saveAll` takes the warranties and writes the type derived from the concrete class. The type
+  of the model, `getWarrantyType()`, is not used because it returns the name shown to the user.
+- `loadAll()` takes **no arguments** and returns `List<WarrantyRecord>`. The repository neither
+  imports nor knows `Sale` or `Product`, so it cannot build a domain object and cannot reach a
+  service. It skips damaged lines and returns an empty list when the file does not exist.
+- Deciding whether a record can become a warranty is not done here: the repository only checks
+  that the line can be read.
 - Like the other repositories, both methods declare `throws IOException`.
 
 **`SaleRepository`** adds one column at the end of each sale line: the extended warranty
@@ -152,7 +174,7 @@ classDiagram
         -WarrantyRepository repository
         -List~Warranty~ warranties
         +WarrantyService(WarrantyRepository repository)
-        +loadWarranties(List~Sale~ sales, List~Product~ catalog) void
+        +loadWarranties(List~Sale~ sales) void
         +assignBasicWarranty(Product product, Sale sale, LocalDate startDate) BasicWarranty
         +assignExtendedWarranty(Product product, Sale sale, LocalDate startDate) ExtendedWarranty
         +findWarrantyByProduct(String productId, String saleId) Warranty
@@ -174,8 +196,14 @@ classDiagram
 ```
 
 **`WarrantyService`**
-- The constructor starts with an empty list. `loadWarranties(sales, catalog)` loads the
-  file once the sales exist; `Main` calls it right after creating `SaleService`.
+- The constructor starts with an empty list. `loadWarranties(sales)` loads the records from the
+  repository and builds the warranties once the sales exist; `Main` calls it right after creating
+  `SaleService`.
+- `loadWarranties(sales)` turns each `WarrantyRecord` into a `BasicWarranty` or an
+  `ExtendedWarranty`, looking the sale up by id among the given sales and the product up inside
+  `sale.getProducts()`. The catalogue is not needed: a product can only be covered when it belongs
+  to the sale, so the sale alone is enough to find it. Records whose sale or product no longer
+  exist, and records whose type is unknown, are ignored.
 - `assignBasicWarranty` and `assignExtendedWarranty` create the warranty with the next id
   (`W0001`, `W0002`...), save the file and return it.
 - `findWarrantyByProduct(productId, saleId)` ignores letter case. If the product has both
@@ -231,7 +259,7 @@ classDiagram
   4. Listar garantías próximas a vencer (asks how many days)
 - `Main` creates `WarrantyRepository` with `data/warranties.csv` and `WarrantyService`,
   passes it to `SaleService` and `ConsoleMenu`, and calls
-  `warrantyService.loadWarranties(saleService.listAllSales(), saleService.getCatalog())`
+  `warrantyService.loadWarranties(saleService.listAllSales())`
   after creating `SaleService`.
 
 ## Who implements what
@@ -239,5 +267,5 @@ classDiagram
 | Member | Work |
 |---|---|
 | Developer 1 (Andrés) | `Warranty`, `BasicWarranty`, `ExtendedWarranty` |
-| Developer 2 (José) | `WarrantyRepository`, `WarrantyService` |
+| Developer 2 (José) | `WarrantyRepository`, `WarrantyRecord`, `WarrantyService` |
 | Technical Leader (Rafael) | Changes in `Sale`, `SaleRepository`, `SaleService`, `ConsoleMenu`, `Main` and `README.md` |
