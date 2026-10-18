@@ -178,6 +178,68 @@ public class WarrantyService {
     }
 
     /**
+ * Returns a copy of every warranty currently registered, in assignment order,
+ * including the ones that already expired.
+ *
+ * @return warranties currently registered
+ */
+    public List<Warranty> listAllWarranties() {
+        return new ArrayList<>(warranties);
+    }
+
+    /**
+     * Returns the warranties that are valid today. A warranty is valid when
+     * today is between its start date and its end date, both included.
+     *
+     * @return warranties valid today
+ */
+    public List<Warranty> listActiveWarranties() {
+        return listActiveOn(LocalDate.now());
+    }
+
+    /**
+     * Returns the warranties that are valid today and end within the next
+     * days, so the store can call the customers before their coverage runs out.
+     *
+     * @param daysAhead how many days ahead are considered
+     * @return warranties that are valid today and end within that window
+ * @throws IllegalArgumentException if the number of days is not greater than
+     *                                  zero
+ */
+    public List<Warranty> listWarrantiesExpiringSoon(int daysAhead) {
+        if (daysAhead <= 0) {
+            throw new IllegalArgumentException(
+                    "La cantidad de días debe ser mayor que cero");
+        }
+        LocalDate limit = LocalDate.now().plusDays(daysAhead);
+        List<Warranty> expiring = new ArrayList<>();
+        for (Warranty warranty : listActiveWarranties()) {
+            LocalDate endDate = warranty.getEndDate();
+            if (endDate != null && !endDate.isAfter(limit)) {
+                expiring.add(warranty);
+            }
+        }
+        return expiring;
+    }
+
+    /**
+     * Returns the warranties that are valid on a given date. It is the shared
+     * implementation of the active queries, which all use today's date.
+     *
+     * @param date date to check the validity period against
+     * @return warranties valid on that date
+ */
+    private List<Warranty> listActiveOn(LocalDate date) {
+        List<Warranty> active = new ArrayList<>();
+        for (Warranty warranty : warranties) {
+            if (warranty.isActive(date)) {
+                active.add(warranty);
+            }
+        }
+        return active;
+    }
+
+    /**
      * Checks that a warranty can be assigned to the given product and sale. Only
      * the values needed to build a warranty are checked, because deciding
      * whether a product is eligible for a warranty is a rule of the sale, not
