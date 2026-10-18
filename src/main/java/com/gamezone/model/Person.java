@@ -14,9 +14,13 @@ package com.gamezone.model;
  * the two abstract methods {@link #getRole()} and {@link #getSummary()} force
  * every existing person to be either a customer or a seller.
  * <p>
+ * The identification is the only attribute without a setter: it identifies the
+ * person in the store, it is the value used by the sales and by the persistence
+ * files, and changing it would break those references.
+ * <p>
  * This class performs no validation and no file access: validation belongs to
  * the service layer, which owns the business rules and produces the messages
- * shown to the user.
+ * shown to the user. The setters therefore store the value they receive.
  *
  * @author Jose Cervantes
  * @since 1.0.0
@@ -36,9 +40,9 @@ public abstract class Person {
      * Builds a person with the information shared by every role. The constructor
      * is {@code protected} so only the subclasses can build a person.
      *
-     * @param id   identification of the person
-     * @param name full name of the person
-     * @param phone contact phone of the person
+     * @param id    identification of the person, stored as given
+     * @param name  full name of the person, stored as given
+     * @param phone contact phone of the person, stored as given
      */
     protected Person(String id, String name, String phone) {
         this.id = id;

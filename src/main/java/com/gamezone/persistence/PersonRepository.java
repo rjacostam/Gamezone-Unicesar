@@ -24,7 +24,12 @@ import java.util.List;
  * Every record uses the semicolon character as the field delimiter, because
  * names may legitimately contain commas. The format of a customer record is
  * {@code id;name;phone;email} and the format of a seller record is
- * {@code id;name;phone;employeeCode;shift}.
+ * {@code id;name;phone;employeeCode;shift}. Both formats are plain text, so the
+ * files can be inspected and edited without running the application.
+ * <p>
+ * The values are stored exactly as the application produced them: the trimming
+ * and the lower casing of the e-mail address are done by the domain classes, so
+ * this repository never changes the content of a record.
  * <p>
  * This class belongs to the persistence layer and therefore is one of the few
  * classes allowed to perform file access. It depends only on the model layer,

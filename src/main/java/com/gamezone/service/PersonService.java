@@ -21,9 +21,16 @@ import java.util.List;
  * <p>
  * Every rejected operation throws an {@link IllegalArgumentException} whose
  * message is written in Spanish, because the console menu shows it directly to
- * the user. The validations live in this layer and not in the domain classes on
- * purpose: deciding whether a customer is valid requires information the
- * customer object does not have, such as the identifications already in use.
+ * the user. The validations are:
+ * <ul>
+ *   <li>the identification, the name, the phone and the e-mail cannot be empty;</li>
+ *   <li>the phone can only contain digits;</li>
+ *   <li>the e-mail has to follow the format of an e-mail address;</li>
+ *   <li>the identification cannot be in use by another person of any role.</li>
+ * </ul>
+ * All of them live in this layer and not in the domain classes on purpose:
+ * deciding whether a customer is valid requires information the customer object
+ * does not have, such as the identifications already in use.
  * <p>
  * The service has no knowledge of the sales module. The purchase history of a
  * customer is derived information and is answered by {@code SaleService}.
@@ -46,11 +53,15 @@ public class PersonService {
     private final List<Seller> sellers = new ArrayList<>();
 
     /**
-     * Builds the service and loads the people previously stored.
-     *
-     * @param repository repository in charge of the persistence
-     * @throws IOException if the customers or the sellers file cannot be read
-     */
+ * Builds the service and loads the people previously stored.
+ * <p>
+ * The exception is declared because the data is read from disk here, before the
+ * menu starts. Whoever builds the service, normally {@code Main}, has to handle
+ * it.
+ *
+ * @param repository repository in charge of the persistence
+ * @throws IOException if the customers or the sellers file cannot be read
+ */
     public PersonService(PersonRepository repository) throws IOException {
         this.repository = repository;
         this.customers.addAll(repository.loadCustomers());
