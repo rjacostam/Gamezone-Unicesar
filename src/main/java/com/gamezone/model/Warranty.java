@@ -121,7 +121,7 @@ public abstract class Warranty {
      * @return certificate ready to be shown to the user
      */
     public String generateWarrantyCertificate() {
-        boolean vigente = isActive(LocalDate.now());
+        boolean active = isActive(LocalDate.now());
         StringBuilder certificate = new StringBuilder();
         certificate.append("=== GameZone Unicesar - Certificado de garantia ===\n");
         certificate.append("Garantia: ").append(id)
@@ -142,7 +142,7 @@ public abstract class Warranty {
         certificate.append("Costo adicional: ")
                 .append(String.format(Locale.US, "$%,.2f", getAdditionalCost())).append("\n");
         certificate.append("Estado: ")
-                .append(vigente ? "Vigente" : "No vigente").append("\n");
+                .append(active ? "Vigente" : "No vigente").append("\n");
         return certificate.toString();
     }
 
