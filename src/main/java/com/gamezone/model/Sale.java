@@ -9,8 +9,8 @@ import java.util.List;
  * Sale registered in the store.
  * <p>
  * Each entry in the product list is one unit sold, so a product that appears twice was
- * sold twice. The sale owns the product list, which makes it the right place to compute
- * its own total.
+ * sold twice. The sale owns the product list and the discount applied to it, which makes
+ * it the right place to compute its own subtotal and total.
  */
 public class Sale {
 
@@ -19,10 +19,13 @@ public class Sale {
     private Customer customer;
     private Seller seller;
     private List<Product> products;
+    private double subtotal;
+    private String appliedPromotionName;
+    private double discountAmount;
     private double total;
 
     /**
-     * Creates a sale and computes its total.
+     * Creates a sale without discount and computes its subtotal and total.
      *
      * @param id       unique sale identifier
      * @param date     date of the sale
@@ -36,25 +39,51 @@ public class Sale {
         this.customer = customer;
         this.seller = seller;
         this.products = new ArrayList<>(products);
-        this.total = calculateTotal();
+        this.appliedPromotionName = null;
+        this.discountAmount = 0;
+        calculateSubtotal();
+        calculateTotal();
     }
 
     /**
-     * Adds up the price of every unit sold and stores the result as the sale total.
+     * Adds up the price of every unit sold and stores the result as the subtotal.
      *
-     * @return sale total
+     * @return subtotal
      */
-    public double calculateTotal() {
+    public double calculateSubtotal() {
         double sum = 0;
         for (Product product : products) {
             sum += product.getPrice();
         }
-        total = sum;
+        subtotal = sum;
+        return subtotal;
+    }
+
+    /**
+     * Computes the final total: the subtotal minus the applied discount.
+     *
+     * @return final total
+     */
+    public double calculateTotal() {
+        total = subtotal - discountAmount;
         return total;
     }
 
     /**
-     * Builds a printable receipt with the sale data, its products and its total.
+     * Records the promotion applied to the sale and updates the total.
+     *
+     * @param promotionName name of the applied promotion
+     * @param amount        discount in pesos
+     */
+    public void applyDiscount(String promotionName, double amount) {
+        this.appliedPromotionName = promotionName;
+        this.discountAmount = amount;
+        calculateTotal();
+    }
+
+    /**
+     * Builds a printable receipt with the sale data, its products, the subtotal, the
+     * applied discount and the final total.
      *
      * @return receipt text
      */
@@ -66,6 +95,12 @@ public class Sale {
         receipt.append("  Productos:\n");
         for (Product product : products) {
             receipt.append(String.format("    - %s %s: $%,.2f%n", product.getId(), product.getTitle(), product.getPrice()));
+        }
+        receipt.append(String.format("  Subtotal: $%,.2f%n", subtotal));
+        if (appliedPromotionName != null) {
+            receipt.append(String.format("  Descuento (%s): -$%,.2f%n", appliedPromotionName, discountAmount));
+        } else {
+            receipt.append("  Descuento: sin promoción aplicable\n");
         }
         receipt.append(String.format("  Total: $%,.2f", total));
         return receipt.toString();
@@ -123,5 +158,51 @@ public class Sale {
      */
     public double getTotal() {
         return total;
+    }
+
+    /**
+     * Returns the sum of the prices of every unit sold, before the discount.
+     *
+     * @return subtotal
+     */
+    public double getSubtotal() {
+        return subtotal;
+    }
+
+    /**
+     * Returns the name of the applied promotion.
+     *
+     * @return promotion name, or {@code null} if no promotion was applied
+     */
+    public String getAppliedPromotionName() {
+        return appliedPromotionName;
+    }
+
+    /**
+     * Changes the name of the applied promotion.
+     *
+     * @param appliedPromotionName promotion name
+     */
+    public void setAppliedPromotionName(String appliedPromotionName) {
+        this.appliedPromotionName = appliedPromotionName;
+    }
+
+    /**
+     * Returns the discount applied to the sale.
+     *
+     * @return discount in pesos, {@code 0} if there is none
+     */
+    public double getDiscountAmount() {
+        return discountAmount;
+    }
+
+    /**
+     * Changes the discount and updates the total.
+     *
+     * @param discountAmount discount in pesos
+     */
+    public void setDiscountAmount(double discountAmount) {
+        this.discountAmount = discountAmount;
+        calculateTotal();
     }
 }
