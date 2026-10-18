@@ -210,3 +210,58 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | The %g format printed five decimals and used the decimal separator of the machine. The %.2f format with Locale.US prints 5.00% and 12.50% and does not depend on the language of the machine. |
 | Decision | Accepted String.format(Locale.US, "%.2f%%", percentage) in the three classes, the same approach already used for the accessory price, so the two modules print prices and percentages in the same way. |
 | Related commit | fix: format promotion percentage with two decimals in descriptions |
+---
+
+## Requirement 4 - Warranties
+
+### Entry 15
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 4 - `feature/warranty-module` |
+| Goal | Decide how the end date of a warranty should be computed |
+| Query | Should the end date be received in the constructor or computed from the duration? |
+| Answer | The class diagram says the constructor receives only the start date and computes endDate as startDate.plusMonths(getDurationInMonths()), so the duration is written in one place and the end date can never disagree with the type. |
+| Decision | Accepted computing the end date in the constructor of Warranty. This makes the compiler warn about a possible this escape, because getDurationInMonths() is called before the subclass is initialized, but it is safe here: both subclasses return a constant and never read their own fields. I kept it because the diagram asks for it. |
+| Related commit | feat: add Warranty abstract class linked to product and sale |
+
+### Entry 16
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 4 - `feature/warranty-module` |
+| Goal | Decide how the warranty should keep its product and its sale |
+| Query | Should Warranty store the Product and Sale objects or only their identifiers? |
+| Answer | The diagram and the leader asked for direct references to Product and Sale, and the certificate needs the title of the product and the name of the customer, both reached through those objects. |
+| Decision | Accepted storing the objects. Rejected storing only identifiers, because then the certificate would need the catalogue and the sales passed in every call. There are no setters, because a granted warranty never changes. |
+| Related commit | feat: add warranty certificate generation in Spanish |
+
+### Entry 17
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 4 - `feature/warranty-module` |
+| Goal | Write the text of what each warranty covers without adding a method to the design |
+| Query | The certificate must show the coverage, but the diagram only allows three abstract methods, so where does that text come from? |
+| Answer | The diagram does not declare a method for the coverage, so I read it from getWarrantyType(): only "Garantía Extendida" also covers accidental damage, and the basic one covers factory defects only. |
+| Decision | Accepted a private coverageDescription method that uses the type name, which keeps the public API exactly as the diagram shows. Rejected adding a fourth abstract getCoverage method, because the leader asked to follow the diagram exactly. |
+| Related commit | feat: add warranty certificate generation in Spanish |
+
+### Entry 18
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 4 - `feature/warranty-module` |
+| Goal | Verify the two warranty types calculate their duration, their cost and their period correctly |
+| Query | Do the three abstract answers and the certificate behave as the diagram describes? |
+| Answer | Yes. On a console of 2500000 sold on 2026-10-18, BasicWarranty reported 6 months, "Garantía Básica", cost 0 and ends on 2027-04-18; ExtendedWarranty reported 12 months, "Garantía Extendida", cost 250000 and ends on 2027-10-18. isActive returned true on the start date and on the end date, and false one day later or before the start. The certificate showed the id, the type, the product, the sale, the customer, both dates, the coverage, the cost and whether it is active today. |
+| Decision | Accepted. The cost uses Locale.US with two decimals so the certificate looks the same on any machine, the same way as the accessory price and the promotion percentages. |
+| Related commit | fix: read product through its getter in extended warranty cost |
