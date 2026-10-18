@@ -54,6 +54,24 @@ public class Sale {
     }
 
     /**
+     * Builds a printable receipt with the sale data, its products and its total.
+     *
+     * @return receipt text
+     */
+    public String generateReceipt() {
+        StringBuilder receipt = new StringBuilder();
+        receipt.append("Venta ").append(id).append(" | Fecha: ").append(date).append('\n');
+        receipt.append("  Cliente: ").append(customer.getName()).append(" (").append(customer.getId()).append(")\n");
+        receipt.append("  Vendedor: ").append(seller.getName()).append(" (").append(seller.getEmployeeCode()).append(")\n");
+        receipt.append("  Productos:\n");
+        for (Product product : products) {
+            receipt.append(String.format("    - %s %s: $%,.2f%n", product.getId(), product.getTitle(), product.getPrice()));
+        }
+        receipt.append(String.format("  Total: $%,.2f", total));
+        return receipt.toString();
+    }
+
+    /**
      * Returns the sale identifier.
      *
      * @return identifier
