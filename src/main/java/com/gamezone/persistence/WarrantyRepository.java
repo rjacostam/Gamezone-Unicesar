@@ -22,7 +22,13 @@ import java.util.List;
  * <p>
  * The file is {@code data/warranties.csv}. Every record uses the semicolon
  * character as the field delimiter and has five columns:
- * {@code type;id;productId;saleId;startDate}. The end date is not stored,
+ * {@code type;id;productId;saleId;startDate}, for example:
+ * <pre>
+ * type;id;productId;saleId;startDate
+ * BASIC;W0001;C-01;S0003;2026-10-18
+ * EXTENDED;W0002;C-01;S0003;2026-10-18
+ * </pre>
+ * The end date is not stored,
  * because the constructor of the warranty computes it again from its duration,
  * so storing it would risk a duplicated value that could disagree with the
  * duration.

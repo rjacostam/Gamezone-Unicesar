@@ -200,12 +200,17 @@ public class WarrantyService {
     /**
      * Returns the warranties that are valid today and end within the next
      * days, so the store can call the customers before their coverage runs out.
+     * <p>
+     * Both ends of the window are included: a warranty that ends exactly today
+     * is still listed, and so is one that ends exactly {@code daysAhead} days
+     * from today. Warranties that already expired are never listed, because
+     * they do not belong to {@link #listActiveWarranties()}.
      *
      * @param daysAhead how many days ahead are considered
      * @return warranties that are valid today and end within that window
- * @throws IllegalArgumentException if the number of days is not greater than
+     * @throws IllegalArgumentException if the number of days is not greater than
      *                                  zero
- */
+     */
     public List<Warranty> listWarrantiesExpiringSoon(int daysAhead) {
         if (daysAhead <= 0) {
             throw new IllegalArgumentException(
@@ -266,7 +271,8 @@ public class WarrantyService {
 
     /**
      * Builds the identifier of the next warranty, following the documented
-     * pattern {@code W0001}, {@code W0002} and so on.
+     * pattern {@code W0001}, {@code W0002} and so on, so the first warranty
+     * assigned is {@code W0001} and the third is {@code W0003}.
      * <p>
      * The number is taken from the highest identifier already in use instead of
      * from the size of the list, so an identifier is never repeated even if the
