@@ -93,31 +93,10 @@ public class SaleService {
         Customer customer = requireCustomer(customerId);
         Seller seller = requireSeller(sellerId);
 
-        Map<Product, Integer> unitsByProduct = new LinkedHashMap<>();
-        List<Product> soldProducts = new ArrayList<>();
-        for (String productId : productIds) {
-            Product product = findItem(productId);
-            if (product == null) {
-                throw new IllegalArgumentException(
-                        "El producto o accesorio con identificador " + productId + " no existe.");
-            }
-            unitsByProduct.merge(product, 1, Integer::sum);
-            soldProducts.add(product);
-        }
-        for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
-            if (!entry.getKey().hasStock(entry.getValue())) {
-                throw new IllegalArgumentException("Stock insuficiente para " + entry.getKey().getTitle()
-                        + ". Disponible: " + entry.getKey().getStock() + ", solicitado: " + entry.getValue() + ".");
-            }
-        }
-        List<String> extendedRequests = productIdsWithExtendedWarranty == null
-                ? new ArrayList<>() : productIdsWithExtendedWarranty;
-        for (String requestedId : extendedRequests) {
-            if (!containsConsole(soldProducts, requestedId)) {
-                throw new IllegalArgumentException(
-                        "La garantía extendida solo aplica a consolas incluidas en la venta: " + requestedId + ".");
-            }
-        }
+        List<Product> soldProducts = resolveItems(productIds);
+        Map<Product, Integer> unitsByProduct = countUnits(soldProducts);
+        checkStock(unitsByProduct);
+        List<String> extendedRequests = validateExtendedRequests(soldProducts, productIdsWithExtendedWarranty);
 
         Sale sale = new Sale(nextSaleId(), LocalDate.now(), customer, seller, soldProducts);
         Promotion promotion = promotionService.findBestPromotionFor(sale);
@@ -230,6 +209,48 @@ public class SaleService {
             throw new IllegalArgumentException("El vendedor " + sellerId + " no existe.");
         }
         return seller;
+    }
+
+    private List<Product> resolveItems(List<String> productIds) {
+        List<Product> items = new ArrayList<>();
+        for (String productId : productIds) {
+            Product product = findItem(productId);
+            if (product == null) {
+                throw new IllegalArgumentException(
+                        "El producto o accesorio con identificador " + productId + " no existe.");
+            }
+            items.add(product);
+        }
+        return items;
+    }
+
+    private Map<Product, Integer> countUnits(List<Product> items) {
+        Map<Product, Integer> unitsByProduct = new LinkedHashMap<>();
+        for (Product item : items) {
+            unitsByProduct.merge(item, 1, Integer::sum);
+        }
+        return unitsByProduct;
+    }
+
+    private void checkStock(Map<Product, Integer> unitsByProduct) {
+        for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
+            if (!entry.getKey().hasStock(entry.getValue())) {
+                throw new IllegalArgumentException("Stock insuficiente para " + entry.getKey().getTitle()
+                        + ". Disponible: " + entry.getKey().getStock() + ", solicitado: " + entry.getValue() + ".");
+            }
+        }
+    }
+
+    private List<String> validateExtendedRequests(List<Product> items, List<String> productIdsWithExtendedWarranty) {
+        List<String> extendedRequests = productIdsWithExtendedWarranty == null
+                ? new ArrayList<>() : productIdsWithExtendedWarranty;
+        for (String requestedId : extendedRequests) {
+            if (!containsConsole(items, requestedId)) {
+                throw new IllegalArgumentException(
+                        "La garantía extendida solo aplica a consolas incluidas en la venta: " + requestedId + ".");
+            }
+        }
+        return extendedRequests;
     }
 
     private boolean containsConsole(List<Product> products, String id) {
