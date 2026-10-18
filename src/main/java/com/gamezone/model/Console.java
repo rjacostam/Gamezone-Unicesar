@@ -44,6 +44,16 @@ public class Console extends Product {
     }
 
     /**
+     * Returns the category of this product, so a promotion can target consoles
+     * only.
+     * @return CONSOLE
+     */
+    @Override
+    public String getCategory() {
+        return "CONSOLE";
+    }
+
+    /**
      * Returns the brand that manufactures this console.
      * @return brand of the console
      */

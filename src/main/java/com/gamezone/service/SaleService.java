@@ -1,9 +1,13 @@
 package com.gamezone.service;
 
+import com.gamezone.model.Accessory;
+import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
+import com.gamezone.model.Promotion;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
+import com.gamezone.model.Warranty;
 import com.gamezone.persistence.SaleRepository;
 
 import java.io.IOException;
@@ -16,8 +20,10 @@ import java.util.Map;
 /**
  * Business rules for sales.
  * <p>
- * It checks the sale rules, creates the sale and asks the product service to update the
- * inventory. It never touches the product or person repositories directly. A rejected
+ * It checks the sale rules, creates the sale with items from the product and accessory
+ * catalogs, applies the best active promotion, assigns the warranties of the consoles, and
+ * asks the service that owns each item to update the inventory. It never touches another
+ * module's repository. A rejected
  * operation throws an {@link IllegalArgumentException} with a message in Spanish that the
  * menu can show to the user.
  */
@@ -26,23 +32,34 @@ public class SaleService {
     private final SaleRepository repository;
     private final ProductService productService;
     private final PersonService personService;
+    private final AccessoryService accessoryService;
+    private final PromotionService promotionService;
+    private final WarrantyService warrantyService;
     private final List<Sale> sales;
 
     /**
-     * Creates the service and loads the stored sales, linking them to the products and
-     * people already loaded by the other services.
+     * Creates the service and loads the stored sales, linking them to the products,
+     * accessories and people already loaded by the other services.
      *
-     * @param repository     repository used to persist sales
-     * @param productService service that manages the inventory
-     * @param personService  service that manages customers and sellers
+     * @param repository       repository used to persist sales
+     * @param productService   service that manages video games and consoles
+     * @param personService    service that manages customers and sellers
+     * @param accessoryService service that manages accessories
+     * @param promotionService service that chooses the promotion of each sale
+     * @param warrantyService  service that creates the warranties of the consoles sold
      * @throws IllegalStateException if the sales file cannot be read
      */
-    public SaleService(SaleRepository repository, ProductService productService, PersonService personService) {
+    public SaleService(SaleRepository repository, ProductService productService, PersonService personService,
+                       AccessoryService accessoryService, PromotionService promotionService,
+                       WarrantyService warrantyService) {
         this.repository = repository;
         this.productService = productService;
         this.personService = personService;
+        this.accessoryService = accessoryService;
+        this.promotionService = promotionService;
+        this.warrantyService = warrantyService;
         try {
-            this.sales = repository.loadAll(productService.listAllProducts(),
+            this.sales = repository.loadAll(getCatalog(),
                     personService.listCustomers(), personService.listSellers());
         } catch (IOException e) {
             throw new IllegalStateException("No se pudo cargar el historial de ventas", e);
@@ -50,52 +67,61 @@ public class SaleService {
     }
 
     /**
-     * Registers a sale, discounts the sold units from the inventory and saves it. Every
-     * rule is checked before changing anything, so a rejected sale leaves the inventory
-     * untouched.
+     * Registers a sale following the integrated flow, always in this order:
+     * <ol>
+     *   <li>check that the sale has at least one item, a customer and a seller;</li>
+     *   <li>resolve every item as a product or an accessory and check its stock;</li>
+     *   <li>create the sale, which computes its subtotal;</li>
+     *   <li>apply the best active promotion, computed only on the subtotal;</li>
+     *   <li>assign the basic warranty of every console and the requested extended ones;</li>
+     *   <li>leave the total as subtotal - discount + extended warranty cost;</li>
+     *   <li>update the inventory through the service that owns each item;</li>
+     *   <li>save the sale (each warranty is saved when it is assigned).</li>
+     * </ol>
+     * Every rule is checked in steps 1 and 2, before changing anything, so a rejected sale
+     * leaves the inventory and the warranties untouched.
      *
      * @param customerId customer identification
      * @param sellerId   seller identification or employee code
-     * @param productIds identifiers of the units sold, one entry per unit
+     * @param productIds                     identifiers of the units sold (products or
+     *                                       accessories), one entry per unit
+     * @param productIdsWithExtendedWarranty consoles of the sale that get an extended
+     *                                       warranty; empty or {@code null} for none
      * @return the registered sale
      * @throws IllegalArgumentException if there are no products, if the customer, the
-     *                                  seller or a product does not exist, or if there is
-     *                                  not enough stock
+     *                                  seller or a product does not exist, if there is not
+     *                                  enough stock, or if an extended warranty is requested
+     *                                  for an item that is not a console of the sale
      */
-    public Sale registerSale(String customerId, String sellerId, List<String> productIds) {
+    public Sale registerSale(String customerId, String sellerId, List<String> productIds,
+                             List<String> productIdsWithExtendedWarranty) {
+        // 1. The sale needs at least one item, an existing customer and an existing seller.
         if (productIds == null || productIds.isEmpty()) {
             throw new IllegalArgumentException("La venta debe contener al menos un producto.");
         }
-        Customer customer = personService.findCustomerById(customerId);
-        if (customer == null) {
-            throw new IllegalArgumentException("El cliente con identificación " + customerId + " no existe.");
-        }
-        Seller seller = personService.findSellerById(sellerId);
-        if (seller == null) {
-            throw new IllegalArgumentException("El vendedor " + sellerId + " no existe.");
-        }
+        Customer customer = requireCustomer(customerId);
+        Seller seller = requireSeller(sellerId);
 
-        Map<Product, Integer> unitsByProduct = new LinkedHashMap<>();
-        List<Product> soldProducts = new ArrayList<>();
-        for (String productId : productIds) {
-            Product product = productService.findById(productId);
-            if (product == null) {
-                throw new IllegalArgumentException("El producto con identificador " + productId + " no existe.");
-            }
-            unitsByProduct.merge(product, 1, Integer::sum);
-            soldProducts.add(product);
-        }
-        for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
-            if (!entry.getKey().hasStock(entry.getValue())) {
-                throw new IllegalArgumentException("Stock insuficiente para " + entry.getKey().getTitle()
-                        + ". Disponible: " + entry.getKey().getStock() + ", solicitado: " + entry.getValue() + ".");
-            }
-        }
+        // 2. Resolve every item as a product or an accessory and check its stock.
+        List<Product> soldProducts = resolveItems(productIds);
+        Map<Product, Integer> unitsByProduct = countUnits(soldProducts);
+        checkStock(unitsByProduct);
+        List<String> extendedRequests = validateExtendedRequests(soldProducts, productIdsWithExtendedWarranty);
 
+        // 3. Create the sale, which computes its subtotal.
         Sale sale = new Sale(nextSaleId(), LocalDate.now(), customer, seller, soldProducts);
-        for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
-            productService.updateStock(entry.getKey().getId(), entry.getValue());
-        }
+
+        // 4. Apply the best active promotion; its discount is computed only on the subtotal.
+        applyBestPromotion(sale);
+
+        // 5. Assign the basic warranty of every console and the requested extended warranties.
+        // 6. The sale adds each extended warranty cost: total = subtotal - discount + warranties.
+        assignWarranties(sale, extendedRequests);
+
+        // 7. Update the inventory through the service that owns each item.
+        updateInventory(unitsByProduct);
+
+        // 8. Save the sale (WarrantyService already saved each warranty when it was assigned).
         sales.add(sale);
         saveSales();
         return sale;
@@ -108,6 +134,21 @@ public class SaleService {
      */
     public List<Sale> listAllSales() {
         return new ArrayList<>(sales);
+    }
+
+    /**
+     * Looks for a sale by its identifier, ignoring letter case.
+     *
+     * @param saleId sale identifier
+     * @return the sale, or {@code null} if it does not exist
+     */
+    public Sale findById(String saleId) {
+        for (Sale sale : sales) {
+            if (sale.getId().equalsIgnoreCase(saleId)) {
+                return sale;
+            }
+        }
+        return null;
     }
 
     /**
@@ -144,6 +185,130 @@ public class SaleService {
             }
         }
         return result;
+    }
+
+    /**
+     * Returns every item that can be sold: video games, consoles and accessories.
+     *
+     * @return products followed by accessories
+     */
+    public List<Product> getCatalog() {
+        List<Product> catalog = new ArrayList<>(productService.listAllProducts());
+        catalog.addAll(accessoryService.listAllAccessories());
+        return catalog;
+    }
+
+    private Customer requireCustomer(String customerId) {
+        Customer customer = personService.findCustomerById(customerId);
+        if (customer == null) {
+            throw new IllegalArgumentException("El cliente con identificación " + customerId + " no existe.");
+        }
+        return customer;
+    }
+
+    private Seller requireSeller(String sellerId) {
+        Seller seller = personService.findSellerById(sellerId);
+        if (seller == null) {
+            throw new IllegalArgumentException("El vendedor " + sellerId + " no existe.");
+        }
+        return seller;
+    }
+
+    private List<Product> resolveItems(List<String> productIds) {
+        List<Product> items = new ArrayList<>();
+        for (String productId : productIds) {
+            Product product = findItem(productId);
+            if (product == null) {
+                throw new IllegalArgumentException(
+                        "El producto o accesorio con identificador " + productId + " no existe.");
+            }
+            items.add(product);
+        }
+        return items;
+    }
+
+    private Map<Product, Integer> countUnits(List<Product> items) {
+        Map<Product, Integer> unitsByProduct = new LinkedHashMap<>();
+        for (Product item : items) {
+            unitsByProduct.merge(item, 1, Integer::sum);
+        }
+        return unitsByProduct;
+    }
+
+    private void checkStock(Map<Product, Integer> unitsByProduct) {
+        for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
+            if (!entry.getKey().hasStock(entry.getValue())) {
+                throw new IllegalArgumentException("Stock insuficiente para " + entry.getKey().getTitle()
+                        + ". Disponible: " + entry.getKey().getStock() + ", solicitado: " + entry.getValue() + ".");
+            }
+        }
+    }
+
+    private List<String> validateExtendedRequests(List<Product> items, List<String> productIdsWithExtendedWarranty) {
+        List<String> extendedRequests = productIdsWithExtendedWarranty == null
+                ? new ArrayList<>() : productIdsWithExtendedWarranty;
+        for (String requestedId : extendedRequests) {
+            if (!containsConsole(items, requestedId)) {
+                throw new IllegalArgumentException(
+                        "La garantía extendida solo aplica a consolas incluidas en la venta: " + requestedId + ".");
+            }
+        }
+        return extendedRequests;
+    }
+
+    private void applyBestPromotion(Sale sale) {
+        Promotion promotion = promotionService.findBestPromotionFor(sale);
+        if (promotion != null) {
+            sale.applyDiscount(promotion.getName(), promotion.calculateDiscount(sale));
+        }
+    }
+
+    private void assignWarranties(Sale sale, List<String> extendedRequests) {
+        for (Product product : sale.getProducts()) {
+            if (product instanceof Console) {
+                warrantyService.assignBasicWarranty(product, sale, sale.getDate());
+                if (containsIgnoreCase(extendedRequests, product.getId())) {
+                    Warranty extended = warrantyService.assignExtendedWarranty(product, sale, sale.getDate());
+                    sale.addExtendedWarrantyCost(extended.getAdditionalCost());
+                }
+            }
+        }
+    }
+
+    private void updateInventory(Map<Product, Integer> unitsByProduct) {
+        for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
+            if (entry.getKey() instanceof Accessory) {
+                accessoryService.updateStock(entry.getKey().getId(), entry.getValue());
+            } else {
+                productService.updateStock(entry.getKey().getId(), entry.getValue());
+            }
+        }
+    }
+
+    private boolean containsConsole(List<Product> products, String id) {
+        for (Product product : products) {
+            if (product instanceof Console && product.getId().equalsIgnoreCase(id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsIgnoreCase(List<String> values, String value) {
+        for (String candidate : values) {
+            if (candidate.equalsIgnoreCase(value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Product findItem(String id) {
+        Product product = productService.findById(id);
+        if (product == null) {
+            product = accessoryService.findById(id);
+        }
+        return product;
     }
 
     private void saveSales() {

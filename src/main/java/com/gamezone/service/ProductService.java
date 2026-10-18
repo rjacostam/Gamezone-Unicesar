@@ -139,6 +139,25 @@ public class ProductService {
         saveCatalogue();
     }
 
+    /**
+     * Adds returned units back to the stock of a product and saves the catalogue.
+     * It is used by the return module, so the inventory is only changed here.
+     * @param productId identifier of the product to update
+     * @param quantity amount of units to add to the stock
+     */
+    public void restoreStock(String productId, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("La cantidad a restaurar debe ser mayor que cero");
+        }
+        Product product = findById(productId);
+        if (product == null) {
+            throw new IllegalArgumentException(
+                    "No existe un producto con el identificador " + productId);
+        }
+        product.setStock(product.getStock() + quantity);
+        saveCatalogue();
+    }
+
     private void saveCatalogue() {
         try {
             repository.saveAll(products);

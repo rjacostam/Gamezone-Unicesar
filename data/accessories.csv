@@ -1,0 +1,4 @@
+type;id;title;price;stock;compatibleConsoles;extra1;extra2
+CONTROLLER;A-01;Control DualSense;350000;8;C-01;Inalámbrico;
+CABLE;A-02;Cable HDMI 2.1;45000;15;C-01,C-02;2.0;HDMI
+MEMORY;A-03;Tarjeta microSD 256 GB;120000;10;C-02;256;microSD

@@ -33,6 +33,14 @@ public abstract class Product {
     public abstract String getDescription();
 
     /**
+     * Returns the category this product belongs to, used by the promotions that
+     * apply a discount only to one kind of product. Each concrete product type
+     * reports its own category, and Accessory answers for all its subclasses.
+     * @return VIDEOGAME, CONSOLE or ACCESSORY
+     */
+    public abstract String getCategory();
+
+    /**
      * Tells whether the store has enough units to sell the requested quantity.
      * A negative quantity is never valid, so it is always rejected.
      * @param quantity units the store wants to sell
