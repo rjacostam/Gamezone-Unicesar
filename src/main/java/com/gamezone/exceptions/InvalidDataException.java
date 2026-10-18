@@ -7,6 +7,9 @@ package com.gamezone.exceptions;
  */
 public class InvalidDataException extends GameZoneException {
 
+    /** Keeps the same serial version across compilations. */
+    private static final long serialVersionUID = 1L;
+
     /** Error code that identifies this kind of problem. */
     private static final String ERROR_CODE = "INVALID_DATA";
 

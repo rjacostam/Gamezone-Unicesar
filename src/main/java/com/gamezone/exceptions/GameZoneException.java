@@ -9,6 +9,9 @@ package com.gamezone.exceptions;
  */
 public abstract class GameZoneException extends RuntimeException {
 
+    /** Keeps the same serial version across compilations. */
+    private static final long serialVersionUID = 1L;
+
     /** Error code used when a subclass does not provide its own. */
     private static final String DEFAULT_ERROR_CODE = "GAMEZONE_ERROR";
 
