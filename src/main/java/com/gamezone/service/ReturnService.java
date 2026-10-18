@@ -1,6 +1,7 @@
 package com.gamezone.service;
 
 import com.gamezone.model.Accessory;
+import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
@@ -48,6 +49,7 @@ public class ReturnService {
     private SaleService saleService;
     private ProductService productService;
     private AccessoryService accessoryService;
+    private WarrantyService warrantyService;
     private List<Return> returns;
 
     /**
@@ -61,14 +63,18 @@ public class ReturnService {
      *                       of the returned video games and consoles
      * @param accessoryService service of the accessories, needed to restore the
      *                         stock of the returned accessories
+     * @param warrantyService service of the warranties, needed to cancel the
+     *                        warranties of the returned consoles
      * @throws IllegalStateException if the returns file cannot be read
      */
     public ReturnService(ReturnRepository repository, SaleService saleService,
-                         ProductService productService, AccessoryService accessoryService) {
+                         ProductService productService, AccessoryService accessoryService,
+                         WarrantyService warrantyService) {
         this.repository = repository;
         this.saleService = saleService;
         this.productService = productService;
         this.accessoryService = accessoryService;
+        this.warrantyService = warrantyService;
         try {
             this.returns = new ArrayList<>(repository.loadAll(saleService.listAllSales()));
         } catch (IOException e) {
@@ -88,7 +94,16 @@ public class ReturnService {
  * <p>
  * The stock is restored for every kind of product: video games and consoles
  * through {@code ProductService} and accessories through
- * {@code AccessoryService}.
+ * {@code AccessoryService}. The warranties of the returned consoles are cancelled
+ * through {@code WarrantyService}, and that money is given back as part of the
+ * refund.
+ * <p>
+ * All the validations run first and change nothing. After them the changes are
+ * applied in this order: the warranties are cancelled, the stock is restored and
+ * the return is registered. Each step writes its own file, so the order matters
+ * when one of them fails: a warranty cancelled before a failed stock update
+ * leaves the customer without coverage. The system has no transaction that can
+ * undo a partial change, which is a known limit of the design based on files.
  *
  * @param saleId    identifier of the sale the products are returned from
  * @param productIds identifiers of the units returned, one entry per unit, so
@@ -118,9 +133,11 @@ public class ReturnService {
         }
 
         List<Product> returnedProducts = resolveReturnedProducts(sale, productIds);
+        double warrantyRefund = cancelWarrantiesOfConsoles(sale, returnedProducts);
 
         Return registeredReturn =
-                new Return(nextReturnId(), LocalDate.now(), sale, returnedProducts, reason.trim());
+                new Return(nextReturnId(), LocalDate.now(), sale, returnedProducts,
+                        reason.trim(), warrantyRefund);
         restoreStock(returnedProducts);
         returns.add(registeredReturn);
         saveCatalogue();
@@ -145,6 +162,33 @@ public class ReturnService {
                     "No existe una venta con el identificador " + saleId.trim());
         }
         return sale;
+    }
+
+    /**
+     * Cancels the warranties of the returned consoles and sums what has to be
+     * given back for them.
+     * <p>
+     * Only consoles have warranties that must be cancelled. Video games and
+     * accessories are not covered, so they add nothing, and a console without
+     * warranties in that sale also adds nothing.
+     * <p>
+     * The call is made **once per unit**, not once per product, because two units
+     * of the same console have their own pair of warranties and each pair has to
+     * be cancelled.
+     *
+     * @param sale              sale the units come from
+     * @param returnedProducts  units returned
+     * @return total to give back for the cancelled warranties
+     */
+    private double cancelWarrantiesOfConsoles(Sale sale, List<Product> returnedProducts) {
+        double refund = 0;
+        for (Product product : returnedProducts) {
+            if (!(product instanceof Console)) {
+                continue;
+            }
+            refund += warrantyService.cancelWarranties(product.getId(), sale.getId());
+        }
+        return refund;
     }
 
     /**

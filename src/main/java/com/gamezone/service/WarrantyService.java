@@ -283,6 +283,76 @@ public class WarrantyService {
     }
 
     /**
+     * Cancels the warranties of one unit of a product in one sale, and returns
+     * how much has to be given back to the customer for them.
+     * <p>
+     * Cancelling removes **one unit**: the basic warranty of that product in that
+     * sale and, when it exists, the extended one. Two units of the same console in
+     * the same sale have their own pair of warranties, so returning two consoles
+     * calls this method twice.
+     * <p>
+     * The money to give back is the cost of the cancelled warranties. The basic
+     * warranty has no cost and contributes zero; the extended one costs a
+     * percentage of the price of the product, and that is what the customer gets
+     * back. A product without warranties in that sale cancels nothing and returns
+     * zero.
+     * <p>
+     * The warranties are cancelled because the covered product is going back to
+     * the store: a console that is no longer with the customer cannot be covered
+     * any more, so it must not keep showing as active.
+     * <p>
+     * The file is written whenever a warranty was actually removed, and not when
+     * the amount to refund is greater than zero. A basic warranty costs nothing,
+     * so cancelling only a basic warranty removes a row and refunds zero; saving
+     * on the amount alone would drop that removal when the application restarts.
+     *
+     * @param productId identifier of the product whose warranties are cancelled
+     * @param saleId    identifier of the sale the warranties come from
+     * @return amount to give back for the cancelled warranties, zero when there
+     *         was none
+     * @throws IllegalStateException if the warranties file cannot be written
+     */
+    public double cancelWarranties(String productId, String saleId) {
+        if (productId == null || productId.isBlank()
+                || saleId == null || saleId.isBlank()) {
+            return 0;
+        }
+        int before = warranties.size();
+        double refund = removeOneWarranty(productId, saleId, BasicWarranty.class)
+                + removeOneWarranty(productId, saleId, ExtendedWarranty.class);
+        if (warranties.size() != before) {
+            saveCatalogue();
+        }
+        return refund;
+    }
+
+    /**
+     * Removes the first warranty of a given type that covers a product in a sale,
+     * and returns its cost.
+     * <p>
+     * The type is checked against the concrete class and not against
+     * {@code getWarrantyType()}, because that method returns the name shown to the
+     * user, {@code "Garantía Básica"}, and not the marker of the file.
+     *
+     * @param productId identifier of the covered product
+     * @param saleId    identifier of the sale
+     * @param type      concrete class of the warranty to remove
+     * @return cost of the removed warranty, zero when there was none
+     */
+    private double removeOneWarranty(String productId, String saleId,
+                                     Class<? extends Warranty> type) {
+        for (int index = 0; index < warranties.size(); index++) {
+            Warranty warranty = warranties.get(index);
+            if (!type.isInstance(warranty) || !covers(warranty, productId, saleId)) {
+                continue;
+            }
+            warranties.remove(index);
+            return warranty.getAdditionalCost();
+        }
+        return 0;
+    }
+
+    /**
      * Returns the warranties that are valid today. A warranty is valid when
      * today is between its start date and its end date, both included.
      *
