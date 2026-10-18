@@ -114,6 +114,70 @@ public class WarrantyService {
     }
 
     /**
+ * Searches the warranty of a product in a specific sale, ignoring letter case
+ * on both identifiers.
+ * <p>
+ * A product sold in a sale can carry two warranties, a basic one and an extended
+ * one. When both exist, the one that lasts longer is returned, because it is
+ * the one that covers the customer for more time.
+ *
+ * @param productId identifier of the product covered
+ * @param saleId    identifier of the sale the product was bought in
+ * @return the warranty found, or null when the product has no warranty in that
+ *         sale
+ */
+    public Warranty findWarrantyByProduct(String productId, String saleId) {
+        if (productId == null || productId.isBlank() || saleId == null || saleId.isBlank()) {
+            return null;
+        }
+        String searchedProduct = productId.trim();
+        String searchedSale = saleId.trim();
+        Warranty found = null;
+        for (Warranty warranty : warranties) {
+            if (!covers(warranty, searchedProduct, searchedSale)) {
+                continue;
+            }
+            if (found == null || lastsLongerThan(warranty, found)) {
+                found = warranty;
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Tells whether a warranty covers the given product in the given sale,
+     * ignoring letter case on both identifiers.
+     *
+     * @param warranty      warranty to inspect
+     * @param productId     identifier of the product covered
+     * @param saleId        identifier of the sale
+     * @return true when the warranty covers that product in that sale
+     */
+    private boolean covers(Warranty warranty, String productId, String saleId) {
+        Product product = warranty.getProduct();
+        Sale sale = warranty.getSale();
+        return product != null && sale != null
+                && product.getId().equalsIgnoreCase(productId)
+                && sale.getId().equalsIgnoreCase(saleId);
+    }
+
+    /**
+     * Tells whether a warranty lasts longer than another one.
+     *
+     * @param warranty warranty to compare
+     * @param other    warranty to compare against
+     * @return true when the first warranty ends after the second one
+     */
+    private boolean lastsLongerThan(Warranty warranty, Warranty other) {
+        LocalDate endDate = warranty.getEndDate();
+        LocalDate otherEndDate = other.getEndDate();
+        if (endDate == null) {
+            return false;
+        }
+        return otherEndDate == null || endDate.isAfter(otherEndDate);
+    }
+
+    /**
      * Checks that a warranty can be assigned to the given product and sale. Only
      * the values needed to build a warranty are checked, because deciding
      * whether a product is eligible for a warranty is a rule of the sale, not
