@@ -101,13 +101,7 @@ public class SaleService {
         Sale sale = new Sale(nextSaleId(), LocalDate.now(), customer, seller, soldProducts);
         applyBestPromotion(sale);
         assignWarranties(sale, extendedRequests);
-        for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
-            if (entry.getKey() instanceof Accessory) {
-                accessoryService.updateStock(entry.getKey().getId(), entry.getValue());
-            } else {
-                productService.updateStock(entry.getKey().getId(), entry.getValue());
-            }
-        }
+        updateInventory(unitsByProduct);
         sales.add(sale);
         saveSales();
         return sale;
@@ -257,6 +251,16 @@ public class SaleService {
                     Warranty extended = warrantyService.assignExtendedWarranty(product, sale, sale.getDate());
                     sale.addExtendedWarrantyCost(extended.getAdditionalCost());
                 }
+            }
+        }
+    }
+
+    private void updateInventory(Map<Product, Integer> unitsByProduct) {
+        for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
+            if (entry.getKey() instanceof Accessory) {
+                accessoryService.updateStock(entry.getKey().getId(), entry.getValue());
+            } else {
+                productService.updateStock(entry.getKey().getId(), entry.getValue());
             }
         }
     }
