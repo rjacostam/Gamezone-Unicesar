@@ -8,6 +8,12 @@ import java.util.Locale;
  * base of the discount is the sum of the prices of the units whose category
  * matches the target category, and the percentage is applied only to that sum,
  * so the products of other categories are not discounted.
+ *
+ * <p>The three categories of the store are accepted: {@code VIDEOGAME},
+ * {@code CONSOLE} and, since adjustment A1, {@code ACCESSORY}. The category of
+ * every product comes from {@link Product#getCategory()}, and every accessory
+ * answers {@code ACCESSORY}, so accessories are recognised without changing this
+ * class when they were added to the system.</p>
  */
 public class CategoryDiscount extends Promotion {
     private double percentage;
@@ -20,7 +26,8 @@ public class CategoryDiscount extends Promotion {
      * @param startDate first day the promotion applies, included
      * @param endDate last day the promotion applies, included
      * @param percentage discount percentage, greater than zero and up to 100
-     * @param targetCategory category the discount applies to
+     * @param targetCategory category the discount applies to: {@code VIDEOGAME},
+     *                          {@code CONSOLE} or {@code ACCESSORY}
      */
     public CategoryDiscount(String id, String name, LocalDate startDate, LocalDate endDate,
                             double percentage, String targetCategory) {
@@ -32,7 +39,9 @@ public class CategoryDiscount extends Promotion {
     /**
      * Returns the discount for the given sale. Only the products whose category
      * equals the target category are added to the base, and the percentage is
-     * applied to that base alone.
+     * applied to that base alone. Accessories are included when the target
+     * category is {@code ACCESSORY}, because their category comes from the
+     * same {@link Product#getCategory()} method as the other products.
      * @param sale sale to evaluate
      * @return discount in pesos, zero when the promotion is not active or the
      *         sale has no product of the target category
@@ -81,7 +90,8 @@ public class CategoryDiscount extends Promotion {
 
     /**
      * Returns the category this promotion discounts.
-     * @return target category of the promotion
+     * @return target category of the promotion: {@code VIDEOGAME},
+     *         {@code CONSOLE} or {@code ACCESSORY}
      */
     public String getTargetCategory() {
         return targetCategory;
@@ -89,7 +99,8 @@ public class CategoryDiscount extends Promotion {
 
     /**
      * Changes the category this promotion discounts.
-     * @param targetCategory new target category
+     * @param targetCategory new target category: {@code VIDEOGAME},
+     *                       {@code CONSOLE} or {@code ACCESSORY}
      */
     public void setTargetCategory(String targetCategory) {
         this.targetCategory = targetCategory;
