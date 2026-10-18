@@ -97,7 +97,7 @@ public class Sale {
 
     /**
      * Builds a printable receipt with the sale data, its products, the subtotal, the
-     * applied discount and the final total.
+     * applied discount, the cost of the extended warranties and the final total.
      *
      * @return receipt text
      */
@@ -116,6 +116,7 @@ public class Sale {
         } else {
             receipt.append("  Descuento: sin promoción aplicable\n");
         }
+        receipt.append(String.format("  Garantías extendidas: $%,.2f%n", extendedWarrantyCost));
         receipt.append(String.format("  Total: $%,.2f", total));
         return receipt.toString();
     }
