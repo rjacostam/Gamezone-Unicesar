@@ -66,19 +66,21 @@ public class PersonService {
      *
      * @param id    identification of the customer
      * @param name  full name of the customer
-     * @param phone contact phone of the customer
+     * @param phone contact phone of the customer, digits only
      * @param email e-mail address of the customer
      * @return the customer that was registered
-     * @throws IllegalArgumentException if any value is empty, if the e-mail
-     *                                  address has an invalid format, or if the
-     *                                  identification is already in use
+     * @throws IllegalArgumentException if any value is empty, if the phone
+     *                                  contains a character that is not a
+     *                                  digit, if the e-mail address has an
+     *                                  invalid format, or if the identification
+     *                                  is already in use
      * @throws IOException              if the customers file cannot be written
      */
     public Customer registerCustomer(String id, String name, String phone, String email)
             throws IOException {
         String validId = requireText(id, "La identificación del cliente no puede estar vacía.");
         String validName = requireText(name, "El nombre del cliente no puede estar vacío.");
-        String validPhone = requireText(phone, "El teléfono del cliente no puede estar vacío.");
+        String validPhone = requirePhone(phone);
         String validEmail = requireEmail(email);
 
         if (findPersonById(validId) != null) {
@@ -183,6 +185,31 @@ public class PersonService {
             throw new IllegalArgumentException(message);
         }
         return value.trim();
+    }
+
+    /**
+     * Checks that a contact phone is written with digits only.
+     * <p>
+     * Every character is compared against the ASCII range {@code '0'} to
+     * {@code '9'} instead of using {@link Character#isDigit(char)}, because that
+     * method also accepts digits of other writing systems, which are not valid
+     * in a phone number of the store.
+     *
+     * @param phone value to check
+     * @return the trimmed value
+     * @throws IllegalArgumentException if the value is null, blank or contains
+     *                                  a character that is not a digit
+     */
+    private String requirePhone(String phone) {
+        String value = requireText(phone, "El teléfono del cliente no puede estar vacío.");
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            if (character < '0' || character > '9') {
+                throw new IllegalArgumentException(
+                        "El teléfono del cliente solo puede contener números: " + value);
+            }
+        }
+        return value;
     }
 
     /**
