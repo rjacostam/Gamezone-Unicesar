@@ -5,6 +5,7 @@ import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Promotion;
+import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.model.Warranty;
@@ -12,6 +13,7 @@ import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
+import com.gamezone.service.ReturnService;
 import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
 
@@ -38,6 +40,7 @@ public class ConsoleMenu {
     private final AccessoryService accessoryService;
     private final PromotionService promotionService;
     private final WarrantyService warrantyService;
+    private final ReturnService returnService;
     private final Scanner scanner;
 
     /**
@@ -49,16 +52,18 @@ public class ConsoleMenu {
      * @param accessoryService service for accessories
      * @param promotionService service for promotions
      * @param warrantyService  service for warranties
+     * @param returnService    service for returns and the monthly balance
      */
     public ConsoleMenu(ProductService productService, PersonService personService, SaleService saleService,
                        AccessoryService accessoryService, PromotionService promotionService,
-                       WarrantyService warrantyService) {
+                       WarrantyService warrantyService, ReturnService returnService) {
         this.productService = productService;
         this.personService = personService;
         this.saleService = saleService;
         this.accessoryService = accessoryService;
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
+        this.returnService = returnService;
         this.scanner = new Scanner(System.in);
     }
 
@@ -76,6 +81,7 @@ public class ConsoleMenu {
             System.out.println("4. Gestión de accesorios");
             System.out.println("5. Gestión de promociones");
             System.out.println("6. Gestión de garantías");
+            System.out.println("7. Gestión de devoluciones");
             System.out.println("0. Salir");
             option = readInt("Seleccione una opción: ");
             switch (option) {
@@ -85,6 +91,7 @@ public class ConsoleMenu {
                 case 4 -> accessoryMenu();
                 case 5 -> promotionMenu();
                 case 6 -> warrantyMenu();
+                case 7 -> returnMenu();
                 case 0 -> System.out.println("Hasta pronto.");
                 default -> System.out.println("Opción no válida.");
             }
@@ -514,6 +521,84 @@ public class ConsoleMenu {
         for (Warranty warranty : warranties) {
             System.out.println(warranty.generateWarrantyCertificate());
         }
+    }
+
+    // ---------------------------------------------------------------- returns
+
+    private void returnMenu() {
+        System.out.println();
+        System.out.println("--- Gestión de devoluciones ---");
+        System.out.println("1. Registrar devolución");
+        System.out.println("2. Consultar todas las devoluciones");
+        System.out.println("3. Consultar devoluciones por cliente");
+        System.out.println("4. Consultar devoluciones por venta");
+        System.out.println("5. Consultar balance mensual");
+        System.out.println("0. Volver");
+        int option = readInt("Seleccione una opción: ");
+        try {
+            switch (option) {
+                case 1 -> registerReturn();
+                case 2 -> listReturns(returnService.viewAllReturns());
+                case 3 -> listReturns(returnService.viewReturnsByCustomer(readText("Identificación del cliente: ")));
+                case 4 -> listReturns(returnService.viewReturnsBySale(
+                        readText("Identificador de la venta (por ejemplo S0001): ")));
+                case 5 -> showMonthlyBalance();
+                case 0 -> { }
+                default -> System.out.println("Opción no válida.");
+            }
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void registerReturn() {
+        String saleId = readText("Identificador de la venta (por ejemplo S0001): ");
+        Sale sale = saleService.findById(saleId);
+        if (sale == null) {
+            System.out.println("No existe una venta con el identificador " + saleId + ".");
+            return;
+        }
+        System.out.println(sale.generateReceipt());
+        if (!sale.canBeReturned()) {
+            System.out.println("Aviso: esta venta tiene más de 30 días, no se puede devolver.");
+            return;
+        }
+        List<String> productIds = new ArrayList<>();
+        while (true) {
+            String productId = readOptionalText("Identificador del producto a devolver (Enter para terminar): ");
+            if (productId.isEmpty()) {
+                break;
+            }
+            int quantity = readInt("Cantidad: ");
+            for (int i = 0; i < quantity; i++) {
+                productIds.add(productId);
+            }
+        }
+        String reason = readText("Motivo de la devolución: ");
+        Return productReturn = returnService.registerReturn(sale.getId(), productIds, reason);
+        System.out.println("Devolución registrada con éxito.");
+        System.out.println(productReturn.generateReturnReceipt());
+    }
+
+    private void listReturns(List<Return> returns) {
+        if (returns.isEmpty()) {
+            System.out.println("No hay devoluciones para mostrar.");
+            return;
+        }
+        for (Return productReturn : returns) {
+            System.out.println(productReturn.generateReturnReceipt());
+        }
+    }
+
+    private void showMonthlyBalance() {
+        int month = readInt("Mes (1-12): ");
+        int year = readInt("Año (por ejemplo 2026): ");
+        if (month < 1 || month > 12) {
+            System.out.println("El mes debe estar entre 1 y 12.");
+            return;
+        }
+        double balance = returnService.generateMonthlyBalance(month, year);
+        System.out.printf("Balance neto de %02d/%d (ventas menos devoluciones): $%,.2f%n", month, year, balance);
     }
 
     // ---------------------------------------------------------------- input helpers

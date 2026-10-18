@@ -4,12 +4,14 @@ import com.gamezone.persistence.AccessoryRepository;
 import com.gamezone.persistence.PersonRepository;
 import com.gamezone.persistence.ProductRepository;
 import com.gamezone.persistence.PromotionRepository;
+import com.gamezone.persistence.ReturnRepository;
 import com.gamezone.persistence.SaleRepository;
 import com.gamezone.persistence.WarrantyRepository;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
+import com.gamezone.service.ReturnService;
 import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
 import com.gamezone.ui.ConsoleMenu;
@@ -43,6 +45,7 @@ public class Main {
             AccessoryRepository accessoryRepository = new AccessoryRepository(DATA_FOLDER + "accessories.csv");
             PromotionRepository promotionRepository = new PromotionRepository(DATA_FOLDER + "promotions.csv");
             WarrantyRepository warrantyRepository = new WarrantyRepository(DATA_FOLDER + "warranties.csv");
+            ReturnRepository returnRepository = new ReturnRepository(DATA_FOLDER + "returns.csv");
 
             ProductService productService = new ProductService(productRepository);
             PersonService personService = new PersonService(personRepository);
@@ -52,9 +55,10 @@ public class Main {
             SaleService saleService = new SaleService(saleRepository, productService, personService,
                     accessoryService, promotionService, warrantyService);
             warrantyService.loadWarranties(saleService.listAllSales(), saleService.getCatalog());
+            ReturnService returnService = new ReturnService(returnRepository, saleService, productService);
 
             ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService, accessoryService,
-                    promotionService, warrantyService);
+                    promotionService, warrantyService, returnService);
             menu.start();
         } catch (IOException | IllegalStateException e) {
             System.out.println("No fue posible cargar los datos del sistema: " + e.getMessage());
