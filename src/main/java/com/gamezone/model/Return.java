@@ -101,7 +101,9 @@ public class Return {
     /**
      * Builds the receipt the customer receives, in Spanish. It shows the return
      * identifier and its date, the original sale with its date and the customer,
-     * each returned unit with its price, the reason and the amount refunded.
+     * then for each returned unit its list price, the proportional part of the
+     * discount that is taken away and the amount really refunded, and finally
+     * the reason and the total refunded.
      * @return receipt ready to be shown to the user
      */
     public String generateReturnReceipt() {
@@ -118,9 +120,14 @@ public class Return {
         }
         receipt.append("Productos devueltos:\n");
         for (Product product : returnedProducts) {
+            double listPrice = product.getPrice();
+            double itemDiscount = listPrice * discountRatio();
             receipt.append("- ").append(product.getId()).append(" ")
                     .append(product.getTitle())
-                    .append(" | Precio: ").append(String.format(Locale.US, "$%,.2f", product.getPrice()))
+                    .append(" | Precio: ").append(String.format(Locale.US, "$%,.2f", listPrice))
+                    .append(" | Descuento: ").append(String.format(Locale.US, "-$%,.2f", itemDiscount))
+                    .append(" | Reembolso: ")
+                    .append(String.format(Locale.US, "$%,.2f", listPrice - itemDiscount))
                     .append("\n");
         }
         receipt.append("Motivo: ").append(reason).append("\n");
