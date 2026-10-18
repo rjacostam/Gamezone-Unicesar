@@ -1,18 +1,47 @@
 package com.gamezone;
 
+import com.gamezone.persistence.PersonRepository;
+import com.gamezone.persistence.ProductRepository;
+import com.gamezone.persistence.SaleRepository;
+import com.gamezone.service.PersonService;
+import com.gamezone.service.ProductService;
+import com.gamezone.service.SaleService;
+import com.gamezone.ui.ConsoleMenu;
+
+import java.io.IOException;
+
 /**
  * Entry point of the GameZone Unicesar application.
  * <p>
- * It will build the repositories, services and console menu once the modules are integrated.
+ * It builds every layer from the bottom up and injects each dependency through the
+ * constructors, so no class creates its own collaborators. Each service loads its stored
+ * data when it is created.
  */
 public class Main {
 
+    private static final String DATA_FOLDER = "data/";
+
     /**
-     * Starts the application.
+     * Starts the application. If the stored data cannot be loaded, it shows a message and
+     * ends instead of starting the menu with incomplete information.
      *
      * @param args command line arguments (not used)
      */
     public static void main(String[] args) {
-        System.out.println("GameZone Unicesar - sistema en construcción");
+        try {
+            ProductRepository productRepository = new ProductRepository(DATA_FOLDER + "products.csv");
+            PersonRepository personRepository = new PersonRepository(
+                    DATA_FOLDER + "customers.csv", DATA_FOLDER + "sellers.csv");
+            SaleRepository saleRepository = new SaleRepository(DATA_FOLDER + "sales.csv");
+
+            ProductService productService = new ProductService(productRepository);
+            PersonService personService = new PersonService(personRepository);
+            SaleService saleService = new SaleService(saleRepository, productService, personService);
+
+            ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService);
+            menu.start();
+        } catch (IOException | IllegalStateException e) {
+            System.out.println("No fue posible cargar los datos del sistema: " + e.getMessage());
+        }
     }
 }
