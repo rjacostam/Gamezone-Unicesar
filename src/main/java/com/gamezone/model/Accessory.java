@@ -30,7 +30,9 @@ public abstract class Accessory extends Product {
         this.compatibleConsoleIds = new ArrayList<>();
         if (compatibleConsoleIds != null) {
             for (String consoleId : compatibleConsoleIds) {
-                addCompatibleConsole(consoleId);
+                if (consoleId != null && !consoleId.isBlank() && !containsConsoleId(consoleId)) {
+                    this.compatibleConsoleIds.add(consoleId);
+                }
             }
         }
     }
@@ -67,6 +69,17 @@ public abstract class Accessory extends Product {
         if (consoleId == null) {
             return false;
         }
+        return containsConsoleId(consoleId);
+    }
+
+    /**
+     * Looks for a console identifier in the compatible list, ignoring letter
+     * case. It is private on purpose so the constructor can reuse it without
+     * calling an overridable method before the subclass is initialized.
+     * @param consoleId identifier to look for
+     * @return true when the identifier is already in the list
+     */
+    private boolean containsConsoleId(String consoleId) {
         for (String compatibleId : compatibleConsoleIds) {
             if (compatibleId.equalsIgnoreCase(consoleId)) {
                 return true;
