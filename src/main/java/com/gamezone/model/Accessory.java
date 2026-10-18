@@ -113,10 +113,12 @@ public abstract class Accessory extends Product {
     }
 
     /**
-     * Returns the ids of the compatible consoles.
-     * @return ids of the compatible consoles
+     * Returns a copy of the ids of the compatible consoles, so the list can be
+     * read but not modified from outside the class. To change the compatibility,
+     * addCompatibleConsole or removeCompatibleConsole must be used.
+     * @return copy of the ids of the compatible consoles
      */
     public List<String> getCompatibleConsoleIds() {
-        return compatibleConsoleIds;
+        return new ArrayList<>(compatibleConsoleIds);
     }
 }
