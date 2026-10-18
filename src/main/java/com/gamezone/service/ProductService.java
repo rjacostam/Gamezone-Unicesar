@@ -92,8 +92,8 @@ public class ProductService {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("El titulo del producto es obligatorio");
         }
-        if (price < 0) {
-            throw new IllegalArgumentException("El precio no puede ser negativo");
+        if (price <= 0) {
+            throw new IllegalArgumentException("El precio debe ser mayor que cero.");
         }
         if (stock < 0) {
             throw new IllegalArgumentException("El stock no puede ser negativo");
