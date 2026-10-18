@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Scanner;
 
@@ -239,7 +240,15 @@ public class ConsoleMenu {
                 productIds.add(productId);
             }
         }
-        Sale sale = saleService.registerSale(customerId, sellerId, productIds, new ArrayList<>());
+        List<String> extendedWarranty = new ArrayList<>();
+        for (String productId : new LinkedHashSet<>(productIds)) {
+            Product product = productService.findById(productId);
+            if (product instanceof Console
+                    && readYesNo("¿Desea agregar garantía extendida a " + product.getTitle() + "? (s/n): ")) {
+                extendedWarranty.add(product.getId());
+            }
+        }
+        Sale sale = saleService.registerSale(customerId, sellerId, productIds, extendedWarranty);
         System.out.println("Venta registrada con éxito.");
         System.out.println(sale.generateReceipt());
     }
@@ -498,6 +507,11 @@ public class ConsoleMenu {
                 System.out.println("Debe ingresar un número válido.");
             }
         }
+    }
+
+    private boolean readYesNo(String prompt) {
+        String value = readOptionalText(prompt);
+        return value.equalsIgnoreCase("s") || value.equalsIgnoreCase("si") || value.equalsIgnoreCase("sí");
     }
 
     private LocalDate readDate(String prompt) {
