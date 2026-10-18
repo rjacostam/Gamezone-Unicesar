@@ -1,5 +1,6 @@
 package com.gamezone;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.persistence.AccessoryRepository;
 import com.gamezone.persistence.PersonRepository;
 import com.gamezone.persistence.ProductRepository;
@@ -61,8 +62,11 @@ public class Main {
             ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService, accessoryService,
                     promotionService, warrantyService, returnService);
             menu.start();
+        } catch (PersistenceException e) {
+            System.out.println("No fue posible cargar los datos del sistema. Contacte al administrador.");
         } catch (IOException | IllegalStateException e) {
-            System.out.println("No fue posible cargar los datos del sistema: " + e.getMessage());
+            // Temporary: services not yet migrated still report load errors this way.
+            System.out.println("No fue posible cargar los datos del sistema. Contacte al administrador.");
         }
     }
 }
