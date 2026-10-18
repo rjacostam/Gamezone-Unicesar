@@ -1,10 +1,13 @@
 package com.gamezone.ui;
 
+import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
+import com.gamezone.model.Seller;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.SaleService;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Scanner;
 
@@ -45,10 +48,12 @@ public class ConsoleMenu {
             System.out.println();
             System.out.println("===== GAMEZONE UNICESAR =====");
             System.out.println("1. Gestión de productos");
+            System.out.println("2. Gestión de personas");
             System.out.println("0. Salir");
             option = readInt("Seleccione una opción: ");
             switch (option) {
                 case 1 -> productMenu();
+                case 2 -> personMenu();
                 case 0 -> System.out.println("Hasta pronto.");
                 default -> System.out.println("Opción no válida.");
             }
@@ -110,6 +115,62 @@ public class ConsoleMenu {
         }
         for (Product product : products) {
             System.out.println(product.getDescription());
+        }
+    }
+
+    // ---------------------------------------------------------------- people
+
+    private void personMenu() {
+        System.out.println();
+        System.out.println("--- Gestión de personas ---");
+        System.out.println("1. Registrar cliente");
+        System.out.println("2. Listar clientes");
+        System.out.println("3. Listar vendedores");
+        System.out.println("0. Volver");
+        int option = readInt("Seleccione una opción: ");
+        try {
+            switch (option) {
+                case 1 -> registerCustomer();
+                case 2 -> listCustomers();
+                case 3 -> listSellers();
+                case 0 -> { }
+                default -> System.out.println("Opción no válida.");
+            }
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("Error: no se pudo guardar el cliente en el archivo de datos.");
+        }
+    }
+
+    private void registerCustomer() throws IOException {
+        String id = readText("Identificación: ");
+        String name = readText("Nombre: ");
+        String phone = readText("Teléfono: ");
+        String email = readText("Correo electrónico: ");
+        Customer customer = personService.registerCustomer(id, name, phone, email);
+        System.out.println("Cliente registrado: " + customer.getSummary());
+    }
+
+    private void listCustomers() {
+        List<Customer> customers = personService.listCustomers();
+        if (customers.isEmpty()) {
+            System.out.println("No hay clientes registrados.");
+            return;
+        }
+        for (Customer customer : customers) {
+            System.out.println(customer.getSummary());
+        }
+    }
+
+    private void listSellers() {
+        List<Seller> sellers = personService.listSellers();
+        if (sellers.isEmpty()) {
+            System.out.println("No hay vendedores registrados.");
+            return;
+        }
+        for (Seller seller : sellers) {
+            System.out.println(seller.getSummary());
         }
     }
 
