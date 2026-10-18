@@ -1,6 +1,7 @@
 package com.gamezone.service;
 
 import com.gamezone.model.Accessory;
+import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
@@ -341,6 +342,63 @@ public class ReturnService {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    /**
+ * Returns the returns of the sales of a given customer, ignoring letter case
+ * on the identifier. The filter looks at the customer of the original sale,
+ * because a return never stores a customer of its own.
+ *
+ * @param customerId identifier of the customer
+ * @return returns of that customer, empty when there is none
+ */
+    public List<Return> viewReturnsByCustomer(String customerId) {
+        List<Return> found = new ArrayList<>();
+        if (customerId == null || customerId.isBlank()) {
+            return found;
+        }
+        String searched = customerId.trim();
+        for (Return registeredReturn : returns) {
+            Sale sale = registeredReturn.getSale();
+            Customer customer = sale == null ? null : sale.getCustomer();
+            if (customer != null && customer.getId().equalsIgnoreCase(searched)) {
+                found.add(registeredReturn);
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Returns the returns that come from a given sale, ignoring letter case.
+ *
+ * @param saleId identifier of the sale
+ * @return returns of that sale, empty when there is none
+ */
+    public List<Return> viewReturnsBySale(String saleId) {
+        List<Return> found = new ArrayList<>();
+        if (saleId == null || saleId.isBlank()) {
+            return found;
+        }
+        String searched = saleId.trim();
+        for (Return registeredReturn : returns) {
+            if (isReturnOfSaleId(registeredReturn, searched)) {
+                found.add(registeredReturn);
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Tells whether a return comes from the sale with the given identifier,
+     * ignoring letter case.
+     *
+     * @param registeredReturn return to compare
+     * @param saleId           identifier of the sale
+     * @return true when the return belongs to that sale
+     */
+    private boolean isReturnOfSaleId(Return registeredReturn, String saleId) {
+        Sale sale = registeredReturn.getSale();
+        return sale != null && sale.getId().equalsIgnoreCase(saleId);
     }
 
     /**
