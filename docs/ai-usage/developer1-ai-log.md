@@ -383,3 +383,47 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
 |---|---|---|---|---|---|---|---|
 | 2026-10-18 | Space Bunny (OpenCode) | Requirement 5, phase 4 - `fix/return-discounted-refund` (A5) | Check the result against the example the leader gave | Does a console of 2500000 in a sale with 125000 of discount refund 2375000 and show the three figures per unit? | Yes. The receipt printed "- C-01 PlayStation 5 Slim &#124; Precio: $2,500,000.00 &#124; Descuento: -$125,000.00 &#124; Reembolso: $2,375,000.00", a sale without discount refunded the full 2500000, and a partial return of a video game in a sale with a 5 percent discount refunded 237500. | Accepted showing the discount with a minus sign, because the receipt must say how much is taken away from the list price. Prices keep Locale.US with two decimals, the same as the other modules. | fix: show list price proportional discount and refund per item |
+---
+
+## Requirement 6 - Exceptions and validation
+
+### Entry 29
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Decide whether the root exception should be checked or unchecked | Should GameZoneException extend Exception or RuntimeException? | Extending RuntimeException keeps the failure in the operation that caused it, so the services and the repositories do not have to declare it in every signature, and the menu can catch it in one place. | Accepted RuntimeException, with the code GAMEZONE_ERROR on the first constructor and one code per subclass. The class is abstract so nobody throws the root directly. | feat: add GameZoneException base class with error code |
+
+### Entry 30
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Decide how each exception builds its message | Should the messages be built by the caller or by the constructor? | The diagram shows each constructor receiving the pieces of the message, so the caller never concatenates text. | Accepted building the message inside the exception. For ResourceNotFoundException the caller passes the kind of resource already with its article, such as "el producto", so the sentence is correct for every resource instead of needing a second form for masculine and feminine. | feat: add ResourceNotFoundException with typed message |
+
+### Entry 31
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Decide why the validators are final with a private constructor | Why can a validator not be instantiated? | A validator only offers static methods and holds no state, so an instance would be useless and could keep data between calls. | Accepted final classes with a private constructor, which is the usual way to forbid instantiation from outside, and rejected a public constructor because it would invite using the class by object. | feat: add ProductValidator and PersonValidator |
+
+### Entry 32
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Check that every method throws the exception the table of the diagram asks for | Do the seven validators really throw the type and the error code that the table lists for each one? | Yes. I ran the forty-three cases of the table: a wrong format or range throws InvalidDataException with code INVALID_DATA, a lookup that returned null throws ResourceNotFoundException with code RESOURCE_NOT_FOUND, and a broken rule of the store throws BusinessRuleException with code BUSINESS_RULE. PersistenceException keeps the original cause and reports PERSISTENCE_ERROR, and the four exceptions are all GameZoneException. | Accepted the three exception types as they were and only adjusted the wording of the messages so the user reads a complete sentence, such as "El campo precio debe ser mayor que cero." | feat: add ReturnValidator with window and units checks |
+
+### Entry 33
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Decide how a validator checks that a console really is a console | Should validateCompatibleConsole use instanceof on Console? | The rule is about the category, and every product reports its category through getCategory(), which avoids importing the concrete classes. | Accepted comparing the category with CONSOLE, the same way CategoryDiscount does, and kept the two failures apart: null gives ResourceNotFoundException and a product that exists but is not a console gives BusinessRuleException. | feat: add AccessoryValidator and SaleValidator |
+### Entry 34
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Corregir una diferencia entre el validador y el servicio al rejecting la cantidad cero | validateQuantity solo rechazaba las cantidades negativas, pero restoreStock ya rechaza el cero. ¿Cual de las dos reglas es la correcta? | La regla del servicio es la correcta: una cantidad de cero unidades no es una operación, es un no-op que el usuario no debería poder ejecutar, y ademas el mensaje ya dice "debe ser mayor que cero". | Accepted cambiar la condición a quantity <= 0 y unificar el mensaje con el del servicio, de modo que el usuario lea lo mismo sin importar por donde entra la llamada. | fix: reject zero quantity in validateQuantity |
+
+### Entry 35
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Quitar el aviso del compilador sobre las excepciones | ¿Por qué javac avisa que las clases serializables no declaran serialVersionUID? | RuntimeException implementa Serializable, así que las cinco clases heredan esa obligación y el compilador avisa con -Xlint:serial. Sin ese campo, un cambio en la estructura de la clase rompe la deserialización de excepciones antiguas. | Accepted declarar private static final long serialVersionUID = 1L en las cinco, con un comentario que explica que mantiene la misma versión al recompilar. Verifiqué que el aviso desaparece. | fix: declare serialVersionUID in the exception hierarchy |
