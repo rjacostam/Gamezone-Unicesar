@@ -82,7 +82,8 @@ public class Sale {
     }
 
     /**
-     * Builds a printable receipt with the sale data, its products and its total.
+     * Builds a printable receipt with the sale data, its products, the subtotal, the
+     * applied discount and the final total.
      *
      * @return receipt text
      */
@@ -94,6 +95,12 @@ public class Sale {
         receipt.append("  Productos:\n");
         for (Product product : products) {
             receipt.append(String.format("    - %s %s: $%,.2f%n", product.getId(), product.getTitle(), product.getPrice()));
+        }
+        receipt.append(String.format("  Subtotal: $%,.2f%n", subtotal));
+        if (appliedPromotionName != null) {
+            receipt.append(String.format("  Descuento (%s): -$%,.2f%n", appliedPromotionName, discountAmount));
+        } else {
+            receipt.append("  Descuento: sin promoción aplicable\n");
         }
         receipt.append(String.format("  Total: $%,.2f", total));
         return receipt.toString();
