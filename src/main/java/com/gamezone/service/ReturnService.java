@@ -416,43 +416,86 @@ public class ReturnService {
     }
 
     /**
- * Builds the balance of a month: the money the store took in that month minus
- * the money it gave back in that month.
- * <p>
- * The income side adds up the total of every sale whose date falls on that month
- * and year. The outcome side adds up the refunded amount of every return whose
- * date falls on that month and year, and both sides are grouped by the date each
- * record was registered, which is why a sale made in September and returned in
- * October counts as income in September and as a refund in October.
- * <p>
- * The method reads data of two modules, the sales and the returns, which is why
- * it lives in this service: it is the place that already knows both. It
- * delegates the lookup of the sales to {@code SaleService} and never reads a
- * repository of another module.
- *
- * @param month number of the month, from 1 to 12
- * @param year  number of the year
- * @return the income of the month minus the refunds of the month
- * @throws IllegalArgumentException if the month is not between 1 and 12
- */
-    public double generateMonthlyBalance(int month, int year) {
-        if (month < 1 || month > 12) {
-            throw new IllegalArgumentException(
-                    "El mes debe estar entre 1 y 12");
-        }
-        double income = 0;
+     * Sums the total of every sale of a month, that is the final amount of the
+     * sale with its discount and its warranties already applied.
+     * <p>
+     * Each sale is grouped by its own date, so a sale made in September and
+     * returned in October counts as income in September only.
+     *
+     * @param month number of the month, from 1 to 12
+     * @param year  number of the year
+     * @return total of the sales of that month
+     * @throws IllegalArgumentException if the month is not between 1 and 12
+     */
+    public double calculateMonthlySales(int month, int year) {
+        validateMonth(month);
+        double total = 0;
         for (Sale sale : saleService.listAllSales()) {
             if (isInMonth(sale.getDate(), month, year)) {
-                income += sale.getTotal();
+                total += sale.getTotal();
             }
         }
-        double refunds = 0;
+        return total;
+    }
+
+    /**
+     * Sums the refunded amount of every return of a month, that is the money the
+     * store gave back.
+     * <p>
+     * Each return is grouped by its own date, so the refund of a sale made in a
+     * previous month counts in the month the customer handed the product back.
+     *
+     * @param month number of the month, from 1 to 12
+     * @param year  number of the year
+     * @return total of the refunds of that month
+     * @throws IllegalArgumentException if the month is not between 1 and 12
+     */
+    public double calculateMonthlyReturns(int month, int year) {
+        validateMonth(month);
+        double total = 0;
         for (Return registeredReturn : returns) {
             if (isInMonth(registeredReturn.getDate(), month, year)) {
-                refunds += registeredReturn.getRefundAmount();
+                total += registeredReturn.getRefundAmount();
             }
         }
-        return income - refunds;
+        return total;
+    }
+
+    /**
+     * Checks that a month number is one of the twelve months of a year. The rule
+     * and its message are written only once and shared by the three reports of the
+     * month.
+     *
+     * @param month number of the month
+     * @throws IllegalArgumentException if the month is not between 1 and 12
+     */
+    private void validateMonth(int month) {
+        if (month < 1 || month > 12) {
+            throw new IllegalArgumentException("El mes debe estar entre 1 y 12");
+        }
+    }
+
+    /**
+ * Builds the balance of a month: the money the store took in that month minus
+     * the money it gave back in that month.
+     * <p>
+     * The result is {@link #calculateMonthlySales(int, int)} minus
+     * {@link #calculateMonthlyReturns(int, int)}, so the net figure and the two
+     * figures the report shows next to it can never disagree: all three come from
+     * the same two methods.
+     * <p>
+     * The method reads data of two modules, the sales and the returns, which is
+     * why it lives in this service: it is the place that already knows both. It
+     * delegates the lookup of the sales to {@code SaleService} and never reads a
+     * repository of another module.
+     *
+     * @param month number of the month, from 1 to 12
+     * @param year  number of the year
+     * @return the income of the month minus the refunds of the month
+     * @throws IllegalArgumentException if the month is not between 1 and 12
+     */
+    public double generateMonthlyBalance(int month, int year) {
+        return calculateMonthlySales(month, year) - calculateMonthlyReturns(month, year);
     }
 
     /**
