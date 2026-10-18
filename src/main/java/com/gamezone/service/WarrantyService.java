@@ -5,6 +5,7 @@ import com.gamezone.model.ExtendedWarranty;
 import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Warranty;
+import com.gamezone.persistence.WarrantyRecord;
 import com.gamezone.persistence.WarrantyRepository;
 
 import java.io.IOException;
@@ -20,10 +21,15 @@ import java.util.Locale;
  * The service starts with an empty list on purpose. A warranty points to a sale
  * and to a product, and the sales need this service to create their warranties,
  * so this service cannot ask another service for those objects. Instead
- * {@link #loadWarranties(List, List)} receives the sales and the catalogue that
- * were already loaded and fills the list afterwards. {@code Main} calls it once
- * the sales exist. That ordering is what keeps the dependency graph free of a
- * cycle.
+ * {@link #loadWarranties(List)} receives the sales that were already loaded and
+ * the records that the repository read, and it resolves them in that order:
+ * repository, then sales, then warranties. {@code Main} calls it once the sales
+ * exist. That ordering is what keeps the dependency graph free of a cycle.
+ * <p>
+ * The repository works with only identifiers, through {@code WarrantyRecord}, so
+ * the persistence layer never builds a domain object and never references this
+ * service. Building the warranties is the job of this class, which already knows
+ * the sales and is the layer that owns the warranty rules.
  * <p>
  * File errors do not reach the caller as a checked exception. They become an
  * {@link IllegalStateException}, the same way the other services do it, because
@@ -31,6 +37,12 @@ import java.util.Locale;
  * user.
  */
 public class WarrantyService {
+
+    /** Type marker of a basic warranty, as stored in the file. */
+    private static final String TYPE_BASIC = "BASIC";
+
+    /** Type marker of an extended warranty, as stored in the file. */
+    private static final String TYPE_EXTENDED = "EXTENDED";
 
     /** Prefix of the generated warranty identifiers. */
     private static final String ID_PREFIX = "W";
@@ -53,24 +65,107 @@ public class WarrantyService {
     }
 
     /**
-     * Loads the warranties stored in the file and replaces the content held in
-     * memory. The warranties that cannot be rebuilt, because their sale or their
-     * product no longer exists, are left out.
+     * Loads the records stored in the file and turns each one into a warranty.
+     * <p>
+     * The repository returns plain records with only identifiers, because the
+     * persistence layer must not build domain objects. This method is the place
+     * where those records become real warranties: it looks the sale up by id
+     * among the sales that were already registered, and then looks the product up
+     * inside that sale. The sale alone is enough to find the product, because a
+     * product can only be covered by a warranty when it belongs to the sale.
+     * <p>
+     * A record whose sale or whose product no longer exists, or whose type is
+     * unknown, is ignored, so a warranty of a deleted product does not stop the
+     * application from starting.
      *
-     * @param sales   sales already registered, used to resolve the sale of each
-     *                warranty
-     * @param catalog products already registered, used to resolve the product of
-     *                each warranty
+     * @param sales sales already registered, used to resolve the sale and the
+     *              product of each record
      * @throws IllegalStateException if the warranties file cannot be read
      */
-    public void loadWarranties(List<Sale> sales, List<Product> catalog) {
+    public void loadWarranties(List<Sale> sales) {
         try {
-            List<Warranty> stored = repository.loadAll(sales, catalog);
+            List<WarrantyRecord> records = repository.loadAll();
+            List<Warranty> loaded = new ArrayList<>();
+            for (WarrantyRecord record : records) {
+                Warranty warranty = toWarranty(record, sales);
+                if (warranty != null) {
+                    loaded.add(warranty);
+                }
+            }
             warranties.clear();
-            warranties.addAll(stored);
+            warranties.addAll(loaded);
         } catch (IOException e) {
             throw new IllegalStateException("No se pudo cargar el catalogo de garantias", e);
         }
+    }
+
+    /**
+     * Turns one record into the warranty it represents.
+     *
+     * @param record record read from the file
+     * @param sales  sales already registered
+     * @return the warranty, or null when the record cannot be used because its
+     *         type is unknown or its sale or its product no longer exists
+     */
+    private Warranty toWarranty(WarrantyRecord record, List<Sale> sales) {
+        if (record.getStartDate() == null) {
+            return null;
+        }
+        Sale sale = findSale(sales, record.getSaleId());
+        if (sale == null) {
+            return null;
+        }
+        Product product = findProduct(sale, record.getProductId());
+        if (product == null) {
+            return null;
+        }
+        if (TYPE_BASIC.equalsIgnoreCase(record.getType())) {
+            return new BasicWarranty(record.getId(), product, sale, record.getStartDate());
+        }
+        if (TYPE_EXTENDED.equalsIgnoreCase(record.getType())) {
+            return new ExtendedWarranty(record.getId(), product, sale, record.getStartDate());
+        }
+        return null;
+    }
+
+    /**
+     * Looks for the sale a record comes from.
+     *
+     * @param sales  sales already registered
+     * @param saleId identifier stored in the record
+     * @return the sale found, or null when it no longer exists
+     */
+    private Sale findSale(List<Sale> sales, String saleId) {
+        if (saleId == null || saleId.isBlank()) {
+            return null;
+        }
+        String searched = saleId.trim();
+        for (Sale sale : sales) {
+            if (sale.getId().equalsIgnoreCase(searched)) {
+                return sale;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Looks for the product a record covers inside the units of its sale.
+     *
+     * @param sale      sale the warranty comes from
+     * @param productId identifier stored in the record
+     * @return the product found, or null when the sale does not contain it
+     */
+    private Product findProduct(Sale sale, String productId) {
+        if (productId == null || productId.isBlank()) {
+            return null;
+        }
+        String searched = productId.trim();
+        for (Product product : sale.getProducts()) {
+            if (product.getId().equalsIgnoreCase(searched)) {
+                return product;
+            }
+        }
+        return null;
     }
 
     /**
