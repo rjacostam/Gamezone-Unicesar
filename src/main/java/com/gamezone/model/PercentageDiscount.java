@@ -1,6 +1,7 @@
 package com.gamezone.model;
 
 import java.time.LocalDate;
+import java.util.Locale;
 
 /**
  * Promotion that applies a percentage to the whole sale. It is the simplest
@@ -51,7 +52,7 @@ public class PercentageDiscount extends Promotion {
     public String getDescription() {
         return "[" + getId() + "] " + getName()
                 + " | " + getStartDate() + " a " + getEndDate()
-                + " | " + String.format("%g%%", percentage) + " sobre el total";
+                + " | " + String.format(Locale.US, "%.2f%%", percentage) + " sobre el total";
     }
 
     /**
