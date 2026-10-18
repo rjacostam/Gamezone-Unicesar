@@ -343,7 +343,7 @@ public class ConsoleMenu {
         System.out.println("6. Consultar accesorios compatibles con una consola");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerController();
                 case 2 -> registerCable();
@@ -355,9 +355,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerController() {
@@ -444,7 +442,7 @@ public class ConsoleMenu {
         System.out.println("5. Listar promociones vigentes");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerPercentagePromotion();
                 case 2 -> registerCategoryPromotion();
@@ -454,9 +452,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerPercentagePromotion() {
@@ -518,7 +514,7 @@ public class ConsoleMenu {
         System.out.println("4. Listar garantías próximas a vencer");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> showWarranty();
                 case 2 -> listWarranties(warrantyService.listAllWarranties());
@@ -528,9 +524,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void showWarranty() {
@@ -566,7 +560,7 @@ public class ConsoleMenu {
         System.out.println("5. Consultar balance mensual");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerReturn();
                 case 2 -> listReturns(returnService.viewAllReturns());
@@ -577,9 +571,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerReturn() {
