@@ -45,9 +45,10 @@ public class ExtendedWarranty extends Warranty {
      */
     @Override
     public double getAdditionalCost() {
-        if (product == null) {
+        Product covered = getProduct();
+        if (covered == null) {
             return 0.0;
         }
-        return product.getPrice() * 0.10;
+        return covered.getPrice() * 0.10;
     }
 }
