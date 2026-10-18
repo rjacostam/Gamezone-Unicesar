@@ -135,6 +135,66 @@ public class PromotionService {
     }
 
     /**
+     * Returns a copy of every promotion currently registered, in registration
+     * order, including the ones that already expired and the ones that have not
+     * started yet.
+     *
+     * @return promotions currently registered
+     */
+    public List<Promotion> listAllPromotions() {
+        return new ArrayList<>(promotions);
+    }
+
+    /**
+     * Returns the promotions that are valid today. A promotion is valid when
+     * today is between its start date and its end date, both included.
+     *
+     * @return promotions valid today
+     */
+    public List<Promotion> listActivePromotions() {
+        return listActiveOn(LocalDate.now());
+    }
+
+    /**
+     * Searches a promotion by its identifier, ignoring letter case, so a user
+     * can type "p-01" and still find the promotion registered as "P-01".
+     *
+     * @param id identifier to look for
+     * @return the promotion found, or null when no promotion uses that
+     *         identifier
+     */
+    public Promotion findById(String id) {
+        if (id == null || id.isBlank()) {
+            return null;
+        }
+        String searched = id.trim();
+        for (Promotion promotion : promotions) {
+            if (promotion.getId().equalsIgnoreCase(searched)) {
+                return promotion;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the promotions that are valid on a given date. It is the shared
+     * implementation of {@link #listActivePromotions()} and of
+     * {@link #findBestPromotionFor(Sale)}, which use different dates.
+     *
+     * @param date date to check the validity period against
+     * @return promotions valid on that date
+     */
+    private List<Promotion> listActiveOn(LocalDate date) {
+        List<Promotion> active = new ArrayList<>();
+        for (Promotion promotion : promotions) {
+            if (promotion.isActive(date)) {
+                active.add(promotion);
+            }
+        }
+        return active;
+    }
+
+    /**
      * Checks the data shared by every promotion before it is registered.
      *
      * @param id        promotion identifier
