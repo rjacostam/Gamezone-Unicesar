@@ -216,10 +216,10 @@ public class ConsoleMenu {
         String customerId = readText("Identificación del cliente: ");
         listSellers();
         String sellerId = readText("Identificación o código del vendedor: ");
-        listProducts();
+        listCatalog();
         List<String> productIds = new ArrayList<>();
         while (true) {
-            String productId = readOptionalText("Identificador del producto (Enter para terminar): ");
+            String productId = readOptionalText("Identificador del producto o accesorio (Enter para terminar): ");
             if (productId.isEmpty()) {
                 break;
             }
@@ -231,6 +231,17 @@ public class ConsoleMenu {
         Sale sale = saleService.registerSale(customerId, sellerId, productIds);
         System.out.println("Venta registrada con éxito.");
         System.out.println(sale.generateReceipt());
+    }
+
+    private void listCatalog() {
+        List<Product> catalog = saleService.getCatalog();
+        if (catalog.isEmpty()) {
+            System.out.println("No hay productos ni accesorios registrados.");
+            return;
+        }
+        for (Product item : catalog) {
+            System.out.println(item.getDescription());
+        }
     }
 
     private void printSales(List<Sale> sales) {
