@@ -19,14 +19,20 @@ import java.util.List;
  * the application itself.
  * <p>
  * The file is {@code data/returns.csv}. Every record uses the semicolon
- * character as the field delimiter and has five columns:
- * {@code id;date;saleId;productIds;reason}, for example:
+ * character as the field delimiter and has six columns:
+ * {@code id;date;saleId;productIds;reason;warrantyRefund}, for example:
  * <pre>
- * id;date;saleId;productIds;reason
- * R0001;2026-10-18;S0001;C-01,A-01;No funciona
+ * id;date;saleId;productIds;reason;warrantyRefund
+ * R0001;2026-10-18;S0001;C-01,A-01;No funciona;0.0
  * </pre>
- * The refunded amount is not stored, because the constructor of {@code Return}
- * computes it again from the returned units. The product identifiers are
+ * The last column is the amount refunded for the warranties that were cancelled
+ * because of that return. The records written before the A7 adjustment have only
+ * five columns and are still read, with a warranty refund of zero, so the file
+ * does not have to be migrated by hand.
+ * <p>
+ * The refunded amount of the returned units is not stored, because the constructor
+ * of {@code Return} computes it again from the returned units and the discount of
+ * the original sale. The product identifiers are
  * separated by commas inside their own column. A semicolon inside the reason is
  * written as a comma, because a semicolon is the delimiter and a reason that
  * contains it would break the record; the reason is therefore read back with a
@@ -63,8 +69,11 @@ public class ReturnRepository {
     /** Character used to separate the product identifiers inside their column. */
     private static final String ID_SEPARATOR = ",";
 
-    /** Number of columns of a record, including the header layout. */
-    private static final int COLUMN_COUNT = 5;
+    /** Number of columns of a record as written by this version of the file. */
+    private static final int COLUMN_COUNT = 6;
+
+    /** Number of columns of the records written before the A7 adjustment. */
+    private static final int LEGACY_COLUMN_COUNT = 5;
 
     /** Location of the file where the returns are stored. */
     private final Path filePath;
@@ -87,7 +96,8 @@ public class ReturnRepository {
      */
     public void saveAll(List<Return> returns) throws IOException {
         List<String> lines = new ArrayList<>();
-        lines.add(String.join(DELIMITER, "id", "date", "saleId", "productIds", "reason"));
+        lines.add(String.join(DELIMITER, "id", "date", "saleId", "productIds", "reason",
+                "warrantyRefund"));
         for (Return registeredReturn : returns) {
             lines.add(serialize(registeredReturn));
         }
@@ -145,7 +155,8 @@ public class ReturnRepository {
                 String.valueOf(registeredReturn.getDate()),
                 registeredReturn.getSale().getId(),
                 productIds.toString(),
-                reason);
+                reason,
+                String.valueOf(registeredReturn.getWarrantyRefund()));
     }
 
     /**
@@ -165,10 +176,10 @@ public class ReturnRepository {
      */
     private Return deserialize(String record, List<Sale> sales) {
         String[] columns = record.split(DELIMITER, -1);
-        if (columns.length < COLUMN_COUNT || columns.length > COLUMN_COUNT) {
+        if (columns.length < LEGACY_COLUMN_COUNT || columns.length > COLUMN_COUNT) {
             return null;
         }
-        for (int index = 0; index < COLUMN_COUNT; index++) {
+        for (int index = 0; index < columns.length; index++) {
             columns[index] = columns[index].trim();
         }
         if (columns[0].equalsIgnoreCase("id") && columns[1].equalsIgnoreCase("date")) {
@@ -185,11 +196,39 @@ public class ReturnRepository {
         if (returnedProducts == null) {
             return null;
         }
+        double warrantyRefund = readWarrantyRefund(columns);
         try {
             LocalDate date = LocalDate.parse(columns[1]);
-            return new Return(columns[0], date, sale, returnedProducts, columns[4]);
+            return new Return(columns[0], date, sale, returnedProducts, columns[4], warrantyRefund);
         } catch (java.time.format.DateTimeParseException e) {
             return null;
+        }
+    }
+
+    /**
+     * Reads the amount refunded for the cancelled warranties, which is the last
+     * column of a record.
+     * <p>
+     * The records written before the A7 adjustment do not have that column, and a
+     * line written before the change must keep loading as a return without any
+     * warranty refund, so a missing or unreadable value means zero instead of a
+     * skipped line.
+     *
+     * @param columns fields of the record
+     * @return warranty amount refunded, zero when the column is not there
+     */
+    private double readWarrantyRefund(String[] columns) {
+        if (columns.length <= LEGACY_COLUMN_COUNT) {
+            return 0;
+        }
+        String value = columns[COLUMN_COUNT - 1];
+        if (value.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            return 0;
         }
     }
 
