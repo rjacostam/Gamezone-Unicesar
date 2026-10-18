@@ -1,9 +1,6 @@
 package com.gamezone.persistence;
 
 import com.gamezone.model.BasicWarranty;
-import com.gamezone.model.ExtendedWarranty;
-import com.gamezone.model.Product;
-import com.gamezone.model.Sale;
 import com.gamezone.model.Warranty;
 
 import java.io.BufferedReader;
@@ -34,18 +31,20 @@ import java.util.List;
  * duration.
  * <p>
  * This repository stores **only identifiers**. It never rebuilds a sale or a
- * product, because those objects are already held by the rest of the system.
- * {@link #loadAll(List, List)} receives the sales and the catalogue that were
- * already loaded and links every warranty to them, the same way
- * {@code SaleRepository} does. That is what keeps the dependency graph free of
- * a cycle: the repository needs no service, so the objects can be built in
- * {@code Main} in any order.
+ * product, and it does not even import them: reading the file produces
+ * {@link WarrantyRecord} values, and {@code WarrantyService} is the class that
+ * turns each record into a {@code Warranty}, looking the sale and the product up
+ * among the objects that are already loaded. That is what keeps the persistence
+ * layer depending on the model alone, with no reference to the service layer,
+ * and it is what avoids the cycle
+ * {@code SaleService → WarrantyService → WarrantyRepository → SaleService},
+ * because the repository can no longer reach a service.
  * <p>
- * A line is skipped, and no warranty is created, when it is the header, when it
- * does not have the expected number of columns, when its date does not follow
- * the format, when its type is unknown, or when the sale or the product it
- * references no longer exist. An empty list is returned when the file does not
- * exist, which is the normal case before the first warranty is assigned.
+ * A line is skipped, and no record is produced, when it is the header, when it
+ * does not have the expected number of columns, when an identifier is empty, or
+ * when its date does not follow the format. An empty list is returned when the
+ * file does not exist, which is the normal case before the first warranty is
+ * assigned.
  * <p>
  * This class belongs to the persistence layer and therefore is one of the few
  * classes allowed to perform file access. It depends only on the model layer,
@@ -101,28 +100,29 @@ public class WarrantyRepository {
     }
 
     /**
-     * Loads every warranty stored in the file and links each one to the sale and
-     * the product it references.
+     * Loads every warranty stored in the file, as plain records.
      * <p>
-     * The header line, the damaged records and the records whose sale or product
-     * no longer exist are skipped.
+     * The header line and the damaged records are ignored. A line is only
+     * rejected when the line itself cannot be read: the wrong number of
+     * columns, an empty identifier or a date that does not follow the format.
+     * Whether a record can actually become a warranty, which depends on its sale
+     * and its product still existing, is not decided here, because this layer
+     * does not know them: {@code WarrantyService} is the class that resolves
+     * them.
      *
-     * @param sales   sales already loaded, used to resolve the sale of a warranty
-     * @param catalog products already loaded, used to resolve the product of a
-     *                warranty
-     * @return list of the warranties that could be rebuilt, empty when the file
-     *         does not exist
+     * @return list of the records contained in the file, empty when the file does
+     *         not exist
      * @throws IOException if the file cannot be read
      */
-    public List<Warranty> loadAll(List<Sale> sales, List<Product> catalog) throws IOException {
-        List<Warranty> warranties = new ArrayList<>();
+    public List<WarrantyRecord> loadAll() throws IOException {
+        List<WarrantyRecord> records = new ArrayList<>();
         for (String record : readRecords()) {
-            Warranty warranty = deserialize(record, sales, catalog);
-            if (warranty != null) {
-                warranties.add(warranty);
+            WarrantyRecord parsed = toRecord(record);
+            if (parsed != null) {
+                records.add(parsed);
             }
         }
-        return warranties;
+        return records;
     }
 
     /**
@@ -151,76 +151,39 @@ public class WarrantyRepository {
      * that were already loaded. Skipping instead of failing is what allows a
      * warranty of a deleted product not to stop the application from starting.
      *
-     * @param record  text record read from the file
-     * @param sales   sales already loaded
-     * @param catalog products already loaded
-     * @return the warranty represented by the record, or null when the record
-     *         cannot be interpreted
+     /**
+     * Builds a record from one line of the file, keeping only the identifiers.
+     * <p>
+     * Null is returned when the line is the header, when its columns are
+     * incomplete, when an identifier is empty, or when its date does not follow
+     * the format. The type is stored as it is read, without deciding whether it
+     * is a known one, because turning a record into a warranty is not the job of
+     * this layer.
+     *
+     * @param line text record read from the file
+     * @return the record represented by the line, or null when the line cannot
+     *         be interpreted
      */
-    private Warranty deserialize(String record, List<Sale> sales, List<Product> catalog) {
-        String[] columns = record.split(DELIMITER, -1);
+    private WarrantyRecord toRecord(String line) {
+        String[] columns = line.split(DELIMITER, -1);
         if (columns.length < COLUMN_COUNT || columns.length > COLUMN_COUNT) {
             return null;
         }
         for (int index = 0; index < COLUMN_COUNT; index++) {
             columns[index] = columns[index].trim();
         }
-        String type = columns[0];
-        if (HEADER_TYPE.equalsIgnoreCase(type)) {
+        if (HEADER_TYPE.equalsIgnoreCase(columns[0])) {
             return null;
         }
         if (columns[1].isEmpty() || columns[2].isEmpty() || columns[3].isEmpty()) {
             return null;
         }
-        Product product = findProduct(catalog, columns[2]);
-        Sale sale = findSale(sales, columns[3]);
-        if (product == null || sale == null) {
-            return null;
-        }
         try {
-            LocalDate startDate = LocalDate.parse(columns[4]);
-            if (TYPE_BASIC.equalsIgnoreCase(type)) {
-                return new BasicWarranty(columns[1], product, sale, startDate);
-            }
-            if (TYPE_EXTENDED.equalsIgnoreCase(type)) {
-                return new ExtendedWarranty(columns[1], product, sale, startDate);
-            }
+            return new WarrantyRecord(columns[0], columns[1], columns[2], columns[3],
+                    LocalDate.parse(columns[4]));
         } catch (java.time.format.DateTimeParseException e) {
             return null;
         }
-        return null;
-    }
-
-    /**
-     * Looks for the product a warranty covers.
-     *
-     * @param catalog products already loaded
-     * @param id      product identifier stored in the record
-     * @return the product found, or null when it no longer exists
-     */
-    private Product findProduct(List<Product> catalog, String id) {
-        for (Product product : catalog) {
-            if (product.getId().equals(id)) {
-                return product;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Looks for the sale a warranty comes from.
-     *
-     * @param sales sales already loaded
-     * @param id    sale identifier stored in the record
-     * @return the sale found, or null when it no longer exists
-     */
-    private Sale findSale(List<Sale> sales, String id) {
-        for (Sale sale : sales) {
-            if (sale.getId().equals(id)) {
-                return sale;
-            }
-        }
-        return null;
     }
 
     /**
