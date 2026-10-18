@@ -76,6 +76,44 @@ public class ProductService {
         return console;
     }
 
+    /**
+     * Returns a copy of the whole catalogue, in registration order.
+     * @return products currently registered
+     */
+    public List<Product> listAllProducts() {
+        return new ArrayList<>(products);
+    }
+
+    /**
+     * Searches a product by its identifier.
+     * @param id identifier to look for
+     * @return the product found, or null when no product uses that identifier
+     */
+    public Product findById(String id) {
+        for (Product product : products) {
+            if (product.getId().equals(id)) {
+                return product;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Updates the available stock of a product and saves the catalogue. The
+     * product itself rejects the update when the stock is not enough.
+     * @param productId identifier of the product to update
+     * @param quantity amount of units to remove from the stock
+     */
+    public void updateStock(String productId, int quantity) {
+        Product product = findById(productId);
+        if (product == null) {
+            throw new IllegalArgumentException(
+                    "No existe un producto con el identificador " + productId);
+        }
+        product.decreaseStock(quantity);
+        saveCatalogue();
+    }
+
     private void saveCatalogue() {
         try {
             repository.saveAll(products);
