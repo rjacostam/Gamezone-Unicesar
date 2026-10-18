@@ -24,6 +24,7 @@ connects the layers. The design is documented in `docs/`:
 - `docs/promotion-analysis.md`, `docs/promotion-class-diagram.md` — promotion module (Requirement 2)
 - `docs/warranty-analysis.md`, `docs/warranty-class-diagram.md` — warranty module (Requirement 4)
 - `docs/return-analysis.md`, `docs/return-class-diagram.md` — return module (Requirement 3)
+- `docs/integration-analysis.md`, `docs/integrated-class-diagram.md` — integration of the four modules (Requirement 5)
 
 ## Requirements
 
@@ -73,7 +74,7 @@ The data is loaded when the application starts and saved after every operation.
 | 4. Gestión de accesorios | Register a controller, a cable or a memory card; list all accessories; list by type; list the accessories compatible with a console |
 | 5. Gestión de promociones | Register a percentage, category or bulk purchase promotion; list all promotions; list the active promotions |
 | 6. Gestión de garantías | Show the warranty of a product in a sale; list all warranties; list the active warranties; list the warranties expiring in the next days |
-| 7. Gestión de devoluciones | Register a return; list all returns; list the returns of a customer; list the returns of a sale; monthly balance |
+| 7. Gestión de devoluciones | Register a return; list all returns; list the returns of a customer; list the returns of a sale; monthly balance (sales, returns and net) |
 
 A sale needs an existing customer, an existing seller (by identification or employee code)
 and at least one item with enough stock. A sale can mix video games, consoles and
@@ -117,16 +118,48 @@ cost. Video games and accessories have no warranty. Warranty ids look like `W000
 
 A customer can return some or all the products of a sale within 30 calendar days of the
 sale date. Every returned product must belong to that sale, and a unit cannot be returned
-twice. The refund is the sum of the prices of the returned products, and the stock of
-returned video games and consoles goes back to the inventory through
-`ProductService.restoreStock`.
+twice. Return ids look like `R0001`.
 
-The monthly balance shows, for a month and year, the total of the sales minus the refunds
-of the returns. Return ids look like `R0001`.
+- The stock of every returned item goes back to the inventory. Video games and consoles go
+  through `ProductService.restoreStock`, and accessories through
+  `AccessoryService.restoreStock`.
+- Each item is refunded in proportion to the discount of the original sale:
+  `price × (1 − discount / subtotal)`.
+- Returning a console cancels its warranties, and the cost of a cancelled extended
+  warranty is added to the refund.
 
-The integration adjustments of Requirement 5 complete this module. They cover the stock
-of returned accessories, refunds of discounted sales, the full balance report, and
-cancelling the warranties of returned consoles.
+The monthly balance shows, for a month and year, the total of the sales (with discounts and
+extended warranties), the total refunded, and the net balance.
+
+## Integration (Requirement 5)
+
+The four modules run together on the same sales. The integration adjustments A1 to A7 are
+explained in `docs/integration-analysis.md`. The most visible ones:
+
+- A sale can mix video games, consoles and accessories. It always follows the same eight
+  steps:
+  1. validate the sale;
+  2. resolve the items and check stock;
+  3. create the sale and compute the subtotal;
+  4. apply the best promotion on the subtotal;
+  5. assign the warranties;
+  6. compute the total;
+  7. update the inventory;
+  8. save the sale.
+- Promotions by category also apply to accessories (`ACCESSORY`).
+- Returns restore accessory stock, refund what the customer actually paid, and cancel the
+  warranties of returned consoles.
+
+Example of the integrated flow:
+
+1. Sell a PlayStation 5 Slim, a video game and a controller with an extended warranty for
+   the console: subtotal $3,100,000, "Lleva 3 o más" −$310,000, warranty +$250,000, total
+   **$3,040,000**.
+2. Return the console and the controller. The refund is $2,250,000 + $315,000 + $250,000
+   for the cancelled warranty = **$2,815,000**. The stock goes back and the console
+   warranties are removed.
+3. The balance of the month shows sales $3,040,000, returns $2,815,000 and a net balance of
+   **$225,000**.
 
 ## Team
 
