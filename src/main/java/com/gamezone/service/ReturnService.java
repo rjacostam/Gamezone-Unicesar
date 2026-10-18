@@ -21,11 +21,12 @@ import java.util.Map;
  * stock of the returned units and saves the returns after every change so the
  * data survives between executions.
  * <p>
- * The service receives {@code SaleService} and {@code ProductService} and uses
- * them instead of reaching the repositories itself. That is what the statement
- * asks for and it also keeps a single owner for every rule: the sales know
- * whether a sale can still be returned, and the catalogue knows how to restore a
- * unit of stock.
+ * The service receives {@code SaleService}, {@code ProductService} and
+ * {@code AccessoryService} and uses them instead of reaching the repositories
+ * itself. That is what the statement asks for and it also keeps a single owner
+ * for every rule: the sales know whether a sale can still be returned, the
+ * catalogue owns the stock of the products, and the accessory service owns the
+ * stock of the accessories.
  * <p>
  * File errors do not reach the caller as a checked exception. They become an
  * {@link IllegalStateException}, the same way the other services do it, because
@@ -46,6 +47,7 @@ public class ReturnService {
     private ReturnRepository repository;
     private SaleService saleService;
     private ProductService productService;
+    private AccessoryService accessoryService;
     private List<Return> returns;
 
     /**
@@ -56,14 +58,17 @@ public class ReturnService {
      * @param saleService    service of the sales, needed because a return always
      *                       comes from a sale
      * @param productService service of the catalogue, needed to restore the stock
-     *                       of the returned units
+     *                       of the returned video games and consoles
+     * @param accessoryService service of the accessories, needed to restore the
+     *                         stock of the returned accessories
      * @throws IllegalStateException if the returns file cannot be read
      */
     public ReturnService(ReturnRepository repository, SaleService saleService,
-                         ProductService productService) {
+                         ProductService productService, AccessoryService accessoryService) {
         this.repository = repository;
         this.saleService = saleService;
         this.productService = productService;
+        this.accessoryService = accessoryService;
         try {
             this.returns = new ArrayList<>(repository.loadAll(saleService.listAllSales()));
         } catch (IOException e) {
@@ -81,9 +86,9 @@ public class ReturnService {
  * Only when all of that passes, the return is created, the stock is restored and
  * the file is written, so a rejected return never leaves the inventory modified.
  * <p>
- * The stock is restored for video games and consoles. The stock of the returned
- * accessories is not restored here, because that adjustment belongs to
- * Requirement 5.
+ * The stock is restored for every kind of product: video games and consoles
+ * through {@code ProductService} and accessories through
+ * {@code AccessoryService}.
  *
  * @param saleId    identifier of the sale the products are returned from
  * @param productIds identifiers of the units returned, one entry per unit, so
@@ -255,25 +260,34 @@ public class ReturnService {
     }
 
     /**
-     * Restores the stock of the returned units through {@code ProductService},
-     * which is the only class that owns the inventory of the store.
+     * Restores the stock of the returned units, delegating each unit to the
+     * service that owns it.
      * <p>
-     * Each identifier is restored in a single call with the number of units
-     * returned, instead of one call per unit. Accessories are left out, because
-     * restoring their stock belongs to Requirement 5.
+     * An accessory is restored through {@code AccessoryService} and everything
+     * else, video games and consoles, through {@code ProductService}. Each
+     * identifier is restored in a single call with the number of units returned,
+     * instead of one call per unit.
+     * <p>
+     * Before the A4 adjustment the accessories were simply skipped, so the stock
+     * of a returned accessory was never given back. Delegating by type is what
+     * fixes it, and it keeps a single owner for each inventory: the catalogue
+     * owns the products and the accessory service owns the accessories.
      *
      * @param returnedProducts units returned
      */
     private void restoreStock(List<Product> returnedProducts) {
-        Map<String, Integer> unitsToRestore = new LinkedHashMap<>();
+        Map<String, Integer> productUnits = new LinkedHashMap<>();
+        Map<String, Integer> accessoryUnits = new LinkedHashMap<>();
         for (Product product : returnedProducts) {
-            if (product instanceof Accessory) {
-                continue;
-            }
-            unitsToRestore.merge(product.getId(), 1, Integer::sum);
+            Map<String, Integer> target =
+                    product instanceof Accessory ? accessoryUnits : productUnits;
+            target.merge(product.getId(), 1, Integer::sum);
         }
-        for (Map.Entry<String, Integer> entry : unitsToRestore.entrySet()) {
+        for (Map.Entry<String, Integer> entry : productUnits.entrySet()) {
             productService.restoreStock(entry.getKey(), entry.getValue());
+        }
+        for (Map.Entry<String, Integer> entry : accessoryUnits.entrySet()) {
+            accessoryService.restoreStock(entry.getKey(), entry.getValue());
         }
     }
 

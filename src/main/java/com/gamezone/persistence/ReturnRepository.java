@@ -33,12 +33,17 @@ import java.util.List;
  * comma where the customer had written a semicolon.
  * <p>
  * This repository stores **only identifiers** and never rebuilds a sale, the
- * same way the repositories of sales and warranties do. {@link #loadAll(List)}
- * receives the sales that were already loaded and links each return to its sale
- * by id, and each returned unit to the product of that sale with the same id.
+ * same way {@code SaleRepository} does. {@link #loadAll(List)} receives the
+ * sales that were already loaded and links each return to its sale by id, and
+ * each returned unit to the product of that sale with the same id.
  * The sale alone is enough to find the product, because a product can only be
  * returned when it belongs to the sale, and that also works for video games,
  * consoles and accessories.
+ * <p>
+ * Accessories need no special treatment here. A returned accessory is found
+ * through {@code sale.getProducts()}, exactly like any other product, and giving
+ * its stock back is not the job of this layer: that is decided by
+ * {@code ReturnService} and applied by {@code AccessoryService}.
  * <p>
  * A line is skipped, and no return is created, when it is the header, when it
  * does not have the expected number of columns, when its date does not follow
