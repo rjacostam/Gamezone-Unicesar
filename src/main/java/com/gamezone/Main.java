@@ -43,7 +43,7 @@ public class Main {
             SaleService saleService = new SaleService(saleRepository, productService, personService,
                     accessoryService);
 
-            ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService);
+            ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService, accessoryService);
             menu.start();
         } catch (IOException | IllegalStateException e) {
             System.out.println("No fue posible cargar los datos del sistema: " + e.getMessage());
