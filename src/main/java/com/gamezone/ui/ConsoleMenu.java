@@ -445,10 +445,11 @@ public class ConsoleMenu {
         LocalDate start = readDate("Fecha de inicio (AAAA-MM-DD): ");
         LocalDate end = readDate("Fecha de fin (AAAA-MM-DD): ");
         double percentage = readDouble("Porcentaje de descuento: ");
-        System.out.println("1. Videojuegos  2. Consolas");
+        System.out.println("1. Videojuegos  2. Consolas  3. Accesorios");
         String category = switch (readInt("Categoría: ")) {
             case 1 -> "VIDEOGAME";
             case 2 -> "CONSOLE";
+            case 3 -> "ACCESSORY";
             default -> "";
         };
         Promotion promotion = promotionService.registerCategoryDiscount(id, name, start, end, percentage, category);

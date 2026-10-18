@@ -34,6 +34,9 @@ public class PromotionService {
     /** Category accepted by a category discount for consoles. */
     private static final String CATEGORY_CONSOLE = "CONSOLE";
 
+    /** Category accepted by a category discount for accessories. */
+    private static final String CATEGORY_ACCESSORY = "ACCESSORY";
+
     /** Highest percentage accepted by any promotion. */
     private static final double MAX_PERCENTAGE = 100;
 
@@ -88,8 +91,8 @@ public class PromotionService {
      * @param startDate      first day the promotion is valid
      * @param endDate        last day the promotion is valid
      * @param percentage     discount percentage, greater than zero and at most 100
-     * @param targetCategory category the discount applies to, {@code VIDEOGAME}
-     *                       or {@code CONSOLE}
+     * @param targetCategory category the discount applies to, {@code VIDEOGAME},
+     *                       {@code CONSOLE} or {@code ACCESSORY}
      * @return the registered promotion
      * @throws IllegalArgumentException if the data is invalid, if the category
      *                                  is not accepted, or if the identifier is
@@ -272,21 +275,23 @@ public class PromotionService {
 
     /**
      * Checks that a category discount points to a category that exists in the
-     * catalogue. Accessories cannot be the target of a category discount in this
-     * requirement, only video games and consoles.
+     * catalogue. Video games, consoles and accessories are accepted, since
+     * adjustment A1 added accessories as a target category.
      *
      * @param targetCategory category to check
      * @throws IllegalArgumentException if the category is empty or is not
-     *                                  {@code VIDEOGAME} nor {@code CONSOLE}
+     *                                  {@code VIDEOGAME}, {@code CONSOLE} nor
+     *                                  {@code ACCESSORY}
      */
     private void validateTargetCategory(String targetCategory) {
         if (targetCategory == null || targetCategory.isBlank()) {
             throw new IllegalArgumentException("La categoría de la promoción es obligatoria");
         }
         if (!CATEGORY_VIDEOGAME.equalsIgnoreCase(targetCategory.trim())
-                && !CATEGORY_CONSOLE.equalsIgnoreCase(targetCategory.trim())) {
+                && !CATEGORY_CONSOLE.equalsIgnoreCase(targetCategory.trim())
+                && !CATEGORY_ACCESSORY.equalsIgnoreCase(targetCategory.trim())) {
             throw new IllegalArgumentException(
-                    "La categoría debe ser VIDEOGAME o CONSOLE");
+                    "La categoría debe ser VIDEOGAME, CONSOLE o ACCESSORY");
         }
     }
 

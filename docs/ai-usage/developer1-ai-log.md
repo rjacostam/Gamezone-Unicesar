@@ -320,3 +320,45 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | Yes. Returning a video game of 250000 and a controller of 350000 refunded 600000, and returning only the video game refunded 250000, so partial returns work. The receipt showed the return id, its date, the sale, the date of the sale, the customer, each returned unit with its price, the reason and the amount. canBeReturned returned true on the same day, 10 days later and exactly 30 days later, and false 31 days later or with a future date. |
 | Decision | Accepted. Prices use Locale.US with two decimals so the receipt prints the same as the warranty certificate and the accessory description. |
 | Related commit | fix: reject return without identifier sale or products |
+---
+
+## Requirement 5 - Integration adjustment A1
+
+### Entry 23
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 5, phase 2 - `feature/accessory-category-discount` (adjustment A1) |
+| Goal | Find out what was really blocking a promotion over accessories |
+| Query | Requirement 2 limited the target category to VIDEOGAME and CONSOLE. Which parts of the system still refuse accessories? |
+| Answer | Three parts. PromotionService validates the category and rejected anything else, ConsoleMenu only offered two options, and promotions.csv had no accessory promotion. The model needed no change at all: CategoryDiscount already compares the target category with product.getCategory(), and every accessory answers ACCESSORY through that method. |
+| Decision | Accepted changing only the service, the menu and the data file, and leaving the model untouched because it already worked. Changing CategoryDiscount would have been dead code. |
+| Related commit | docs: document ACCESSORY as a category discount target |
+
+### Entry 24
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 5, phase 2 - `feature/accessory-category-discount` (adjustment A1) |
+| Goal | Allow the three categories in the place that validates them |
+| Query | How should PromotionService accept ACCESSORY without changing how the other two categories are checked? |
+| Answer | The class already keeps one private constant per accepted category, so a third constant CATEGORY_ACCESSORY and a third condition in validateTargetCategory follow the same pattern. |
+| Decision | Accepted adding the constant, the condition, the third value in the error message and the JavaDoc. Rejected duplicating the validation, because the service is the only place that checks the category and the model stays independent. |
+| Related commit | feat: accept ACCESSORY as target category for promotions |
+
+### Entry 25
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 5, phase 2 - `feature/accessory-category-discount` (adjustment A1) |
+| Goal | Verify the whole adjustment end to end |
+| Query | Does a category promotion over accessories work from the data file to the discount amount? |
+| Answer | Yes. The file loaded four promotions, including P-04 Accesorios al 15%. Registering a category promotion with ACCESSORY was accepted, an invalid category was still rejected with "La categoría debe ser VIDEOGAME, CONSOLE o ACCESSORY", and on a sale with one video game, one controller and one cable the discount was 64500, which is exactly fifteen percent of the two accessories and leaves the video game out of the base. |
+| Decision | Accepted. The new preloaded promotion follows the same format and the same validity period as the other three. |
+| Related commit | feat: add preloaded accessory category promotion |
