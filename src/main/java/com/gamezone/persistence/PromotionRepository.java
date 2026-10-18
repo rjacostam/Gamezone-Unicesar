@@ -192,7 +192,7 @@ public class PromotionRepository {
                 return new BulkPurchaseDiscount(columns[1], columns[2], startDate, endDate,
                         Integer.parseInt(columns[6]), percentage);
             }
-        } catch (NumberFormatException | java.time.DateTimeParseException e) {
+        } catch (NumberFormatException | java.time.format.DateTimeParseException e) {
             return null;
         }
         return null;
