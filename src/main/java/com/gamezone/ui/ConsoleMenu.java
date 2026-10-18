@@ -2,12 +2,14 @@ package com.gamezone.ui;
 
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
+import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.SaleService;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -49,11 +51,13 @@ public class ConsoleMenu {
             System.out.println("===== GAMEZONE UNICESAR =====");
             System.out.println("1. Gestión de productos");
             System.out.println("2. Gestión de personas");
+            System.out.println("3. Gestión de ventas");
             System.out.println("0. Salir");
             option = readInt("Seleccione una opción: ");
             switch (option) {
                 case 1 -> productMenu();
                 case 2 -> personMenu();
+                case 3 -> saleMenu();
                 case 0 -> System.out.println("Hasta pronto.");
                 default -> System.out.println("Opción no válida.");
             }
@@ -171,6 +175,63 @@ public class ConsoleMenu {
         }
         for (Seller seller : sellers) {
             System.out.println(seller.getSummary());
+        }
+    }
+
+    // ---------------------------------------------------------------- sales
+
+    private void saleMenu() {
+        System.out.println();
+        System.out.println("--- Gestión de ventas ---");
+        System.out.println("1. Registrar venta");
+        System.out.println("2. Historial de ventas");
+        System.out.println("3. Historial de compras de un cliente");
+        System.out.println("4. Ventas atendidas por un vendedor");
+        System.out.println("0. Volver");
+        int option = readInt("Seleccione una opción: ");
+        try {
+            switch (option) {
+                case 1 -> registerSale();
+                case 2 -> printSales(saleService.listAllSales());
+                case 3 -> printSales(saleService.findSalesByCustomer(readText("Identificación del cliente: ")));
+                case 4 -> printSales(saleService.findSalesBySeller(readText("Identificación o código del vendedor: ")));
+                case 0 -> { }
+                default -> System.out.println("Opción no válida.");
+            }
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void registerSale() {
+        String customerId = readText("Identificación del cliente: ");
+        listSellers();
+        String sellerId = readText("Identificación o código del vendedor: ");
+        listProducts();
+        List<String> productIds = new ArrayList<>();
+        while (true) {
+            String productId = readOptionalText("Identificador del producto (Enter para terminar): ");
+            if (productId.isEmpty()) {
+                break;
+            }
+            int quantity = readInt("Cantidad: ");
+            for (int i = 0; i < quantity; i++) {
+                productIds.add(productId);
+            }
+        }
+        Sale sale = saleService.registerSale(customerId, sellerId, productIds);
+        System.out.println("Venta registrada con éxito.");
+        System.out.println(sale.generateReceipt());
+    }
+
+    private void printSales(List<Sale> sales) {
+        if (sales.isEmpty()) {
+            System.out.println("No hay ventas para mostrar.");
+            return;
+        }
+        for (Sale sale : sales) {
+            System.out.println(sale.generateReceipt());
+            System.out.println();
         }
     }
 
