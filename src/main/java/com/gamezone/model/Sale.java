@@ -9,8 +9,9 @@ import java.util.List;
  * Sale registered in the store.
  * <p>
  * Each entry in the product list is one unit sold, so a product that appears twice was
- * sold twice. The sale owns the product list and the discount applied to it, which makes
- * it the right place to compute its own subtotal and total.
+ * sold twice. The sale owns the product list, the discount applied to it and the cost of
+ * its extended warranties, which makes it the right place to compute its own subtotal and
+ * total.
  */
 public class Sale {
 
@@ -22,6 +23,7 @@ public class Sale {
     private double subtotal;
     private String appliedPromotionName;
     private double discountAmount;
+    private double extendedWarrantyCost;
     private double total;
 
     /**
@@ -41,6 +43,7 @@ public class Sale {
         this.products = new ArrayList<>(products);
         this.appliedPromotionName = null;
         this.discountAmount = 0;
+        this.extendedWarrantyCost = 0;
         calculateSubtotal();
         calculateTotal();
     }
@@ -60,13 +63,24 @@ public class Sale {
     }
 
     /**
-     * Computes the final total: the subtotal minus the applied discount.
+     * Computes the final total: the subtotal minus the applied discount plus the cost of
+     * the extended warranties.
      *
      * @return final total
      */
     public double calculateTotal() {
-        total = subtotal - discountAmount;
+        total = subtotal - discountAmount + extendedWarrantyCost;
         return total;
+    }
+
+    /**
+     * Adds the cost of an extended warranty to the sale and updates the total.
+     *
+     * @param cost cost of the extended warranty
+     */
+    public void addExtendedWarrantyCost(double cost) {
+        this.extendedWarrantyCost += cost;
+        calculateTotal();
     }
 
     /**
@@ -158,6 +172,15 @@ public class Sale {
      */
     public double getTotal() {
         return total;
+    }
+
+    /**
+     * Returns the total cost of the extended warranties of the sale.
+     *
+     * @return extended warranty cost, {@code 0} if there are none
+     */
+    public double getExtendedWarrantyCost() {
+        return extendedWarrantyCost;
     }
 
     /**
