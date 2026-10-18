@@ -50,15 +50,16 @@ public class Seller extends Person {
     }
 
     /**
-     * Returns the description line of the seller, adding the employee code and
-     * the shift to the information shared by every person.
+     * Returns the description line of the seller, prefixed with its role and
+     * adding the employee code and the shift to the information shared by every
+     * person.
      *
      * @return the description line of the seller
      */
     @Override
     public String getSummary() {
-        return getId() + " | " + getName() + " | " + getPhone()
-                + " | " + employeeCode + " | " + shift;
+        return "[" + getRole() + "] " + getId() + " | " + getName()
+                + " | " + getPhone() + " | " + employeeCode + " | " + shift;
     }
 
     /**
