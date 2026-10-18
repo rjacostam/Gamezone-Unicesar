@@ -3,6 +3,7 @@ package com.gamezone.model;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Return of one or more products of a sale already registered in the store. The
@@ -51,6 +52,37 @@ public class Return {
         }
         this.refundAmount = total;
         return total;
+    }
+
+    /**
+     * Builds the receipt the customer receives, in Spanish. It shows the return
+     * identifier and its date, the original sale with its date and the customer,
+     * each returned unit with its price, the reason and the amount refunded.
+     * @return receipt ready to be shown to the user
+     */
+    public String generateReturnReceipt() {
+        StringBuilder receipt = new StringBuilder();
+        receipt.append("=== GameZone Unicesar - Comprobante de devolucion ===\n");
+        receipt.append("Devolucion: ").append(id).append("\n");
+        receipt.append("Fecha: ").append(date).append("\n");
+        if (sale != null) {
+            receipt.append("Venta original: ").append(sale.getId()).append("\n");
+            receipt.append("Fecha de la venta: ").append(sale.getDate()).append("\n");
+            if (sale.getCustomer() != null) {
+                receipt.append("Cliente: ").append(sale.getCustomer().getName()).append("\n");
+            }
+        }
+        receipt.append("Productos devueltos:\n");
+        for (Product product : returnedProducts) {
+            receipt.append("- ").append(product.getId()).append(" ")
+                    .append(product.getTitle())
+                    .append(" | Precio: ").append(String.format(Locale.US, "$%,.2f", product.getPrice()))
+                    .append("\n");
+        }
+        receipt.append("Motivo: ").append(reason).append("\n");
+        receipt.append("Monto reembolsado: ")
+                .append(String.format(Locale.US, "$%,.2f", refundAmount)).append("\n");
+        return receipt.toString();
     }
 
     /**
