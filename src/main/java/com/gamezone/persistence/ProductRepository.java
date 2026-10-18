@@ -90,8 +90,14 @@ public class ProductRepository {
             }
             String id = fields[1];
             String title = fields[2];
-            double price = Double.parseDouble(fields[3]);
-            int stock = Integer.parseInt(fields[4]);
+            double price;
+            int stock;
+            try {
+                price = Double.parseDouble(fields[3].trim());
+                stock = Integer.parseInt(fields[4].trim());
+            } catch (NumberFormatException e) {
+                continue;
+            }
             if ("VIDEOGAME".equalsIgnoreCase(fields[0].trim())) {
                 products.add(new VideoGame(id, title, price, stock,
                         fields[5], fields[6], fields[7]));
