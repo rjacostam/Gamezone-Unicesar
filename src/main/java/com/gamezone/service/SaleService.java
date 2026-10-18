@@ -3,6 +3,7 @@ package com.gamezone.service;
 import com.gamezone.model.Accessory;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
+import com.gamezone.model.Promotion;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.persistence.SaleRepository;
@@ -18,8 +19,8 @@ import java.util.Map;
  * Business rules for sales.
  * <p>
  * It checks the sale rules, creates the sale with items from the product and accessory
- * catalogs, and asks the service that owns each item to update the inventory. It never
- * touches another module's repository. A rejected
+ * catalogs, applies the best active promotion, and asks the service that owns each item
+ * to update the inventory. It never touches another module's repository. A rejected
  * operation throws an {@link IllegalArgumentException} with a message in Spanish that the
  * menu can show to the user.
  */
@@ -29,6 +30,7 @@ public class SaleService {
     private final ProductService productService;
     private final PersonService personService;
     private final AccessoryService accessoryService;
+    private final PromotionService promotionService;
     private final List<Sale> sales;
 
     /**
@@ -39,14 +41,16 @@ public class SaleService {
      * @param productService   service that manages video games and consoles
      * @param personService    service that manages customers and sellers
      * @param accessoryService service that manages accessories
+     * @param promotionService service that chooses the promotion of each sale
      * @throws IllegalStateException if the sales file cannot be read
      */
     public SaleService(SaleRepository repository, ProductService productService, PersonService personService,
-                       AccessoryService accessoryService) {
+                       AccessoryService accessoryService, PromotionService promotionService) {
         this.repository = repository;
         this.productService = productService;
         this.personService = personService;
         this.accessoryService = accessoryService;
+        this.promotionService = promotionService;
         try {
             this.sales = repository.loadAll(getCatalog(),
                     personService.listCustomers(), personService.listSellers());
@@ -56,9 +60,10 @@ public class SaleService {
     }
 
     /**
-     * Registers a sale, discounts the sold units from the inventory and saves it. The
-     * items can be video games, consoles or accessories. Every rule is checked before
-     * changing anything, so a rejected sale leaves the inventory untouched.
+     * Registers a sale, applies the best active promotion, discounts the sold units from
+     * the inventory and saves it. The items can be video games, consoles or accessories.
+     * Every rule is checked before changing anything, so a rejected sale leaves the
+     * inventory untouched.
      *
      * @param customerId customer identification
      * @param sellerId   seller identification or employee code
@@ -101,6 +106,10 @@ public class SaleService {
         }
 
         Sale sale = new Sale(nextSaleId(), LocalDate.now(), customer, seller, soldProducts);
+        Promotion promotion = promotionService.findBestPromotionFor(sale);
+        if (promotion != null) {
+            sale.applyDiscount(promotion.getName(), promotion.calculateDiscount(sale));
+        }
         for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
             if (entry.getKey() instanceof Accessory) {
                 accessoryService.updateStock(entry.getKey().getId(), entry.getValue());
