@@ -67,11 +67,19 @@ public class SaleService {
     }
 
     /**
-     * Registers a sale, applies the best active promotion, assigns a basic warranty to
-     * every console and the requested extended warranties, discounts the sold units from
-     * the inventory and saves it. The items can be video games, consoles or accessories.
-     * Every rule is checked before changing anything, so a rejected sale leaves the
-     * inventory untouched.
+     * Registers a sale following the integrated flow, always in this order:
+     * <ol>
+     *   <li>check that the sale has at least one item, a customer and a seller;</li>
+     *   <li>resolve every item as a product or an accessory and check its stock;</li>
+     *   <li>create the sale, which computes its subtotal;</li>
+     *   <li>apply the best active promotion, computed only on the subtotal;</li>
+     *   <li>assign the basic warranty of every console and the requested extended ones;</li>
+     *   <li>leave the total as subtotal - discount + extended warranty cost;</li>
+     *   <li>update the inventory through the service that owns each item;</li>
+     *   <li>save the sale (each warranty is saved when it is assigned).</li>
+     * </ol>
+     * Every rule is checked in steps 1 and 2, before changing anything, so a rejected sale
+     * leaves the inventory and the warranties untouched.
      *
      * @param customerId customer identification
      * @param sellerId   seller identification or employee code
@@ -87,21 +95,33 @@ public class SaleService {
      */
     public Sale registerSale(String customerId, String sellerId, List<String> productIds,
                              List<String> productIdsWithExtendedWarranty) {
+        // 1. The sale needs at least one item, an existing customer and an existing seller.
         if (productIds == null || productIds.isEmpty()) {
             throw new IllegalArgumentException("La venta debe contener al menos un producto.");
         }
         Customer customer = requireCustomer(customerId);
         Seller seller = requireSeller(sellerId);
 
+        // 2. Resolve every item as a product or an accessory and check its stock.
         List<Product> soldProducts = resolveItems(productIds);
         Map<Product, Integer> unitsByProduct = countUnits(soldProducts);
         checkStock(unitsByProduct);
         List<String> extendedRequests = validateExtendedRequests(soldProducts, productIdsWithExtendedWarranty);
 
+        // 3. Create the sale, which computes its subtotal.
         Sale sale = new Sale(nextSaleId(), LocalDate.now(), customer, seller, soldProducts);
+
+        // 4. Apply the best active promotion; its discount is computed only on the subtotal.
         applyBestPromotion(sale);
+
+        // 5. Assign the basic warranty of every console and the requested extended warranties.
+        // 6. The sale adds each extended warranty cost: total = subtotal - discount + warranties.
         assignWarranties(sale, extendedRequests);
+
+        // 7. Update the inventory through the service that owns each item.
         updateInventory(unitsByProduct);
+
+        // 8. Save the sale (WarrantyService already saved each warranty when it was assigned).
         sales.add(sale);
         saveSales();
         return sale;
