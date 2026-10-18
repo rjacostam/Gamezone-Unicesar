@@ -4,6 +4,7 @@ import com.gamezone.model.BulkPurchaseDiscount;
 import com.gamezone.model.CategoryDiscount;
 import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Promotion;
+import com.gamezone.model.Sale;
 import com.gamezone.persistence.PromotionRepository;
 
 import java.io.IOException;
@@ -192,6 +193,34 @@ public class PromotionService {
             }
         }
         return active;
+    }
+
+    /**
+     * Returns the promotion that gives the greatest discount to a sale.
+ * <p>
+ * Only the promotions that are valid on the date of the sale are considered,
+ * because a promotion that was not valid on that day cannot be applied to it.
+ * Promotions are not accumulative, so only one is returned. The method does not
+ * change the sale: it only answers which promotion should be applied.
+ *
+ * @param sale sale the promotion is calculated for
+ * @return the promotion with the greatest discount, or null when no active
+ *         promotion gives a discount greater than zero
+ */
+    public Promotion findBestPromotionFor(Sale sale) {
+        if (sale == null || sale.getDate() == null) {
+            return null;
+        }
+        Promotion best = null;
+        double bestDiscount = 0;
+        for (Promotion promotion : listActiveOn(sale.getDate())) {
+            double discount = promotion.calculateDiscount(sale);
+            if (discount > bestDiscount) {
+                bestDiscount = discount;
+                best = promotion;
+            }
+        }
+        return best;
     }
 
     /**
