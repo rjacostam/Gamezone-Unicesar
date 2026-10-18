@@ -11,6 +11,12 @@ import java.util.Locale;
  * back, the reason and the amount that was refunded. The refunded amount is
  * computed when the object is created, so it is always available. There are only
  * getters, because a registered return is never modified afterwards.
+ * <p>
+ * The refunded amount has two parts: what is owed for the returned units, and
+ * what is owed for the warranties that were cancelled because of this return. A
+ * console that comes back can no longer be covered, so the cost of its extended
+ * warranty is given back to the customer. The basic warranty has no cost, so it
+ * adds nothing.
  */
 public class Return {
     private String id;
@@ -18,6 +24,7 @@ public class Return {
     private Sale sale;
     private List<Product> returnedProducts;
     private String reason;
+    private double warrantyRefund;
     private double refundAmount;
 
     /**
@@ -28,9 +35,11 @@ public class Return {
      * @param sale original sale the return comes from
      * @param returnedProducts units returned, one entry per unit
      * @param reason reason of the return
+     * @param warrantyRefund amount to give back for the cancelled warranties,
+     *                       zero when the return cancels none
      */
     public Return(String id, LocalDate date, Sale sale,
-                  List<Product> returnedProducts, String reason) {
+                  List<Product> returnedProducts, String reason, double warrantyRefund) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("El identificador de la devolucion es obligatorio");
         }
@@ -45,21 +54,22 @@ public class Return {
         this.sale = sale;
         this.returnedProducts = new ArrayList<>(returnedProducts);
         this.reason = reason;
+        this.warrantyRefund = warrantyRefund;
         calculateRefundAmount();
     }
 
     /**
-     * Adds up what is really owed to the customer for the returned units, stores
-     * the result in the refunded amount and returns it. Each unit is refunded at
-     * its list price minus the same proportion of the discount the customer got
-     * in the original sale, because the store never charged the full price for
-     * it. When the original sale has no subtotal, or no discount, nothing is
-     * discounted. It is called by the constructor, so a return always knows how
-     * much was refunded.
+     * Adds up what is really owed to the customer for the returned units and adds
+     * what is owed for the cancelled warranties, stores the result in the
+     * refunded amount and returns it. Each unit is refunded at its list price
+     * minus the same proportion of the discount the customer got in the original
+     * sale, because the store never charged the full price for it. When the
+     * original sale has no subtotal, or no discount, nothing is discounted. It is
+     * called by the constructor, so a return always knows how much was refunded.
      * @return refunded amount in pesos
      */
     public double calculateRefundAmount() {
-        double total = 0;
+        double total = warrantyRefund;
         for (Product product : returnedProducts) {
             total += refundableAmount(product);
         }
@@ -131,6 +141,8 @@ public class Return {
                     .append("\n");
         }
         receipt.append("Motivo: ").append(reason).append("\n");
+        receipt.append("Reembolso por garantías anuladas: ")
+                .append(String.format(Locale.US, "$%,.2f", warrantyRefund)).append("\n");
         receipt.append("Monto reembolsado: ")
                 .append(String.format(Locale.US, "$%,.2f", refundAmount)).append("\n");
         return receipt.toString();
@@ -178,7 +190,17 @@ public class Return {
     }
 
     /**
-     * Returns the amount refunded to the customer.
+     * Returns the amount refunded for the warranties that were cancelled by this
+     * return. It is zero when the return cancels none.
+     * @return warranty amount refunded in pesos
+     */
+    public double getWarrantyRefund() {
+        return warrantyRefund;
+    }
+
+    /**
+     * Returns the amount refunded to the customer, which includes both the
+     * returned units and the cancelled warranties.
      * @return refunded amount in pesos
      */
     public double getRefundAmount() {
