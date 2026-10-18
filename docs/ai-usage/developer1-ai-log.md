@@ -265,3 +265,58 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | Yes. On a console of 2500000 sold on 2026-10-18, BasicWarranty reported 6 months, "Garantía Básica", cost 0 and ends on 2027-04-18; ExtendedWarranty reported 12 months, "Garantía Extendida", cost 250000 and ends on 2027-10-18. isActive returned true on the start date and on the end date, and false one day later or before the start. The certificate showed the id, the type, the product, the sale, the customer, both dates, the coverage, the cost and whether it is active today. |
 | Decision | Accepted. The cost uses Locale.US with two decimals so the certificate looks the same on any machine, the same way as the accessory price and the promotion percentages. |
 | Related commit | fix: read product through its getter in extended warranty cost |
+---
+
+## Requirement 3 - Returns
+
+### Entry 19
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 3 - `feature/return-module` |
+| Goal | Decide how Return keeps its link with the original sale |
+| Query | Should Return store the Sale object or only its identifier? |
+| Answer | The diagram asks for a direct reference to Sale, and the receipt needs the date of the sale and the name of the customer, both reached through that object. |
+| Decision | Accepted storing the Sale object. The returned units are kept in a copy of the list, both in the constructor and in the getter, so the return can never be changed from outside. There are only getters because a registered return never changes. |
+| Related commit | feat: add Return class linked to the original sale |
+
+### Entry 20
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 3 - `feature/return-module` |
+| Goal | Decide where the refunded amount is computed |
+| Query | Should the refund be calculated in the constructor, in the service or in the file? |
+| Answer | The diagram says the constructor calls calculateRefundAmount(), and that method sums the prices of the returned units, stores the result and returns it. |
+| Decision | Accepted computing it in the constructor, so a Return always knows its amount. This makes the compiler warn about a possible this escape, because a public method is called before the object is fully initialized. I kept it because the diagram asks for it, and the same warning already exists in the Sale class written by the leader for the same reason. |
+| Related commit | feat: add refund amount calculation for the returned units |
+
+### Entry 21
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 3 - `feature/return-module` |
+| Goal | Place canBeReturned in the right class |
+| Query | Should the 30 day rule be checked in Sale or in the return service? |
+| Answer | The diagram adds canBeReturned() to Sale, counting calendar days with ChronoUnit.DAYS.between(date, LocalDate.now()) and accepting values from 0 to 30. |
+| Decision | Accepted putting it in Sale, next to its own date, and changed nothing else in that class: only the new method and the ChronoUnit import were added. A sale dated in the future returns false, because the number of days would be negative. |
+| Related commit | feat: add Sale canBeReturned check for the 30 day window |
+
+### Entry 22
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 3 - `feature/return-module` |
+| Goal | Verify the refund, the receipt and the 30 day window on a real sale |
+| Query | Do the three behaviours of the module work as the diagram describes? |
+| Answer | Yes. Returning a video game of 250000 and a controller of 350000 refunded 600000, and returning only the video game refunded 250000, so partial returns work. The receipt showed the return id, its date, the sale, the date of the sale, the customer, each returned unit with its price, the reason and the amount. canBeReturned returned true on the same day, 10 days later and exactly 30 days later, and false 31 days later or with a future date. |
+| Decision | Accepted. Prices use Locale.US with two decimals so the receipt prints the same as the warranty certificate and the accessory description. |
+| Related commit | fix: reject return without identifier sale or products |
