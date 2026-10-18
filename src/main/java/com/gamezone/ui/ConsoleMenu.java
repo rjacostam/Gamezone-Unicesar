@@ -1,5 +1,9 @@
 package com.gamezone.ui;
 
+import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.InvalidDataException;
+import com.gamezone.exceptions.PersistenceException;
+import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Accessory;
 import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
@@ -29,8 +33,9 @@ import java.util.Scanner;
  * Console menu of the application.
  * <p>
  * It only reads the user input, calls the services and prints the results. It never uses
- * a repository. Every message shown to the user is in Spanish, and an error in one
- * operation is shown to the user without closing the application.
+ * a repository. Every message shown to the user is in Spanish. Each kind of error gets its
+ * own message, and an error in one operation never closes the application or shows a
+ * stack trace.
  */
 public class ConsoleMenu {
 
@@ -96,6 +101,29 @@ public class ConsoleMenu {
                 default -> System.out.println("Opción no válida.");
             }
         } while (option != 0);
+    }
+
+    /**
+     * Runs one menu operation and turns any error of the system into a clear message for the
+     * user, with a different text for each kind of error.
+     *
+     * @param action operation chosen by the user
+     */
+    private void runSafely(Runnable action) {
+        try {
+            action.run();
+        } catch (ResourceNotFoundException e) {
+            System.out.println("No se encontró el recurso solicitado: " + e.getMessage());
+        } catch (BusinessRuleException e) {
+            System.out.println("No se puede completar la operación: " + e.getMessage());
+        } catch (InvalidDataException e) {
+            System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
+        } catch (PersistenceException e) {
+            System.out.println("Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            // Temporary: services not yet migrated to the validators still throw these.
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 
     // ---------------------------------------------------------------- products
