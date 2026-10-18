@@ -99,19 +99,8 @@ public class SaleService {
         List<String> extendedRequests = validateExtendedRequests(soldProducts, productIdsWithExtendedWarranty);
 
         Sale sale = new Sale(nextSaleId(), LocalDate.now(), customer, seller, soldProducts);
-        Promotion promotion = promotionService.findBestPromotionFor(sale);
-        if (promotion != null) {
-            sale.applyDiscount(promotion.getName(), promotion.calculateDiscount(sale));
-        }
-        for (Product product : soldProducts) {
-            if (product instanceof Console) {
-                warrantyService.assignBasicWarranty(product, sale, sale.getDate());
-                if (containsIgnoreCase(extendedRequests, product.getId())) {
-                    Warranty extended = warrantyService.assignExtendedWarranty(product, sale, sale.getDate());
-                    sale.addExtendedWarrantyCost(extended.getAdditionalCost());
-                }
-            }
-        }
+        applyBestPromotion(sale);
+        assignWarranties(sale, extendedRequests);
         for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
             if (entry.getKey() instanceof Accessory) {
                 accessoryService.updateStock(entry.getKey().getId(), entry.getValue());
@@ -251,6 +240,25 @@ public class SaleService {
             }
         }
         return extendedRequests;
+    }
+
+    private void applyBestPromotion(Sale sale) {
+        Promotion promotion = promotionService.findBestPromotionFor(sale);
+        if (promotion != null) {
+            sale.applyDiscount(promotion.getName(), promotion.calculateDiscount(sale));
+        }
+    }
+
+    private void assignWarranties(Sale sale, List<String> extendedRequests) {
+        for (Product product : sale.getProducts()) {
+            if (product instanceof Console) {
+                warrantyService.assignBasicWarranty(product, sale, sale.getDate());
+                if (containsIgnoreCase(extendedRequests, product.getId())) {
+                    Warranty extended = warrantyService.assignExtendedWarranty(product, sale, sale.getDate());
+                    sale.addExtendedWarrantyCost(extended.getAdditionalCost());
+                }
+            }
+        }
     }
 
     private boolean containsConsole(List<Product> products, String id) {
