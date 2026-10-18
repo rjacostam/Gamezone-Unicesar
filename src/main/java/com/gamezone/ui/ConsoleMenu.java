@@ -532,6 +532,7 @@ public class ConsoleMenu {
         System.out.println("2. Consultar todas las devoluciones");
         System.out.println("3. Consultar devoluciones por cliente");
         System.out.println("4. Consultar devoluciones por venta");
+        System.out.println("5. Consultar balance mensual");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
         try {
@@ -541,6 +542,7 @@ public class ConsoleMenu {
                 case 3 -> listReturns(returnService.viewReturnsByCustomer(readText("Identificación del cliente: ")));
                 case 4 -> listReturns(returnService.viewReturnsBySale(
                         readText("Identificador de la venta (por ejemplo S0001): ")));
+                case 5 -> showMonthlyBalance();
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
@@ -586,6 +588,17 @@ public class ConsoleMenu {
         for (Return productReturn : returns) {
             System.out.println(productReturn.generateReturnReceipt());
         }
+    }
+
+    private void showMonthlyBalance() {
+        int month = readInt("Mes (1-12): ");
+        int year = readInt("Año (por ejemplo 2026): ");
+        if (month < 1 || month > 12) {
+            System.out.println("El mes debe estar entre 1 y 12.");
+            return;
+        }
+        double balance = returnService.generateMonthlyBalance(month, year);
+        System.out.printf("Balance neto de %02d/%d (ventas menos devoluciones): $%,.2f%n", month, year, balance);
     }
 
     // ---------------------------------------------------------------- input helpers
