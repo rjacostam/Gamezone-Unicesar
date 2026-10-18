@@ -20,9 +20,10 @@ import java.util.List;
  * Saves and loads sales from a CSV file.
  * <p>
  * Each line stores the sale id, its date, the ids of its customer and seller, the ids of
- * the products sold separated by commas, and the applied promotion and discount:
- * {@code S0001;2026-10-18;123;1098765432;VG-01,VG-01,C-01;Lleva 3 o más;300000.0}.
- * Lines saved before promotions existed have no last two columns and load without discount.
+ * the products sold separated by commas, the applied promotion and discount, and the cost
+ * of the extended warranties:
+ * {@code S0001;2026-10-18;123;1098765432;VG-01,VG-01,C-01;Lleva 3 o más;300000.0;250000.0}.
+ * Older lines without the last columns load without discount or warranty cost.
  * When loading, those ids are matched against the objects already loaded by the other
  * modules, so this repository only depends on the model layer.
  */
@@ -97,7 +98,7 @@ public class SaleRepository {
         return String.join(SEPARATOR, sale.getId(), sale.getDate().toString(),
                 sale.getCustomer().getId(), sale.getSeller().getId(),
                 String.join(ID_SEPARATOR, productIds), promotionName,
-                String.valueOf(sale.getDiscountAmount()));
+                String.valueOf(sale.getDiscountAmount()), String.valueOf(sale.getExtendedWarrantyCost()));
     }
 
     private Sale fromLine(String line, List<Product> products, List<Customer> customers, List<Seller> sellers) {
@@ -111,6 +112,9 @@ public class SaleRepository {
         Sale sale = new Sale(parts[0], LocalDate.parse(parts[1]), customer, seller, soldProducts);
         if (parts.length > 6 && !parts[5].isBlank()) {
             sale.applyDiscount(parts[5], Double.parseDouble(parts[6]));
+        }
+        if (parts.length > 7 && !parts[7].isBlank()) {
+            sale.addExtendedWarrantyCost(Double.parseDouble(parts[7]));
         }
         return sale;
     }
