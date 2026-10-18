@@ -110,6 +110,42 @@ public class SaleService {
         return new ArrayList<>(sales);
     }
 
+    /**
+     * Returns the purchase history of a customer.
+     *
+     * @param customerId customer identification
+     * @return sales made to that customer, empty if there are none
+     */
+    public List<Sale> findSalesByCustomer(String customerId) {
+        List<Sale> result = new ArrayList<>();
+        for (Sale sale : sales) {
+            if (sale.getCustomer().getId().equals(customerId)) {
+                result.add(sale);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the sales served by a seller.
+     *
+     * @param sellerId seller identification or employee code
+     * @return sales registered by that seller, empty if the seller does not exist
+     */
+    public List<Sale> findSalesBySeller(String sellerId) {
+        Seller seller = personService.findSellerById(sellerId);
+        List<Sale> result = new ArrayList<>();
+        if (seller == null) {
+            return result;
+        }
+        for (Sale sale : sales) {
+            if (sale.getSeller().getId().equals(seller.getId())) {
+                result.add(sale);
+            }
+        }
+        return result;
+    }
+
     private void saveSales() {
         try {
             repository.saveAll(sales);
