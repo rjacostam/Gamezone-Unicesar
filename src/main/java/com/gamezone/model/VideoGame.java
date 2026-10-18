@@ -29,7 +29,8 @@ public class VideoGame extends Product {
 
     /**
      * Builds the description of this video game with its own attributes next to
-     * the common data.
+     * the common data. The price is shown formatted with thousands separators
+     * and two decimals so every product line looks the same in the menu.
      * @return description ready to be shown to the user
      */
     @Override
@@ -38,7 +39,7 @@ public class VideoGame extends Product {
                 + " | Plataforma: " + platform
                 + " | Genero: " + genre
                 + " | Edad: " + ageRating
-                + " | Precio: " + getPrice()
+                + " | Precio: " + String.format("$%,.2f", getPrice())
                 + " | Stock: " + getStock();
     }
 
