@@ -598,8 +598,13 @@ public class ConsoleMenu {
             System.out.println("El mes debe estar entre 1 y 12.");
             return;
         }
+        double sales = returnService.calculateMonthlySales(month, year);
+        double returns = returnService.calculateMonthlyReturns(month, year);
         double balance = returnService.generateMonthlyBalance(month, year);
-        System.out.printf("Balance neto de %02d/%d (ventas menos devoluciones): $%,.2f%n", month, year, balance);
+        System.out.printf("Balance de %02d/%d%n", month, year);
+        System.out.printf("  Total de ventas: $%,.2f%n", sales);
+        System.out.printf("  Total de devoluciones: $%,.2f%n", returns);
+        System.out.printf("  Balance neto: $%,.2f%n", balance);
     }
 
     // ---------------------------------------------------------------- input helpers
