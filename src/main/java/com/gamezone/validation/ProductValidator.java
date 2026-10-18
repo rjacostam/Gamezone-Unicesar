@@ -83,13 +83,14 @@ public final class ProductValidator {
     }
 
     /**
-     * Checks that a quantity is not negative.
+     * Checks that a quantity is greater than zero, because a movement of zero
+     * units makes no sense for the store.
      * @param quantity quantity to check
-     * @throws InvalidDataException if the quantity is negative
+     * @throws InvalidDataException if the quantity is zero or negative
      */
     public static void validateQuantity(int quantity) {
-        if (quantity < 0) {
-            throw new InvalidDataException("cantidad", "no puede ser negativa");
+        if (quantity <= 0) {
+            throw new InvalidDataException("cantidad", "debe ser mayor que cero");
         }
     }
 }
