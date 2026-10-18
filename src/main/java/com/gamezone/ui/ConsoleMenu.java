@@ -530,12 +530,17 @@ public class ConsoleMenu {
         System.out.println("--- Gestión de devoluciones ---");
         System.out.println("1. Registrar devolución");
         System.out.println("2. Consultar todas las devoluciones");
+        System.out.println("3. Consultar devoluciones por cliente");
+        System.out.println("4. Consultar devoluciones por venta");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
         try {
             switch (option) {
                 case 1 -> registerReturn();
                 case 2 -> listReturns(returnService.viewAllReturns());
+                case 3 -> listReturns(returnService.viewReturnsByCustomer(readText("Identificación del cliente: ")));
+                case 4 -> listReturns(returnService.viewReturnsBySale(
+                        readText("Identificador de la venta (por ejemplo S0001): ")));
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
