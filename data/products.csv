@@ -1,0 +1,5 @@
+type;id;title;price;stock;extra1;extra2;extra3
+VIDEOGAME;VG-01;The Legend of Zelda Breath of the Wild;250000;10;Switch;Aventura;E
+VIDEOGAME;VG-02;Elden Ring;320000;8;PC;Accion;M
+CONSOLE;C-01;PlayStation 5 Slim;2500000;5;Sony;PS5 Slim;9
+CONSOLE;C-02;Nintendo Switch OLED;1800000;7;Nintendo;Switch OLED;8
