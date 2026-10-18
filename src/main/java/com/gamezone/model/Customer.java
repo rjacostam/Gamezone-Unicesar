@@ -1,5 +1,7 @@
 package com.gamezone.model;
 
+import java.util.Locale;
+
 /**
  * Concrete class that represents a customer of the GameZone Unicesar store.
  * <p>
@@ -31,7 +33,7 @@ public class Customer extends Person {
      */
     public Customer(String id, String name, String phone, String email) {
         super(id, name, phone);
-        this.email = email;
+        setEmail(email);
     }
 
     /**
@@ -45,14 +47,15 @@ public class Customer extends Person {
     }
 
     /**
-     * Returns the description line of the customer, adding the e-mail address
-     * to the information shared by every person.
+     * Returns the description line of the customer, prefixed with its role and
+     * adding the e-mail address to the information shared by every person.
      *
      * @return the description line of the customer
      */
     @Override
     public String getSummary() {
-        return getId() + " | " + getName() + " | " + getPhone() + " | " + email;
+        return "[" + getRole() + "] " + getId() + " | " + getName()
+                + " | " + getPhone() + " | " + email;
     }
 
     /**
@@ -65,11 +68,17 @@ public class Customer extends Person {
     }
 
     /**
-     * Sets the e-mail address of the customer.
+     * Sets the e-mail address of the customer, normalising it.
+     * <p>
+     * The value is stored without surrounding spaces and in lower case, so that
+     * two customers who wrote the same address with a different capitalisation
+     * end up with the same stored value. {@link Locale#ROOT} is used on purpose,
+     * because the default locale of the machine would change the result for
+     * some letters.
      *
      * @param email e-mail address of the customer
      */
     public void setEmail(String email) {
-        this.email = email;
+        this.email = email == null ? null : email.trim().toLowerCase(Locale.ROOT);
     }
 }
