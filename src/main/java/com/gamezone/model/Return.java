@@ -39,6 +39,21 @@ public class Return {
     }
 
     /**
+     * Adds up the prices of the returned units, stores the result in the
+     * refunded amount and returns it. It is called by the constructor, so a
+     * return always knows how much was refunded.
+     * @return refunded amount in pesos
+     */
+    public double calculateRefundAmount() {
+        double total = 0;
+        for (Product product : returnedProducts) {
+            total += product.getPrice();
+        }
+        this.refundAmount = total;
+        return total;
+    }
+
+    /**
      * Returns the identifier of this return.
      * @return return identifier
      */
