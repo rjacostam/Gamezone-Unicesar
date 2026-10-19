@@ -109,13 +109,18 @@ public class SaleService {
      */
     public Sale registerSale(String customerId, String sellerId, List<String> productIds,
                              List<String> productIdsWithExtendedWarranty) {
-        // 1. The sale needs at least one item, an existing customer and an existing seller.
+        // 1. The sale needs an existing customer and an existing seller.
         Customer customer = requireCustomer(customerId);
         Seller seller = requireSeller(sellerId);
-        SaleValidator.validateSaleData(customer, seller, productIds);
 
-        // 2. Resolve every item as a product or an accessory and check its stock.
+        // 2. Resolve every item as a product or an accessory, so the validator
+        //    receives the objects and not only their identifiers.
         List<Product> soldProducts = resolveItems(productIds);
+
+        // 3. The sale needs at least one item.
+        SaleValidator.validateSaleData(customer, seller, soldProducts);
+
+        // 4. Check the stock of every item.
         Map<Product, Integer> unitsByProduct = countUnits(soldProducts);
         checkStock(unitsByProduct);
         List<String> extendedRequests = validateExtendedRequests(soldProducts, productIdsWithExtendedWarranty);
