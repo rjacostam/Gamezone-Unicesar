@@ -66,6 +66,10 @@ Correct applications:
 - `Return.calculateRefundAmount` (line 71) sums the refunds of the returned products and the
   proportional part of the warranty. What it needs is the list of returned products and the
   sale it belongs to, and it holds both.
+- `CategoryDiscount.calculateDiscount` (lines 54-59) sums only the products of its own
+  category, and each product answers with `getCategory()`. The knowledge it needs is its own
+  category plus what each product is, and it obtains both without asking `Sale` for a total
+  that does not exist.
 - `Warranty.isActive` (line 68) compares its own dates with the date given by the caller,
   and the private calculation of the end date (line 36) uses its own start date with the
   duration that its subclass answers.
@@ -79,11 +83,21 @@ Violation V-01:
 | ID | V-01 |
 | Pattern | Information Expert |
 | Module | Promotions (Requirement 2) |
-| Evidence | The same calculation of the base of a discount is written three times: `PercentageDiscount.calculateDiscount` (lines 40–42), `CategoryDiscount.calculateDiscount` (lines 55–58) and `BulkPurchaseDiscount.calculateDiscount` (lines 48–50) each walk `sale.getProducts()` and add `product.getPrice()`. The value they are trying to produce already exists in `Sale.calculateSubtotal` (line 57) and is published by `Sale.getSubtotal` (line 193). |
-| Explanation | The amount a discount is applied to is knowledge of the sale: how much it cost before any discount. `Sale` owns that number and already publishes it, but the three promotions ignore it and rebuild it from the list of products, so three classes carry a responsibility that one class already has. |
-| Consequence | There are two answers to the same question and they can drift apart. If the base of a sale ever stops being the plain sum of the unit prices, for example when shipping or a tax is added, the promotions keep summing prices and `Sale` keeps adding the extra, and the discount ends up calculated on a different base than the one printed in the receipt. The same loop is also copied into every new promotion. |
-| Proposed solution | Have the three promotions read `sale.getSubtotal()` instead of walking the products, so the base of a discount is computed once, in the class that owns it. The rule of Requirement 2 is preserved: `getSubtotal()` returns the sum before discounts, so a promotion still never sees a discount already applied. |
-| Other member's code | No. `Sale.calculateSubtotal` and `Sale.getSubtotal` belong to the Technical Leader, but the correction is entirely inside the three promotion classes and does not change them. |
+| Evidence | Two promotions rebuild the base of the discount with the same loop: `PercentageDiscount.calculateDiscount` (lines 39-42) and `BulkPurchaseDiscount.calculateDiscount` (lines 47-50) each walk `sale.getProducts()` and add `product.getPrice()` of every unit. The value they are trying to produce already exists in `Sale.calculateSubtotal` (line 57) and is published by `Sale.getSubtotal` (line 193). |
+| Explanation | The amount a discount is applied to is knowledge of the sale: how much it cost before any discount. `Sale` owns that number and already publishes it, but these two promotions ignore it and rebuild it from the list of products, so two classes carry a responsibility that one class already has. |
+| Consequence | There are two answers to the same question and they can drift apart. If the base of a sale ever stops being the plain sum of the unit prices, for example when shipping or a tax is added, these two promotions keep summing prices and `Sale` keeps adding the extra, and the discount ends up calculated on a different base than the one printed in the receipt. The same loop is also copied into every new promotion that follows the same model. |
+| Proposed solution | Have these two promotions read `sale.getSubtotal()` instead of walking the products, so the base of the discount is computed once, in the class that owns it. The rule of Requirement 2 is preserved: `getSubtotal()` returns the sum before discounts, so a promotion still never sees a discount already applied. |
+| Other member's code | No. `Sale.calculateSubtotal` and `Sale.getSubtotal` belong to the Technical Leader, but the correction is entirely inside `PercentageDiscount` and `BulkPurchaseDiscount` and does not change them. |
+
+**`CategoryDiscount` is not part of this violation.** Its loop (lines 54-59) is not a
+duplicate of the subtotal: it holds the condition `if (targetCategory.equalsIgnoreCase(
+product.getCategory()))` (line 56), so it adds the price of only the products of its own
+category. That figure is not the total of the sale and `Sale` does not have it, because the
+sale does not know which category a promotion was created for. Replacing that loop with
+`getSubtotal()` would apply the percentage to every product of the sale instead of only to
+the ones of the category, which is a different promotion and would break the behaviour that
+Requirement 2 asks for. There is no duplicated calculation to remove there, so the promotion
+is audited as correct in this pattern and its finding is not registered.
 
 
 ## Creator
