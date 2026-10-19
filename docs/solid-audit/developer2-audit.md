@@ -115,9 +115,6 @@ Seven findings: V-01 to V-07, plus the problems reported for the consolidation.-
 - `PromotionRepository.serialize` and `WarrantyRepository.serialize` write the marker with
   `getTypeCode()` (lines 136 and 141), so a new kind of promotion or warranty does not add a
   branch to the writing side.
-- `Product.isConsole`, `Sale.countUnitsOf` and `Sale.findProductById`, added in R7, let
-  their callers decide without being edited again when the catalogue grows a new kind of
-  item.
 
 ---
 
