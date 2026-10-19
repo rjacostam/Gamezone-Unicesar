@@ -1,5 +1,6 @@
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Accessory;
 import com.gamezone.model.Cable;
 import com.gamezone.model.Controller;
@@ -77,9 +78,9 @@ public class AccessoryRepository {
      * header line is written first so the file keeps its documented layout.
      *
      * @param accessories accessories to persist
-     * @throws IOException if the file cannot be written
+     * @throws PersistenceException if the file cannot be written
      */
-    public void saveAll(List<Accessory> accessories) throws IOException {
+    public void saveAll(List<Accessory> accessories) {
         List<String> lines = new ArrayList<>();
         lines.add(String.join(DELIMITER,
                 "type", "id", "title", "price", "stock", "compatibleConsoles", "extra1", "extra2"));
@@ -87,10 +88,15 @@ public class AccessoryRepository {
             lines.add(serialize(accessory));
         }
         Path parent = filePath.getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
+        try {
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.write(filePath, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de escritura en el archivo " + filePath, e);
         }
-        Files.write(filePath, lines, StandardCharsets.UTF_8);
     }
 
     /**
@@ -99,15 +105,20 @@ public class AccessoryRepository {
      * The header line and the damaged records are ignored.
      *
      * @return list of the stored accessories, empty when the file does not exist
-     * @throws IOException if the file cannot be read
+     * @throws PersistenceException if the file cannot be read
      */
-    public List<Accessory> loadAll() throws IOException {
+    public List<Accessory> loadAll() {
         List<Accessory> accessories = new ArrayList<>();
-        for (String record : readRecords()) {
-            Accessory accessory = deserialize(record);
-            if (accessory != null) {
-                accessories.add(accessory);
+        try {
+            for (String record : readRecords()) {
+                Accessory accessory = deserialize(record);
+                if (accessory != null) {
+                    accessories.add(accessory);
+                }
             }
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de lectura en el archivo " + filePath, e);
         }
         return accessories;
     }

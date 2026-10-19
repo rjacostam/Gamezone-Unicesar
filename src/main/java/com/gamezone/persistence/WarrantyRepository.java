@@ -1,5 +1,6 @@
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.BasicWarranty;
 import com.gamezone.model.Warranty;
 
@@ -84,19 +85,24 @@ public class WarrantyRepository {
      * header line is written first so the file keeps its documented layout.
      *
      * @param warranties warranties to persist
-     * @throws IOException if the file cannot be written
+     * @throws PersistenceException if the file cannot be written
      */
-    public void saveAll(List<Warranty> warranties) throws IOException {
+    public void saveAll(List<Warranty> warranties) {
         List<String> lines = new ArrayList<>();
         lines.add(String.join(DELIMITER, "type", "id", "productId", "saleId", "startDate"));
         for (Warranty warranty : warranties) {
             lines.add(serialize(warranty));
         }
         Path parent = filePath.getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
+        try {
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.write(filePath, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de escritura en el archivo " + filePath, e);
         }
-        Files.write(filePath, lines, StandardCharsets.UTF_8);
     }
 
     /**
@@ -112,15 +118,20 @@ public class WarrantyRepository {
      *
      * @return list of the records contained in the file, empty when the file does
      *         not exist
-     * @throws IOException if the file cannot be read
+     * @throws PersistenceException if the file cannot be read
      */
-    public List<WarrantyRecord> loadAll() throws IOException {
+    public List<WarrantyRecord> loadAll() {
         List<WarrantyRecord> records = new ArrayList<>();
-        for (String record : readRecords()) {
-            WarrantyRecord parsed = toRecord(record);
-            if (parsed != null) {
-                records.add(parsed);
+        try {
+            for (String record : readRecords()) {
+                WarrantyRecord parsed = toRecord(record);
+                if (parsed != null) {
+                    records.add(parsed);
+                }
             }
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de lectura en el archivo " + filePath, e);
         }
         return records;
     }

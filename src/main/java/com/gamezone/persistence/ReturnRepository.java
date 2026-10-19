@@ -1,5 +1,6 @@
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
@@ -92,9 +93,9 @@ public class ReturnRepository {
      * line is written first so the file keeps its documented layout.
      *
      * @param returns returns to persist
-     * @throws IOException if the file cannot be written
+     * @throws PersistenceException if the file cannot be written
      */
-    public void saveAll(List<Return> returns) throws IOException {
+    public void saveAll(List<Return> returns) {
         List<String> lines = new ArrayList<>();
         lines.add(String.join(DELIMITER, "id", "date", "saleId", "productIds", "reason",
                 "warrantyRefund"));
@@ -102,10 +103,15 @@ public class ReturnRepository {
             lines.add(serialize(registeredReturn));
         }
         Path parent = filePath.getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
+        try {
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.write(filePath, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de escritura en el archivo " + filePath, e);
         }
-        Files.write(filePath, lines, StandardCharsets.UTF_8);
     }
 
     /**
@@ -119,15 +125,20 @@ public class ReturnRepository {
      *              products of each return
      * @return list of the returns that could be rebuilt, empty when the file does
      *         not exist
-     * @throws IOException if the file cannot be read
+     * @throws PersistenceException if the file cannot be read
      */
-    public List<Return> loadAll(List<Sale> sales) throws IOException {
+    public List<Return> loadAll(List<Sale> sales) {
         List<Return> returns = new ArrayList<>();
-        for (String record : readRecords()) {
-            Return registeredReturn = deserialize(record, sales);
-            if (registeredReturn != null) {
-                returns.add(registeredReturn);
+        try {
+            for (String record : readRecords()) {
+                Return registeredReturn = deserialize(record, sales);
+                if (registeredReturn != null) {
+                    returns.add(registeredReturn);
+                }
             }
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de lectura en el archivo " + filePath, e);
         }
         return returns;
     }
