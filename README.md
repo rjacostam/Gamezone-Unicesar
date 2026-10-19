@@ -26,6 +26,7 @@ connects the layers. The design is documented in `docs/`:
 - `docs/return-analysis.md`, `docs/return-class-diagram.md` — return module (Requirement 3)
 - `docs/integration-analysis.md`, `docs/integrated-class-diagram.md` — integration of the four modules (Requirement 5)
 - `docs/exception-analysis.md`, `docs/exception-class-diagram.md` — exceptions and validators (Requirement 6)
+- `docs/grasp-audit/`, `docs/grasp-analysis.md`, `docs/grasp-class-diagram.md`, `docs/grasp-refactor-log.md`, `docs/regression/` — GRASP audit and correction (Requirement 7)
 
 ## Requirements
 
@@ -193,6 +194,46 @@ for each kind of error:
 
 The user never sees a stack trace. If the data files cannot be loaded at startup, the
 application shows a clear message and stops.
+
+## GRASP audit and correction (Requirement 7)
+
+The requirement did not add any operation to the menu. It was done in two phases.
+
+**Phase 1, audit.** Each member audited the code he wrote against the nine GRASP patterns
+(`docs/grasp-audit/leader-audit.md`, `developer1-audit.md`, `developer2-audit.md`). The
+Technical Leader merged the three reports into `docs/grasp-audit/consolidated-audit.md`,
+audited on `develop` at `6c10ce2`: the 48 classes were audited once each, the 13 violations
+of the reports became 9 after merging the ones that described the same defect, and each one
+got its responsible members. The answers to the five guiding questions are in
+`docs/grasp-analysis.md`.
+
+**Phase 2, correction.** The nine violations were corrected without changing what the user
+sees:
+
+| Violation | Pattern | Design change |
+|---|---|---|
+| V-01 | Information Expert | `Product.increaseStock`; `ProductService.restoreStock` calls it |
+| V-02 | Information Expert | Two promotions read `Sale.getSubtotal()` instead of adding the prices again |
+| V-03 | Information Expert | `Sale.countUnitsOf` and `Sale.findProductById`, used by the return module |
+| V-04 | Controller | `Product.isConsole()` answers the rule "only consoles", used by the menu, the services and the validators |
+| V-05 | High Cohesion | The receipt, the return receipt and the warranty certificate are built in the `ui` package (`ReceiptGenerator`, `ReturnReceiptFormatter`, `WarrantyCertificateFormatter`) |
+| V-06 | High Cohesion | `ConsoleMenu` is now only the main menu; each module has its own submenu, with `Submenu` as base class and `ConsoleInput` for the input |
+| V-07 | Polymorphism | `InventoryCatalog`, implemented by `ProductService` and `AccessoryService`; the services ask the catalogue that owns an item |
+| V-08 | Polymorphism | The model publishes its type code and its extra columns; the four repositories write them without `instanceof` |
+| V-09 | Polymorphism | Each warranty answers its own coverage |
+
+After the correction there is no `instanceof` left in the source code, and `ConsoleMenu` went
+from 698 lines to 86. The before and after diagrams are in `docs/grasp-class-diagram.md`.
+
+**No regression.** The two input scripts of `docs/regression/` go through every operation of
+the menu and restart the program on the data left by the first run. They were run on
+`develop` before the first correction and on the final `develop`: the screen output and the
+eight data files are identical. Each correction, its commit and its no regression check are
+recorded in `docs/grasp-refactor-log.md`.
+
+One functional defect found in the audit was left out of scope on purpose (OOS-01: a damaged
+line in `data/sales.csv` stops the program at startup), because correcting it would change
+what the user sees.
 
 ## Team
 

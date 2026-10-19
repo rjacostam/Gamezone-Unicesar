@@ -132,4 +132,32 @@ One row per change. Every violation of the consolidated audit must appear at lea
 
 ## Final verification
 
-To be filled in at the end of Phase 2, with the same two scripts on the final `develop`.
+Run with the same two scripts on `develop` after the pull requests of the two developers were
+merged, and compared with the reference run.
+
+| Field | Value |
+|---|---|
+| Commit | `develop` at `63604f3` (merge of pull request #37) |
+| Date | 2026-10-18, the same day as the reference run |
+| Compilation | No errors |
+| First run | 1,403 lines, **identical** to the reference |
+| Second run | 211 lines, **identical** to the reference |
+| Data files | The eight files of `run/data/` are **identical** to the reference |
+| Stack traces | None |
+| Key figures | Sale `S0001` total $3,040,000; sale `S0002` total $512,000; return `R0001` with warranty refund $250,000; October balance: sales $3,552,000, returns $2,500,000, net $1,052,000 |
+
+Every operation of the menu behaves exactly as before the correction: same inputs, same
+results, same messages and same data files.
+
+Result of the correction:
+
+- The nine violations of the consolidated audit (V-01 to V-09) appear in the table above, with
+  their commits and their responsible member.
+- No `instanceof` is left in the source code. The type of an object is now answered by the
+  object itself (`isConsole`, `getTypeCode`, `getExtraFields`, `coverageDescription`) or by
+  the catalogue that owns it (`InventoryCatalog`).
+- `ConsoleMenu` went from 698 lines to 86, and the presentation of the three documents left
+  the model.
+- The system went from 48 to 61 classes; the 13 new ones are listed in
+  `docs/grasp-class-diagram.md`.
+- The out of scope defect OOS-01 was not touched, as Requirement 7 requires.

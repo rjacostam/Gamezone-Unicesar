@@ -91,4 +91,15 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 # Requirement 7 — Phase 2 (Correction)
 
-No entries yet.
+## Entry 7
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Claude Code (Claude Opus 5.5) |
+| Phase and branch | Requirement 7, Phase 2 — `feature/grasp-refactor` |
+| Goal | Prepare the no regression check, correct my part of the violations and verify the corrections of the developers. |
+| Query | Asked the tool to write the two menu scripts and the strategy of `grasp-refactor-log.md`, draw the before and after diagrams, implement my corrections (V-01, V-03, V-04, V-05, V-06 and V-07 in `ProductService`, `Sale`, `SaleService` and the `ui` package), update the README, and compile and test every commit of the developers. |
+| Answer | The tool did those changes one commit at a time and ran the two scripts after each one. Every check gave the same output and the same data files as the reference run on `develop`. It also proposed the names that the team used to coordinate (`increaseStock`, `isConsole`, `InventoryCatalog`, `getTypeCode`) and the order of the turns. |
+| Decision | Accepted. I gave the team the order of the turns, approved PRs #36 and #37 after the checks, and kept `getDescription` in the model as Developer 1 proposed, because moving it would create a new violation. |
+| Related commit | `c628d84` to `6e7a5ab` (my corrections and logs), `99840bd` (final verification), `b718b8b` (after diagram), `f340cde` (README) |
