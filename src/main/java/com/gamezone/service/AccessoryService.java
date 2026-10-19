@@ -57,6 +57,31 @@ public class AccessoryService implements InventoryCatalog, StockUpdater, StockRe
     }
 
     /**
+     * Registers an accessory of any kind, once it has been built by
+     * {@link AccessoryFactory}.
+     *
+     * <p>This is the single entry point of the correction of violation V-06:
+     * the service no longer needs one method per kind, because it no longer
+     * decides which kind is being registered. The three methods that exist for
+     * each kind stay until the menus are moved to this one.
+     *
+     * @param accessory accessory to register
+     * @return the registered accessory
+     * @throws InvalidDataException      if the data is invalid
+     * @throws ResourceNotFoundException if a compatible console does not exist
+     * @throws BusinessRuleException     if the identifier is already in use, or
+     *                                   if a compatible product is not a console
+     * @throws PersistenceException      if the accessories file cannot be written
+     */
+    public Accessory register(Accessory accessory) {
+        validateAccessoryData(accessory.getId(), accessory.getTitle(),
+                accessory.getPrice(), accessory.getStock());
+        validateCompatibleConsoles(accessory.getCompatibleConsoleIds());
+        addAccessory(accessory);
+        return accessory;
+    }
+
+    /**
      * Registers a new controller. Its identifier cannot be used by another
      * accessory or by another product, and every compatible console identifier
      * must belong to a console of the inventory.

@@ -46,6 +46,28 @@ public class PromotionService {
     }
 
     /**
+     * Registers a promotion of any kind, once it has been built by
+     * {@link PromotionFactory}.
+     *
+     * <p>This is the single entry point of the correction of violation V-06:
+     * the service no longer needs one method per kind, because it no longer
+     * decides which kind is being registered. The three methods that exist for
+     * each kind stay until the menus are moved to this one.
+     *
+     * @param promotion promotion to register
+     * @return the registered promotion
+     * @throws InvalidDataException  if the data is invalid
+     * @throws BusinessRuleException if the identifier is already registered
+     * @throws PersistenceException  if the promotions file cannot be written
+     */
+    public Promotion register(Promotion promotion) {
+        validateCommonData(promotion.getId(), promotion.getName(),
+                promotion.getStartDate(), promotion.getEndDate());
+        addPromotion(promotion);
+        return promotion;
+    }
+
+    /**
      * Registers a new promotion that applies a percentage to the whole total.
      *
      * @param id        promotion identifier
