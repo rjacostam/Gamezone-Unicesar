@@ -228,3 +228,33 @@ Violation V-01 as it breaks this principle:
 | Consequence | Reordering, renaming or adding a column of `products.csv` is a change to `Product`, `VideoGame` and `Console`, reviewed as a change to the business model. The domain can no longer be reused by anything that stores the catalogue somewhere else, because its shape is fixed by one file. It is also what makes the Interface Segregation defect of V-01 possible: because the domain owns the layout, the two hierarchies were forced into a single method. |
 | Proposed solution | Invert it: the persistence layer declares the layout and the domain does not know about it. A mapper in `persistence` per hierarchy, or the `CatalogRow` interface named in V-01 that the repositories consume and that the domain classes answer with attributes rather than with an ordered column list, moves the detail back to where it belongs. This is the same edit as the one proposed in V-01, so it is one correction and not two. |
 | Other member's code | Yes. The `ProductRepository` and `PromotionRepository` that would own the layout belong to Developer 2. |
+## Findings registered for the consolidation
+
+These are not new defects. They are findings of this audit that touch code of another member,
+and that the consolidation has to merge with the other reports instead of counting them twice.
+
+- **V-01 touches two repositories of Developer 2.** `ProductRepository` (line 56) and
+  `AccessoryRepository` (line 141) are the two callers of the `getExtraFields` contract that has
+  two meanings, and they are the classes that would own the layout in the proposed correction.
+  The correction has to be agreed with him before it is written, because moving the columns into
+  `persistence` changes the two files he maintains. The whole defect and its correction are in
+  the Interface Segregation section.
+- **V-03 touches `Sale` of the Technical Leader.** `Sale.generateReceipt` writes money with the
+  same literal `String.format(Locale.US, "$%,.2f", ...)`, so the two findings are the same
+  decision in two places and should become one, with a single fabricated formatter used by all
+  the call sites of the three members.
+- **V-02 touches the call sites, not the correction.** Six places ask `isConsole()` and two of
+  them belong to the Technical Leader (`SaleService` line 312 and the two menus), but the two
+  literals that have to agree are both in `Product` and `Console`, so the edit is mine and the
+  callers do not change.
+- **The audited code includes work from Requirement 7, and one finding is a consequence of it.**
+  `getExtraFields` was added during the GRASP correction, to remove the `instanceof` chains from
+  the repositories. It did remove them, and it moved the column layout into the domain, which is
+  what V-01 registers. The consolidation should decide whether V-01 is a new correction or the
+  second half of V-08 of the GRASP audit, because the same six classes are involved in both.
+- **One line of this audit depends on an answer from the Technical Leader.** `Product.getExtraFields`
+  exists because the repositories needed a marker and a column list. If the leader prefers the
+  repositories to keep the layout and the model to publish attributes instead of an ordered list,
+  V-01 becomes a change of `Product`, `Promotion` and `Accessory` only, with no repository
+  touched. If he prefers a third catalogue in the future, the marker that names the file is the
+  part that cannot be skipped.
