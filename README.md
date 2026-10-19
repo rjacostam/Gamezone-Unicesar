@@ -25,6 +25,7 @@ connects the layers. The design is documented in `docs/`:
 - `docs/warranty-analysis.md`, `docs/warranty-class-diagram.md` — warranty module (Requirement 4)
 - `docs/return-analysis.md`, `docs/return-class-diagram.md` — return module (Requirement 3)
 - `docs/integration-analysis.md`, `docs/integrated-class-diagram.md` — integration of the four modules (Requirement 5)
+- `docs/exception-analysis.md`, `docs/exception-class-diagram.md` — exceptions and validators (Requirement 6)
 
 ## Requirements
 
@@ -160,6 +161,38 @@ Example of the integrated flow:
    warranties are removed.
 3. The balance of the month shows sales $3,040,000, returns $2,815,000 and a net balance of
    **$225,000**.
+
+## Exceptions and validation (Requirement 6)
+
+Two cross-cutting packages separate error handling from the business logic:
+
+- `com.gamezone.exceptions`: `GameZoneException`, an abstract unchecked exception with an
+  error code, and its four subclasses:
+  - `ResourceNotFoundException`: the product, customer, sale or other resource does not
+    exist.
+  - `BusinessRuleException`: a rule of the store is broken, such as not enough stock, a
+    duplicate id or more than 30 days for a return.
+  - `InvalidDataException`: a value has a wrong format or range, such as an empty title or
+    a price that is not greater than zero.
+  - `PersistenceException`: a data file cannot be read or written. It keeps the original
+    `IOException`.
+- `com.gamezone.validation`: one validator per module (`ProductValidator`,
+  `PersonValidator`, `SaleValidator`, `AccessoryValidator`, `PromotionValidator`,
+  `WarrantyValidator`, `ReturnValidator`). They hold static checks, and the services call
+  them before changing anything. They never use the persistence layer.
+
+The console menu runs every operation through `runSafely`, which shows a different message
+for each kind of error:
+
+| Error | Message |
+|---|---|
+| Resource not found | "No se encontró el recurso solicitado: …" |
+| Business rule | "No se puede completar la operación: …" |
+| Invalid data | "Los datos ingresados no son válidos: …" |
+| Data files | "Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador." |
+
+The user never sees a stack trace. If the data files cannot be loaded at startup, the
+application shows a clear message and stops.
 
 ## Team
 

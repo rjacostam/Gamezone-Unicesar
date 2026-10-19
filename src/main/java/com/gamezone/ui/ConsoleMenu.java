@@ -1,5 +1,9 @@
 package com.gamezone.ui;
 
+import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.InvalidDataException;
+import com.gamezone.exceptions.PersistenceException;
+import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Accessory;
 import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
@@ -29,8 +33,9 @@ import java.util.Scanner;
  * Console menu of the application.
  * <p>
  * It only reads the user input, calls the services and prints the results. It never uses
- * a repository. Every message shown to the user is in Spanish, and an error in one
- * operation is shown to the user without closing the application.
+ * a repository. Every message shown to the user is in Spanish. Each kind of error gets its
+ * own message, and an error in one operation never closes the application or shows a
+ * stack trace.
  */
 public class ConsoleMenu {
 
@@ -98,6 +103,29 @@ public class ConsoleMenu {
         } while (option != 0);
     }
 
+    /**
+     * Runs one menu operation and turns any error of the system into a clear message for the
+     * user, with a different text for each kind of error.
+     *
+     * @param action operation chosen by the user
+     */
+    private void runSafely(Runnable action) {
+        try {
+            action.run();
+        } catch (ResourceNotFoundException e) {
+            System.out.println("No se encontró el recurso solicitado: " + e.getMessage());
+        } catch (BusinessRuleException e) {
+            System.out.println("No se puede completar la operación: " + e.getMessage());
+        } catch (InvalidDataException e) {
+            System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
+        } catch (PersistenceException e) {
+            System.out.println("Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            // Temporary: services not yet migrated to the validators still throw these.
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
     // ---------------------------------------------------------------- products
 
     private void productMenu() {
@@ -108,7 +136,7 @@ public class ConsoleMenu {
         System.out.println("3. Listar inventario");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerVideoGame();
                 case 2 -> registerConsole();
@@ -116,9 +144,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerVideoGame() {
@@ -166,18 +192,24 @@ public class ConsoleMenu {
         System.out.println("3. Listar vendedores");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
-                case 1 -> registerCustomer();
+                case 1 -> registerCustomerOrFail();
                 case 2 -> listCustomers();
                 case 3 -> listSellers();
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException e) {
-            System.out.println("Error: " + e.getMessage());
+        });
+    }
+
+    private void registerCustomerOrFail() {
+        // Temporary: PersonService still declares IOException until its repository throws
+        // PersistenceException.
+        try {
+            registerCustomer();
         } catch (IOException e) {
-            System.out.println("Error: no se pudo guardar el cliente en el archivo de datos.");
+            throw new PersistenceException("Error de escritura en el archivo de clientes", e);
         }
     }
 
@@ -224,7 +256,7 @@ public class ConsoleMenu {
         System.out.println("5. Ver detalle de una venta");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerSale();
                 case 2 -> printSales(saleService.listAllSales());
@@ -234,9 +266,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerSale() {
@@ -313,7 +343,7 @@ public class ConsoleMenu {
         System.out.println("6. Consultar accesorios compatibles con una consola");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerController();
                 case 2 -> registerCable();
@@ -325,9 +355,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerController() {
@@ -414,7 +442,7 @@ public class ConsoleMenu {
         System.out.println("5. Listar promociones vigentes");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerPercentagePromotion();
                 case 2 -> registerCategoryPromotion();
@@ -424,9 +452,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerPercentagePromotion() {
@@ -488,7 +514,7 @@ public class ConsoleMenu {
         System.out.println("4. Listar garantías próximas a vencer");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> showWarranty();
                 case 2 -> listWarranties(warrantyService.listAllWarranties());
@@ -498,9 +524,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void showWarranty() {
@@ -536,7 +560,7 @@ public class ConsoleMenu {
         System.out.println("5. Consultar balance mensual");
         System.out.println("0. Volver");
         int option = readInt("Seleccione una opción: ");
-        try {
+        runSafely(() -> {
             switch (option) {
                 case 1 -> registerReturn();
                 case 2 -> listReturns(returnService.viewAllReturns());
@@ -547,9 +571,7 @@ public class ConsoleMenu {
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("Error: " + e.getMessage());
-        }
+        });
     }
 
     private void registerReturn() {
