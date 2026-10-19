@@ -281,7 +281,7 @@ public class ConsoleMenu {
         }
         Sale sale = saleService.registerSale(customerId, sellerId, productIds, extendedWarranty);
         System.out.println("Venta registrada con éxito.");
-        System.out.println(sale.generateReceipt());
+        System.out.println(ReceiptGenerator.generate(sale));
     }
 
     private void listCatalog() {
@@ -302,7 +302,7 @@ public class ConsoleMenu {
             System.out.println("No existe una venta con el identificador " + saleId + ".");
             return;
         }
-        System.out.println(sale.generateReceipt());
+        System.out.println(ReceiptGenerator.generate(sale));
     }
 
     private void printSales(List<Sale> sales) {
@@ -311,7 +311,7 @@ public class ConsoleMenu {
             return;
         }
         for (Sale sale : sales) {
-            System.out.println(sale.generateReceipt());
+            System.out.println(ReceiptGenerator.generate(sale));
             System.out.println();
         }
     }
@@ -521,7 +521,7 @@ public class ConsoleMenu {
             System.out.println("El producto " + productId + " no tiene garantía en la venta " + saleId + ".");
             return;
         }
-        System.out.println(warranty.generateWarrantyCertificate());
+        System.out.println(WarrantyCertificateFormatter.format(warranty));
     }
 
     private void listWarranties(List<Warranty> warranties) {
@@ -530,7 +530,7 @@ public class ConsoleMenu {
             return;
         }
         for (Warranty warranty : warranties) {
-            System.out.println(warranty.generateWarrantyCertificate());
+            System.out.println(WarrantyCertificateFormatter.format(warranty));
         }
     }
 
@@ -567,7 +567,7 @@ public class ConsoleMenu {
             System.out.println("No existe una venta con el identificador " + saleId + ".");
             return;
         }
-        System.out.println(sale.generateReceipt());
+        System.out.println(ReceiptGenerator.generate(sale));
         if (!sale.canBeReturned()) {
             System.out.println("Aviso: esta venta tiene más de 30 días, no se puede devolver.");
             return;
@@ -586,7 +586,7 @@ public class ConsoleMenu {
         String reason = readText("Motivo de la devolución: ");
         Return productReturn = returnService.registerReturn(sale.getId(), productIds, reason);
         System.out.println("Devolución registrada con éxito.");
-        System.out.println(productReturn.generateReturnReceipt());
+        System.out.println(ReturnReceiptFormatter.format(productReturn));
     }
 
     private void listReturns(List<Return> returns) {
@@ -595,7 +595,7 @@ public class ConsoleMenu {
             return;
         }
         for (Return productReturn : returns) {
-            System.out.println(productReturn.generateReturnReceipt());
+            System.out.println(ReturnReceiptFormatter.format(productReturn));
         }
     }
 
