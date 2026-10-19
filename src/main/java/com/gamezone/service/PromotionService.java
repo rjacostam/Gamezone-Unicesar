@@ -3,9 +3,6 @@ package com.gamezone.service;
 import com.gamezone.exceptions.BusinessRuleException;
 import com.gamezone.exceptions.InvalidDataException;
 import com.gamezone.exceptions.PersistenceException;
-import com.gamezone.model.BulkPurchaseDiscount;
-import com.gamezone.model.CategoryDiscount;
-import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Promotion;
 import com.gamezone.model.PromotionFactory;
 import com.gamezone.model.Sale;
@@ -112,86 +109,6 @@ public class PromotionService implements PromotionChooser {
             return "";
         }
         return extras.get(index);
-    }
-
-    /**
-     * Registers a new promotion that applies a percentage to the whole total.
-     *
-     * @param id        promotion identifier
-     * @param name      name of the promotion
-     * @param startDate first day the promotion is valid
-     * @param endDate   last day the promotion is valid
-     * @param percentage discount percentage, greater than zero and at most 100
-     * @return the registered promotion
-     * @throws InvalidDataException  if the data is invalid
-     * @throws BusinessRuleException if the identifier is already registered
-     * @throws PersistenceException  if the promotions file cannot be written
-     */
-    public PercentageDiscount registerPercentageDiscount(String id, String name,
-                                                          LocalDate startDate, LocalDate endDate,
-                                                          double percentage) {
-        validateCommonData(id, name, startDate, endDate);
-        validatePercentage(percentage);
-        PercentageDiscount promotion = new PercentageDiscount(id.trim(), name.trim(),
-                startDate, endDate, percentage);
-        addPromotion(promotion);
-        return promotion;
-    }
-
-    /**
-     * Registers a new promotion that applies a percentage only to the products
-     * of one category.
-     *
-     * @param id             promotion identifier
-     * @param name           name of the promotion
-     * @param startDate      first day the promotion is valid
-     * @param endDate        last day the promotion is valid
-     * @param percentage     discount percentage, greater than zero and at most 100
-     * @param targetCategory category the discount applies to, {@code VIDEOGAME},
-     *                       {@code CONSOLE} or {@code ACCESSORY}
-     * @return the registered promotion
-     * @throws InvalidDataException  if the data is invalid or the category is
-     *                               not accepted
-     * @throws BusinessRuleException if the identifier is already registered
-     * @throws PersistenceException  if the promotions file cannot be written
-     */
-    public CategoryDiscount registerCategoryDiscount(String id, String name,
-                                                     LocalDate startDate, LocalDate endDate,
-                                                     double percentage, String targetCategory) {
-        validateCommonData(id, name, startDate, endDate);
-        validatePercentage(percentage);
-        validateTargetCategory(targetCategory);
-        CategoryDiscount promotion = new CategoryDiscount(id.trim(), name.trim(),
-                startDate, endDate, percentage, targetCategory.trim());
-        addPromotion(promotion);
-        return promotion;
-    }
-
-    /**
-     * Registers a new promotion that applies a percentage when the sale includes
-     * a minimum number of units.
-     *
-     * @param id              promotion identifier
-     * @param name            name of the promotion
-     * @param startDate       first day the promotion is valid
-     * @param endDate         last day the promotion is valid
-     * @param minimumQuantity units the sale must include, greater than zero
-     * @param percentage      discount percentage, greater than zero and at most 100
-     * @return the registered promotion
-     * @throws InvalidDataException  if the data is invalid
-     * @throws BusinessRuleException if the identifier is already registered
-     * @throws PersistenceException  if the promotions file cannot be written
-     */
-    public BulkPurchaseDiscount registerBulkPurchaseDiscount(String id, String name,
-                                                             LocalDate startDate, LocalDate endDate,
-                                                             int minimumQuantity, double percentage) {
-        validateCommonData(id, name, startDate, endDate);
-        validateMinimumQuantity(minimumQuantity);
-        validatePercentage(percentage);
-        BulkPurchaseDiscount promotion = new BulkPurchaseDiscount(id.trim(), name.trim(),
-                startDate, endDate, minimumQuantity, percentage);
-        addPromotion(promotion);
-        return promotion;
     }
 
     /**
