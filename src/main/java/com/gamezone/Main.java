@@ -15,7 +15,15 @@ import com.gamezone.service.PromotionService;
 import com.gamezone.service.ReturnService;
 import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
+import com.gamezone.ui.AccessoryMenu;
+import com.gamezone.ui.ConsoleInput;
 import com.gamezone.ui.ConsoleMenu;
+import com.gamezone.ui.PersonMenu;
+import com.gamezone.ui.ProductMenu;
+import com.gamezone.ui.PromotionMenu;
+import com.gamezone.ui.ReturnMenu;
+import com.gamezone.ui.SaleMenu;
+import com.gamezone.ui.WarrantyMenu;
 
 
 /**
@@ -58,8 +66,16 @@ public class Main {
             ReturnService returnService = new ReturnService(returnRepository, saleService, productService,
                     accessoryService, warrantyService);
 
-            ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService, accessoryService,
-                    promotionService, warrantyService, returnService);
+            ConsoleInput input = new ConsoleInput();
+            PersonMenu personMenu = new PersonMenu(input, personService);
+            ConsoleMenu menu = new ConsoleMenu(input,
+                    new ProductMenu(input, productService),
+                    personMenu,
+                    new SaleMenu(input, saleService, productService, personMenu),
+                    new AccessoryMenu(input, accessoryService, productService),
+                    new PromotionMenu(input, promotionService),
+                    new WarrantyMenu(input, warrantyService),
+                    new ReturnMenu(input, returnService, saleService));
             menu.start();
         } catch (PersistenceException e) {
             System.out.println("No fue posible cargar los datos del sistema. Contacte al administrador.");
