@@ -59,7 +59,7 @@ public final class AccessoryValidator {
         if (product == null) {
             throw new ResourceNotFoundException("la consola", consoleId);
         }
-        if (!product.getCategory().equalsIgnoreCase("CONSOLE")) {
+        if (!product.isConsole()) {
             throw new BusinessRuleException(
                     "El producto " + product.getId() + " no es una consola.");
         }

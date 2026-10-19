@@ -71,7 +71,7 @@ public final class SaleValidator {
             boolean foundAsConsole = false;
             for (Product product : products) {
                 if (product.getId().equalsIgnoreCase(productId)) {
-                    if (product.getCategory().equalsIgnoreCase("CONSOLE")) {
+                    if (product.isConsole()) {
                         foundAsConsole = true;
                     }
                     break;
