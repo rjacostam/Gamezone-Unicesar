@@ -276,29 +276,13 @@ public class ReturnRepository {
             if (wanted.isEmpty()) {
                 continue;
             }
-            Product found = findProduct(sale, wanted);
+            Product found = sale.findProductById(wanted);
             if (found == null) {
                 return null;
             }
             returnedProducts.add(found);
         }
         return returnedProducts.isEmpty() ? null : returnedProducts;
-    }
-
-    /**
-     * Looks for a product inside the units of a sale.
-     *
-     * @param sale      sale the return comes from
-     * @param productId identifier of the returned unit
-     * @return the product found, or null when the sale does not contain it
-     */
-    private Product findProduct(Sale sale, String productId) {
-        for (Product product : sale.getProducts()) {
-            if (product.getId().equals(productId)) {
-                return product;
-            }
-        }
-        return null;
     }
 
     /**

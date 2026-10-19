@@ -208,11 +208,11 @@ public class ReturnService {
                 throw new InvalidDataException("producto de la devolución", "es obligatorio");
             }
             String wanted = requestedId.trim();
-            if (countUnits(sale, wanted) == 0) {
+            if (sale.countUnitsOf(wanted) == 0) {
                 throw new BusinessRuleException(
                         "El producto " + wanted + " no pertenece a la venta " + sale.getId());
             }
-            returnedProducts.add(findProduct(sale, wanted));
+            returnedProducts.add(sale.findProductById(wanted));
         }
         validateAvailableUnits(sale, productIds);
         return returnedProducts;
@@ -235,23 +235,6 @@ public class ReturnService {
             ReturnValidator.validateUnitsAvailable(sale, productId, entry.getValue(),
                     alreadyReturned);
         }
-    }
-
-    /**
-     * Counts how many units of a product were sold in a sale.
-     *
-     * @param sale      sale to inspect
-     * @param productId identifier of the product
-     * @return number of units of that product in the sale
-     */
-    private int countUnits(Sale sale, String productId) {
-        int total = 0;
-        for (Product product : sale.getProducts()) {
-            if (product.getId().equalsIgnoreCase(productId)) {
-                total++;
-            }
-        }
-        return total;
     }
 
     /**
@@ -335,22 +318,6 @@ public class ReturnService {
     private boolean isReturnOf(Sale sale, Return registeredReturn) {
         Sale returnSale = registeredReturn.getSale();
         return returnSale != null && returnSale.getId().equalsIgnoreCase(sale.getId());
-    }
-
-    /**
-     * Looks for a product inside the units of a sale.
-     *
-     * @param sale      sale to inspect
-     * @param productId identifier of the product
-     * @return the product found, or null when the sale does not contain it
-     */
-    private Product findProduct(Sale sale, String productId) {
-        for (Product product : sale.getProducts()) {
-            if (product.getId().equalsIgnoreCase(productId)) {
-                return product;
-            }
-        }
-        return null;
     }
 
     /**
