@@ -161,23 +161,11 @@ Correct applications:
   through getters instead of manipulating the fields of `Sale`, which belong to the Technical
   Leader.
 
-The only violation is the same defect of V-02, and it is registered once, under Polymorphism,
-because the edit that introduces polymorphism in the repository is also the one that removes the
-dependency on concrete classes. Only the coupling evidence is repeated here.
-
-| Field | Content |
-|---|---|
-| ID | V-02 |
-| Pattern | Low Coupling |
-| Module | Catalogue persistence (Taller 1) |
-| Evidence | `ProductRepository` imports the two concrete classes `com.gamezone.model.Console` (line 4) and `com.gamezone.model.VideoGame` (line 6), and casts to them inside `saveAll` (lines 51 and 61). The persistence layer cannot be read or changed without knowing the concrete types of the catalogue. |
-| Explanation | A repository should depend on the abstraction it stores. Here it depends on the two implementations that exist today, so the file format and the hierarchy of products are tied to each other in the same class. |
-| Consequence | Every new product type forces an import and a cast, and every change in a product hierarchy reaches the persistence layer. |
-| Proposed solution | Same edit of V-02: let `Product` answer with its own row, so the repository works with the base type and no longer imports any concrete product. |
-| Other member's code | No. `AccessoryRepository` has the same coupling with the accessory types and belongs to Developer 2. |
-
-Explanation and consequence of this defect are written once, in the finding V-02 of the
-Polymorphism section.
+The only violation of this pattern is the defect of V-02, which is registered once in the
+Polymorphism section: see V-02 there. In short, `ProductRepository` imports the two concrete
+classes `Console` and `VideoGame` and casts to them, so a repository that should depend only on
+the abstraction it stores depends on the two implementations that exist today. It is not
+repeated here because the same edit corrects the three patterns.
 
 ## High Cohesion
 
