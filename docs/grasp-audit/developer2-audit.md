@@ -25,8 +25,8 @@ Not audited here: `Product`, `VideoGame`, `Console`, `Accessory`, `Controller`, 
 `BasicWarranty`, `ExtendedWarranty`, `Return`, `Warranty` (Developer 1), `Sale`,
 `SaleService`, `SaleRepository`, `ConsoleMenu`, `Main`, and the exception and validator
 classes themselves (Technical Leader and Developer 1). `Main.main` and
-`ConsoleMenu.runSafely` are not audited here either: both classes are mine, but the
-Technical Leader already includes them in his own report, and a class must be audited once.
+`ConsoleMenu.runSafely` are not audited here either: both belong to the Technical Leader,
+who already includes them in his own report, and a class must be audited once.
 
 ---
 
@@ -40,7 +40,7 @@ Technical Leader already includes them in his own report, and a class must be au
 | Low Coupling | 1 | 3 | 0 |
 | High Cohesion | 0 | 6 | 0 |
 | Polymorphism | 2 | 2 | 0 |
-| Pure Fabrication | 0 | 3 | 0 |
+| Pure Fabrication | 0 | 2 | 0 |
 | Indirection | 0 | 4 | 0 |
 | Protected Variations | 0 | 5 | 0 |
 
@@ -240,8 +240,6 @@ Correct applications:
 - `PersonRepository.readQuietly` is a named step, not a new class. It gives a name to the
   behaviour of turning a disk failure into the typed exception, without widening the API of
   the package.
-- `GameZoneException` and its four subclasses name the four kinds of failure the statement
-  asks the menu to tell apart, so each one earns its existence.
 
 ---
 
