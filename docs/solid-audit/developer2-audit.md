@@ -41,4 +41,38 @@ once.
 | Interface Segregation | 1 | 2 | 0 |
 | Dependency Inversion | 2 | 3 | 0 |
 
-Seven findings: V-01 to V-07, plus the problems reported for the consolidation.
+Seven findings: V-01 to V-07, plus the problems reported for the consolidation.---
+
+## Single Responsibility Principle
+
+**Verdict: violation.**
+
+### V-01 — `ReturnService` manages returns and also builds a financial report
+
+| Field | Content |
+|---|---|
+| ID | V-01 |
+| Principle | Single Responsibility |
+| Module | Returns (R3) |
+| Evidence | Four of the seven public methods manage returns: `registerReturn` (line 128), `viewReturnsByCustomer` (line 382), `viewReturnsBySale` (line 404) and `viewAllReturns` (line 530). The other three build a report out of two different modules: `calculateMonthlySales` (line 443) walks `saleService.listAllSales()`, `calculateMonthlyReturns` (line 466) walks the returns of the service and `generateMonthlyBalance` (line 508) subtracts one figure from the other. |
+| Explanation | The class changes for two unrelated reasons. Adding a rule about what can be returned touches the first group; adding a column to the financial report touches the second one. The report is not knowledge of a return: it needs the whole history of sales, which this class only reaches by asking another service for a list it does not own. |
+| Consequence | The return module has to be recompiled and retested when a figure of the report changes, and the report has to be recompiled and retested when a return rule changes. A reader looking for the rule of a partial return has to skip three methods about accounting. |
+| Proposed solution | Move the three report methods to a `MonthlyBalanceService` in the same package that receives `SaleService` and the list of returns, and leaves `ReturnService` with the four methods about returns. The figures do not change, because the code moves without being rewritten. |
+| Other member's code | No. `ReturnService` is entirely mine. The new class would need `SaleService`, but it would only call the two methods it already uses today. |
+
+**Correct applications:**
+
+- `PromotionService` only registers, lists and selects promotions. Every validation it runs
+  is a promotion rule, so nothing in the class belongs to another module.
+- `WarrantyService` only assigns, cancels and lists warranties, and the identifier
+  generation (`nextWarrantyId`, `parseIdNumber`) exists because of warranty assignment.
+- `AccessoryRepository` only reads and writes `data/accessories.csv`, and `ReturnRepository`
+  only reads and writes `data/returns.csv`.
+- `PersonService` only registers, lists and searches people. Its three private helpers
+  (`people`, `withCustomer`, `requireText` before R6) exist to serve one of those.
+- `WarrantyRecord` carries one line of `data/warranties.csv` from the repository to the
+  service and answers nothing about warranties, so it has a single reason to change: the
+  layout of that file.
+
+---
+
