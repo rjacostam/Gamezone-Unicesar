@@ -83,3 +83,34 @@ Violation V-03:
 | Consequence | Changing the money format, for example adding a currency code, moving the symbol or asking for more decimals, means editing ten lines spread over six classes in three packages. A line that is forgotten produces a document that shows one format right next to another, and nothing fails: the code still compiles and the store still runs. |
 | Proposed solution | One small fabricated class with the two decisions in it, for example `Money.format(double)` and `Percent.format(double)`, and the ten call sites use it. It has no state and no dependency, it is exactly the Pure Fabrication case of the GRASP audit, and it gives the format a single owner. |
 | Other member's code | Yes. `Sale.generateReceipt` (Technical Leader) writes money the same way, so the same correction covers it and it should be registered once in the consolidation rather than twice. |
+## Open/Closed Principle
+
+**Verdict: violation** (one point, V-02).
+
+Correct applications:
+
+- A new promotion type is added by writing one class: `Sale` stores a `Promotion` and applies it
+  through `calculateDiscount` (line 40), `getDescription` (line 47), `getTypeCode` (line 55) and
+  `getExtraFields` (line 66), so no class that uses a promotion has to be edited.
+- A new warranty type is added by writing one class. The sale stores a `Warranty` and reads its
+  duration with `getDurationInMonths` (line 44) and its cost with `getAdditionalCost` (line 57),
+  so it never learns what kind of warranty it is holding.
+- A new accessory type is added by writing one class: `getAccessoryType` (line 55 in `Accessory`)
+  is the only member that names the kind, and `ConsoleMenu` reads it without a case per subclass.
+- A new kind of failure is added as a new subclass of `GameZoneException` (line 10), and the
+  handler in `ConsoleMenu` keeps catching the base type, so no handler has to be edited.
+- A new validation rule is added as a new static method in the validator of its own module, and
+  no service has to change to call it.
+
+Violation V-02:
+
+| Field | Content |
+|---|---|
+| ID | V-02 |
+| Principle | Open/Closed Principle |
+| Module | Catalogue (Taller 1) and the rule "only consoles accept an extended warranty" (R6, V-04) |
+| Evidence | The same question, "is this product a console", has two independent answers inside the same class. `Product.isConsole` (line 62) returns false as a default and `Console` overrides it to answer true, while `Product.getCategory` (line 43) is abstract and `Console` answers it with the text `CONSOLE`. The two answers are hard coded in the same subclass, one as a boolean literal and one as a string literal. Six call sites already use the predicate: `SaleService.assignWarranties` (line 312), `ReturnService` (line 181), `AccessoryMenu` (line 98), `SaleMenu` (line 81), `AccessoryValidator.validateCompatibleConsole` (line 62) and `SaleValidator.validateExtendedWarrantyRequest` (line 74). |
+| Explanation | The two mechanisms were not introduced together: the predicate came with the correction of V-04 of the GRASP audit, and the category came earlier as the marker of the catalogue file. Nothing in the code ties them together, so a subclass that overrides one of them and not the other is perfectly valid Java and perfectly wrong for the store. The class was open for extension, and the extension it invites is the one that breaks it. |
+| Consequence | A new kind of console, for example a portable console that belongs to the catalogue, has to be changed in two places instead of one, and nothing warns when only one of them was done. The rules that ask "is this a console" and the rules that filter by category can then answer differently about the same product, which is the exact defect that V-04 was registered to remove, reappearing one level below. |
+| Proposed solution | Keep one answer and derive the other. The category cannot disappear, because `ProductRepository` writes it as the marker of the row, so the predicate should be derived from the same constant the subclass uses for its category, instead of a second hard-coded literal. Then a rename of the category or a new console type is a single change and the two answers cannot disagree. |
+| Other member's code | Partly. The six call sites include `SaleService`, `SaleMenu` and `AccessoryMenu`, which belong to the Technical Leader, but the two literals that have to agree are both in `Product` and `Console`, which are mine, so the correction is mine. |
