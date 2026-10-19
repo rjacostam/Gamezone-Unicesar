@@ -1,5 +1,6 @@
 package com.gamezone.ui;
 
+import com.gamezone.format.AmountFormat;
 import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
 
@@ -12,6 +13,9 @@ import com.gamezone.model.Sale;
  * menu showed before.
  */
 public final class ReceiptGenerator {
+
+    /** Line separator of the platform, the one {@code %n} produced before. */
+    private static final String LINE = System.lineSeparator();
 
     private ReceiptGenerator() {
     }
@@ -32,17 +36,19 @@ public final class ReceiptGenerator {
                 .append(" (").append(sale.getSeller().getEmployeeCode()).append(")\n");
         receipt.append("  Productos:\n");
         for (Product product : sale.getProducts()) {
-            receipt.append(String.format("    - %s %s: $%,.2f%n", product.getId(), product.getTitle(), product.getPrice()));
+            receipt.append("    - ").append(product.getId()).append(" ").append(product.getTitle())
+                    .append(": ").append(AmountFormat.moneyInComputerLocale(product.getPrice())).append(LINE);
         }
-        receipt.append(String.format("  Subtotal: $%,.2f%n", sale.getSubtotal()));
+        receipt.append("  Subtotal: ").append(AmountFormat.moneyInComputerLocale(sale.getSubtotal())).append(LINE);
         if (sale.getAppliedPromotionName() != null) {
-            receipt.append(String.format("  Descuento (%s): -$%,.2f%n",
-                    sale.getAppliedPromotionName(), sale.getDiscountAmount()));
+            receipt.append("  Descuento (").append(sale.getAppliedPromotionName()).append("): -")
+                    .append(AmountFormat.moneyInComputerLocale(sale.getDiscountAmount())).append(LINE);
         } else {
             receipt.append("  Descuento: sin promoción aplicable\n");
         }
-        receipt.append(String.format("  Garantías extendidas: $%,.2f%n", sale.getExtendedWarrantyCost()));
-        receipt.append(String.format("  Total: $%,.2f", sale.getTotal()));
+        receipt.append("  Garantías extendidas: ")
+                .append(AmountFormat.moneyInComputerLocale(sale.getExtendedWarrantyCost())).append(LINE);
+        receipt.append("  Total: ").append(AmountFormat.moneyInComputerLocale(sale.getTotal()));
         return receipt.toString();
     }
 }
