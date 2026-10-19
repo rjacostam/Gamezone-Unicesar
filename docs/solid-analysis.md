@@ -95,6 +95,22 @@ Thirenteen findings became thirteen after four merges. A violation that breaks s
 was registered once, under the principle that dictates its correction, and the other principles
 were named inside it, so no defect was counted twice and no defect was fixed twice.
 
+## Question 2 — Boundary findings
+
+*Answered by the Technical Leader.*
+
+There were six boundary findings: V-02, V-06, V-07, V-08, V-09 and V-11. Each one was registered
+only once in the consolidated audit, and each member corrects only his own classes. V-10 and V-12
+also appear in the boundary table, but only because of the order of the corrections: each of them
+has a single owner.
+
+A concrete case is V-09, the interface `InventoryCatalog`. José and I each reported it from the
+client we use: his `ReturnService` never calls `updateStock` and my `SaleService` never calls
+`restoreStock`. In the consolidation it became one violation. José splits the interface and adapts
+his services, and after that Andrés adapts `ProductService` and I adapt `SaleService`.
+
+---
+
 ## Question 3 — How this audit relates to the GRASP audit of Requirement 7
 
 *Answered by Developer 1.*
