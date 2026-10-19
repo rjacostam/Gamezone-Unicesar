@@ -94,6 +94,7 @@ One row per change. Every violation of the consolidated audit must appear at lea
 | Class | Change made | Violation ID | Pattern applied | Commit / PR | Responsible |
 |---|---|---|---|---|---|
 | `Sale` | Added `countUnitsOf(String productId)` and `findProductById(String productId)`, so the sale answers how many units of a product it has and which unit carries an identifier. Both compare ignoring case; `ReturnRepository.findProduct` compares with `equals`, but the stored ids are always written from `Product.getId()`, so the result is the same. No caller changed yet: Developer 2 moves `ReturnService` and `ReturnRepository` to these methods. No regression: both scripts identical. | V-03 | Information Expert | `b0fd770` | Technical Leader |
+| `Product` | Added `increaseStock(int quantity)`, the opposite of `decreaseStock(int)`: it rejects zero and negative quantities with the same rule `ProductService.restoreStock` applies today, and adds the units to the stock the product owns. Purely additive, no existing caller changed, so nothing the user sees changes yet. No caller changed yet: the Technical Leader makes `restoreStock` call it. No regression: both scripts identical. | V-01 | Information Expert | `85481b1` | Developer 1 |
 
 ## Final verification
 
