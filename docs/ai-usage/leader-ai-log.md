@@ -56,3 +56,39 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Decision | Accepted. I approved PRs #30 to #32 only after the fixes compiled and the data files stayed identical. |
 | Related commit | PRs #30, #31, #32 |
 
+
+---
+
+# Requirement 7 — Phase 1 (Audit)
+
+## Entry 5
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Claude Code (Claude Opus 5.5) |
+| Phase and branch | Requirement 7, Phase 1 — `feature/grasp-audit` |
+| Goal | Audit my own classes against the nine GRASP patterns. |
+| Query | Asked the tool to explain each pattern and to guide me with questions on fragments of my code instead of giving me the findings. |
+| Answer | The tool asked 16 questions. I answered each one with my verdict and reasoning, and the tool pointed out missing evidence, wrong classifications and findings that overlapped. |
+| Decision | The verdicts and the five violations are my answers, corrected after the feedback. The tool translated them into English in the format of the statement, checked the line numbers against `develop` at `6c10ce2` and pushed the report. |
+| Related commit | `8597c43` to `5bd1bbc` |
+
+## Entry 6
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | Claude Code (Claude Opus 5.5) |
+| Phase and branch | Requirement 7, Phase 1 — reviews of PR #33 and PR #34 |
+| Goal | Validate the evidence of the developer reports before approving them. |
+| Query | Asked the tool to check both reports against the code: line numbers, owners of each class and duplicated findings. |
+| Answer | It found a wrong evidence in Developer 1's V-01 (`CategoryDiscount`), a duplicated table, wrong class owners and classes of other members audited twice in Developer 2's report. |
+| Decision | I returned each problem to its author and approved both PRs after the corrections. |
+| Related commit | PR #33, PR #34 |
+
+---
+
+# Requirement 7 — Phase 2 (Correction)
+
+No entries yet.
