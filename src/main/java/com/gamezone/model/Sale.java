@@ -168,6 +168,39 @@ public class Sale {
     }
 
     /**
+     * Counts how many units of a product this sale contains. The identifier is compared
+     * ignoring letter case, like the rest of the catalogue searches.
+     *
+     * @param productId identifier of the product
+     * @return number of units of that product, {@code 0} if the sale does not contain it
+     */
+    public int countUnitsOf(String productId) {
+        int total = 0;
+        for (Product product : products) {
+            if (product.getId().equalsIgnoreCase(productId)) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Looks for a unit of this sale by the identifier of its product, ignoring letter case.
+     *
+     * @param productId identifier of the product
+     * @return the first unit with that identifier, or {@code null} if the sale does not
+     *         contain it
+     */
+    public Product findProductById(String productId) {
+        for (Product product : products) {
+            if (product.getId().equalsIgnoreCase(productId)) {
+                return product;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns the sale total.
      *
      * @return total
