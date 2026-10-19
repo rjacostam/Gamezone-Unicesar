@@ -1,6 +1,6 @@
-# AI Usage Log â€” Developer 2
+# AI Usage Log — Developer 2
 
-Owner: JosÃ© David Cervantes Solano
+Owner: José David Cervantes Solano
 
 Each interaction with an AI tool is recorded as one entry with the fields below.
 
@@ -19,7 +19,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 001 â€” Implementation of the people module
+## Entry 001 — Implementation of the people module
 
 | Field | Content |
 |---|---|
@@ -34,7 +34,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 002 â€” Improvements to the people module
+## Entry 002 — Improvements to the people module
 
 | Field | Content |
 |---|---|
@@ -49,13 +49,13 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 003 â€” Accessory module repository and service
+## Entry 003 — Accessory module repository and service
 
 | Field | Content |
 |---|---|
 | Date | 2026-10-18 |
 | Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
-| Phase and branch | Requerimiento 1 del Parcial Primer Corte (mÃ³dulo de accesorios). Branch `feature/accessory-module`, taken from the updated `develop` with the model classes of Developer 1 already merged. |
+| Phase and branch | Requerimiento 1 del Parcial Primer Corte (módulo de accesorios). Branch `feature/accessory-module`, taken from the updated `develop` with the model classes of Developer 1 already merged. |
 | Goal | Implement the two classes of the accessory module assigned to Developer 2 in `docs/accessory-class-diagram.md`: `AccessoryRepository` and `AccessoryService`, together with `data/accessories.csv`, following the specification of the Technical Leader exactly. |
 | Query | "Create `data/accessories.csv` with the header and the three preloaded accessories." / "Implement `AccessoryRepository` with `saveAll` and `loadAll` that declare `throws IOException`, rebuild the right subclass from the first column, return an empty list when the file is missing, skip the header and ignore damaged lines." / "Implement `AccessoryService` with the constructor loading the accessories and turning an `IOException` into an `IllegalStateException` like `ProductService` does." / "Add the three register methods, the four queries and `updateStock`, saving after every change." / "Reject invalid data with `IllegalArgumentException` and a Spanish message." |
 | Answer | The model read the accessory class diagram and the model classes of Developer 1 to use their exact API, read `ProductService` to copy the `IllegalStateException` pattern, and implemented the two classes and the data file with one commit per logical unit, six commits in total, each pushed right after it was created. Because the machine has no Java 17 and no Maven, the code could not be compiled, so it was verified statically: brace and parenthesis balance on every file, detection of unused imports, and confirmation of the twelve signatures and three attributes against the class diagram. The preload file was also checked to have eight columns per line and to be saved in UTF-8. |
@@ -181,3 +181,33 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | The model rewrote the seven services and the seven repositories, plus the two cleanups, and delivered thirteen commits, each pushed right after it was created. Because the machine has no Java 17 and no Maven, the code could not be compiled, so it was verified statically: brace and parenthesis balance on every file, detection of unused and duplicated imports, UTF-8 without byte order mark, a sweep confirming that no service keeps `IllegalArgumentException`, `IOException` or `IllegalStateException`, and a sweep confirming that `IllegalArgumentException` only survives in the two model classes the diagram keeps. |
 | Decision | **Accepted:** the repositories keep `IOException` only in their private helpers, and only the public methods wrap it, which is what makes the exception carry the name of the file without duplicating the wrapping logic. The unknown references of `SaleRepository` were moved to a single private method so the three lookups report the same malformed file message. `PersonService` now builds the list that goes to the file including the new customer and writes it before adding it to memory, so a failed write leaves the customer registered nowhere. **Modified:** the temporary catch blocks were removed only at the end, after the last service was migrated, because until then they were the only thing catching the exceptions of the services that still threw plain `IllegalArgumentException`; removing them earlier would have let those exceptions escape and crash the menu. **Discarded:** three manual checks in `ReturnService` had no matching validator, a blank sale identifier, a blank product identifier inside the request, and a product that does not belong to the sale; they were kept and now throw `InvalidDataException` or `BusinessRuleException`. The category validation of promotions was widened, because `PromotionValidator` also accepts `ACCESSORY`. |
 | Related commit | `2e51acd`, `f9c81a0`, `2dbba58`, `0f2dc94`, `00eac1f`, `47f6cf4`, `5ed2fa9`, `200ae70`, `c0cd7aa`, `81b6044`, `cbd74ab`, `580c11a`, plus the commit that carries this log |
+
+---
+
+## Entry 012 — R7 Fase 1: GRASP audit of my modules
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requerimiento 7 (auditoria GRASP), Fase 1. Branch `feature/grasp-audit`. |
+| Goal | Audit my code against the nine GRASP patterns and write `docs/grasp-audit/developer2-audit.md` in English, with a verdict per pattern, the correct applications named, and a table for every violation. Problems that belong to another member had to be reported for the consolidation instead of being audited. |
+| Query | "Audit `Person`, `Customer`, `Seller`, `PersonRepository`, `PersonService`, `AccessoryRepository`, `AccessoryService`, `PromotionRepository`, `PromotionService`, `ReturnRepository`, `ReturnService` with the monthly balance, `WarrantyRepository` and `WarrantyService`, plus the exception and validator usage of R6." / "One section per pattern with the verdict violation, correct or not applicable." / "For every violation, a table with ID, Pattern, Module, Evidence with the exact lines, Explanation, Consequence, Proposed solution and Other member code." / "Do not audit the code of another member, report it." |
+| Answer | The model read the audit already written by Developer 1 to match its format, then searched my own code for evidence instead of writing from memory: every `instanceof`, every private helper that inspects an object of another class, the collaborator fields of every service and the public API of `Sale` and `Return`. It verified the cited line numbers one by one against the files and corrected four that had drifted. It produced five violations and five problems reported for the consolidation. |
+| Decision | **Accepted:** every verdict is backed by a real line of the current code, and the "correct" verdicts name the class and the method instead of asserting the pattern is followed. The High Cohesion verdict of `ReturnService` is recorded as correct even though the class carries two responsibilities, because Requirement 3 asks for one report over two modules and the reasoning is written down instead of being hidden. **Modified:** four line references were corrected after checking them against the files, and the summary table was fixed because it said ten findings when there were five. **Discarded:** auditing the `Sale` methods or the `Warranty` links that the `V-01` correction would touch, because they belong to the Technical Leader and to Developer 1; they are reported in the last section with the reason, as the statement requires. `docs/grasp-analysis.md` was not written in the first pass because the answer to question 4 had to be agreed first; it was written afterwards on the user's instruction to finish the task. **Corrected after the fact:** the branch was rebased onto two commits that Developer 1 pushed to the same branch while the first pull request was being reviewed, so the hashes below are the ones after the rebase. The first version of this entry cited the hashes from before it, which no longer exist on the branch. |
+| Related commit | Scope and summary `d17e375`, structure `504055d`, then one commit per GRASP pattern: Information Expert `cb896e8`, Creator `0a9405d`, Controller `b0cf019`, Low Coupling `ae8bc53`, High Cohesion `c23ff40`, Polymorphism `8f514ad`, Pure Fabrication `93a4161`, Indirection `63d67c5`, Protected Variations `de018f9`. Log `051932e` and question 4 `7c0cb75`. Pull request #34 into `develop`. |
+
+---
+
+## Entry 013 — R7 Fase 1: corrections requested in the review of the GRASP audit
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requerimiento 7 (auditoria GRASP), Fase 1. Branch `feature/grasp-audit`, pull request #34. |
+| Goal | Apply the eight corrections the Technical Leader asked for before approving the audit, one `docs:` commit each, and replace the description of the pull request with the one he dictated. |
+| Query | "V-01 and R-02: `Return` is Andres's, not mine. Mine is only `Sale`." / "Scope, Controller and Protected Variations: remove `Main.main` and `ConsoleMenu.runSafely`. They are mine and would end up audited twice." / "Pure Fabrication: remove the opinion about the seven validators." / "V-05: if the solution is to keep `WarrantyRecord` then it is not a violation, because every violation is corrected in Phase 2. Change it to correct." / "V-02 and V-03: lines 179 and 317 are in both. Leave them in V-03 and put 'see V-03' in the other." / "Header: put the audited commit, `develop` at `6c10ce2`, as in the other reports." / "grasp-analysis.md: put who answers each question and remove 'Order of the corrections'." / "Polymorphism: `getSummary()` is called on `Customer` and `Seller` (ConsoleMenu lines 208, 218 and 229), not on `Person`." |
+| Answer | The model checked the facts before editing instead of taking the corrections on faith. It read the header of `developer1-audit.md` and `leader-audit.md` to copy the exact `Author:` line format, confirmed that the Technical Leader already lists `ConsoleMenu` and `Main` in his own scope table, and verified that `ConsoleMenu` lines 208, 218 and 229 call `getSummary()` on a `Customer` and on a `Seller`. It also checked the line evidence still matched the source, which it did. |
+| Decision | **Accepted:** all eight corrections. `V-01` was rewritten around `Sale` only, and `R-02` was reassigned from the Technical Leader to Developer 1 because `Return` is his class, so it is reported and not audited. **Modified:** three changes the review did not ask for but that the file required to stay true. The summary table was corrected in the same commits as the content it counts, otherwise the counts would have contradicted the sections. The stale `(see V-01)` inside `R-03` was dropped, because `V-01` no longer covers the warranty question that `R-03` reports. And `grasp-analysis.md` said "five violations" after `V-05` was reclassified, so it was corrected to four. **Discarded:** adding a new Controller example to replace the two removed ones. `PersonService.registerCustomer` was the candidate, but it repeats a bullet already in Protected Variations, so the section was left with its two real applications and the summary was lowered to match. **Kept and flagged:** the leader asked to remove the opinion about the seven validators but not the one about `GameZoneException` and its four subclasses, which are also his classes, and the "correct applications" of Information Expert still praise `Return.calculateRefundAmount` and `Warranty.generateWarrantyCertificate`, which are Andres's. Those three were left as they are and are reported for him to decide. |
+| Related commit | `8226935`, `f19a9a0`, `f755c23`, `302377f`, `37f14f0`, `e178f28`, `a3a6246`, `6731f87`, and the log entry itself. Pull request #34. |
