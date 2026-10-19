@@ -75,3 +75,40 @@ solution and the responsible members are fixed here.
 | V-11 | DIP | `SaleService` (lines 44–49) and `ReturnService` (lines 53–57) hold their repositories and other services as concrete classes. | High level services depend on concrete classes of the storage and of other modules. The fields `ProductService` and `AccessoryService` are already covered by V-01 and V-09, so this violation covers the rest: the two repositories, `PersonService`, `PromotionService`, `WarrantyService` and the `SaleService` used by `ReturnService`. | Small contracts built from what each service needs (store sales and returns, find sales, find people, choose the best promotion, assign warranties, cancel warranties), not copies of whole classes, so no new ISP violation appears. | leader V-06, dev2 V-06 | Technical Leader (contracts implemented by `SaleService`/`SaleRepository`, and `SaleService` fields), Developer 2 (contracts implemented by his services and `ReturnRepository`, and `ReturnService` fields) |
 | V-12 | DIP | `AccessoryService` holds the concrete `ProductService` and uses it only for `findById` (lines 309 and 328). | The accessory module is compiled and tested against the catalogue module. | Depend on the finder contract that comes from V-09. | dev2 V-07 | Developer 2 |
 | V-13 | DIP | `ConsoleMenu` creates `ConsoleInput` and the seven submenus with `new` (lines 46–53); it is not the composition root. | Any change in how a submenu is built changes `ConsoleMenu`. | Build the submenus in `Main` and pass them to `ConsoleMenu`, which receives them as `Submenu`, so the dependency is really inverted. | leader V-07 | Technical Leader |
+
+## Merges made in the consolidation
+
+- **C1.** leader V-02 and dev1 V-03 are the same money format: one violation, V-02. The two
+  reports proposed opposite things about the locale; the agreed solution keeps the current
+  output of every place, because Requirement 8 forbids changing what the user sees.
+- **C2.** leader V-04 and dev2 V-05 are the same interface seen from its two clients: V-09.
+- **C3.** leader V-06 and dev2 V-06 are the same defect in two services, and their solutions
+  share contracts (`ReturnService` needs a sale finder implemented by `SaleService`;
+  `WarrantyService` implements the assign contract used by the sales and the cancel contract
+  used by the returns). Registered once, V-11, so the contracts are designed together. The
+  same was done in the GRASP audit with V-07.
+- **C4.** dev2 V-02 and dev2 V-03 are the same pattern in the accessory and promotion modules,
+  with the same solution and the same owner: V-06.
+
+## Boundary findings
+
+| Violation | Members | Order of the correction |
+|---|---|---|
+| V-02 | Developer 1, Technical Leader | Developer 1 creates the common format component; then each member moves his own call sites. |
+| V-06 | Developer 2, Developer 1, Technical Leader | The factories and the single `register` first; then the two menus. |
+| V-07 | Developer 1 (fix), Developer 2 (reported) | Before or together with V-09, so the new finder interface has one contract from the start. |
+| V-08 | Developer 1, Developer 2 | Developer 1 defines the new contracts; then Developer 2 adapts his two repositories. |
+| V-09 | Developer 2, Developer 1, Technical Leader | Developer 2 splits the interface and adapts `AccessoryService`; then `ProductService`, `SaleService` and `ReturnService`. |
+| V-10, V-12 | Technical Leader, Developer 2 | After V-09, because they use its finder contract. |
+| V-11 | Technical Leader, Developer 2 | The small contracts first; then the fields of `SaleService` and `ReturnService`. |
+
+## Out of scope findings
+
+New functional defects found in this audit. OOS-01 of Requirement 7 is not registered again.
+
+| Field | Content |
+|---|---|
+| ID | OOS-02 |
+| Evidence | `ReceiptGenerator.generate` (lines 35–45) formats money with `String.format` without a locale, while the other nine places use `Locale.US`. |
+| Consequence | The sale receipt depends on the language of the computer: `$3,100,000.00` on a computer in English and `$3.100.000,00` on one in Spanish, while the other documents always show the first format. |
+| Why it is not corrected | Making the receipt use `Locale.US` would change what the user sees on computers configured in Spanish, which Requirement 8 forbids. V-02 is corrected keeping the current output, and this difference is left for a later requirement. |
