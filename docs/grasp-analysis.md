@@ -15,6 +15,74 @@
 
 ---
 
+## Question 1 — Criterion for a verdict
+
+*Answered by Developer 1.*
+
+### The criterion the three verdicts had to pass
+
+The three verdicts were not three degrees of severity. They are three different questions, and
+the rule to choose between them is this one:
+
+> **A change the store could reasonably need to make tomorrow: how many classes would I have to
+> open, and is one of them the class that already owns the information? If the answer is more
+> than one, it is a violation of the pattern that names the missing owner. If the answer is
+> one and it is the owner, it is a correct application. If the class never takes part in that
+> decision, it is not applicable.**
+
+- **Violation.** The pattern exists, the class takes part in the decision the pattern is about,
+  and the responsibility sits somewhere other than where the pattern says it should sit. It is
+  not "the class could be cleaner": it is that the change the pattern protects against would
+  now have to be written in more than one place. GRASP patterns are not about elegance, they
+  are predictions about the cost of future changes, so a violation only exists if it predicts
+  a cost.
+- **Correct.** The pattern is **present and used well**, never merely absent. A class that does
+  not participate in the decision the pattern governs cannot be correct: saying "Creator is
+  correct" because no class creates anything would make the verdict meaningless. A correct
+  verdict needs a place, a class and a method where the pattern is doing its job, and a reason
+  why it is well applied there.
+- **Not applicable.** A precondition of the pattern is not met by the class. This verdict is not
+  a compliment and it is not a "nothing was found": it means the concept the pattern describes
+  does not exist in that code, so there is nothing to judge. It has to be justified in writing,
+  because the difference between *not applicable* and *correct* is the difference between "this
+  class does not do this" and "this class does this and does it well".
+
+### The minimum evidence each verdict had to carry
+
+| Verdict | Minimum evidence | Why that evidence |
+|---|---|---|
+| Violation | Class, method, exact line numbers, the literal expression that decides, why the responsibility is in the wrong place, the consequence for a concrete change, a proposed solution, and whether it touches another member's code | A violation without lines is an opinion. The literal expression is included so the reader can verify the finding without opening the file, and so two members who see the same lines register the same defect instead of two defects. |
+| Correct | Class and method, with the line, and the reason the pattern is applied well there | It is what separates *correct* from *absent*, and it is what lets the consolidation check that the same pattern was not called correct in one report and violated in another for the same class. |
+| Not applicable | The precondition that is not met, written in one sentence, and a pointer to where the pattern does apply in the system if it applies somewhere | It turns "I did not find anything" into a checkable statement. Without the pointer, *not applicable* is indistinguishable from an audit that was not done. |
+
+### Three rules we applied to keep the verdicts honest
+
+1. **No finding without a nameable change.** If I could not describe the modification of the
+   store that the defect would make expensive, it was not a violation. This is why my report
+   has five findings and not thirty: most code is not wrong, it is simply not connected to a
+   foreseeable change.
+2. **The evidence was read, not remembered.** Every line number was taken from the file after
+   `git pull`, on the audited commit `6c10ce2`, and was verified against the source before the
+   finding was written. When the Technical Leader found that one of my line ranges pointed at a
+   filtered loop instead of a full one, the finding was corrected instead of defended, because
+   the criterion is the code and not the report.
+3. **A mandated design is still audited.** Some classes had the shape the class diagrams of the
+   requirements asked for. That does not exempt them: if a mandated shape produces a defect with
+   a real cost, it is reported and the conflict with the diagram is stated. That is how my
+   finding of High Cohesion (my V-03, consolidated as V-05) reached classes whose text was
+   written on purpose.
+
+### What the criterion produced
+
+Thirteen violations were reported by the three reports and nine survived the consolidation. The
+three verdicts were not decoration: `Creator`, `Pure Fabrication` and `Indirection` are correct
+for the whole team because a place was found where each one is applied, and `Controller` is
+**not applicable** in my report but **violation** in the team verdict, because the same pattern
+is absent in my classes and present in `ConsoleMenu`. A criterion that cannot produce different
+verdicts for different members would not be a criterion.
+
+---
+
 ## Question 2 — Boundary findings
 
 *Answered by the Technical Leader.*
