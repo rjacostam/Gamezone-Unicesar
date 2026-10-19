@@ -26,7 +26,7 @@ import java.util.List;
  * {@link BusinessRuleException} when a rule of the store is broken, with a
  * message in Spanish, because the console menu shows it directly to the user.
  */
-public class ProductService implements InventoryCatalog {
+public class ProductService implements InventoryCatalog, StockUpdater, StockRestorer {
     private ProductRepository repository;
     private List<Product> products;
 
