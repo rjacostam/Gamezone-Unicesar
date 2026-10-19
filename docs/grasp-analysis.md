@@ -213,6 +213,8 @@ have been corrected three times by two people in an order nobody had agreed on.
 
 ## Question 4 — Preserving the external behaviour of the system
 
+*Answered by Developer 2.*
+
 The audit found four violations in the code of Developer 2 and five more problems that
 belong to the Technical Leader or to Developer 1. None of them is a change of behaviour,
 but a refactor can break the system without ever failing to compile, so the team agreed on
