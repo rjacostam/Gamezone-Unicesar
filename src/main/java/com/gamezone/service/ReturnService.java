@@ -5,7 +5,6 @@ import com.gamezone.exceptions.InvalidDataException;
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Accessory;
-import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
@@ -176,7 +175,7 @@ public class ReturnService {
     private double cancelWarrantiesOfConsoles(Sale sale, List<Product> returnedProducts) {
         double refund = 0;
         for (Product product : returnedProducts) {
-            if (!(product instanceof Console)) {
+            if (!product.isConsole()) {
                 continue;
             }
             refund += warrantyService.cancelWarranties(product.getId(), sale.getId());
