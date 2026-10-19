@@ -1,10 +1,11 @@
 package com.gamezone.ui;
 
+import com.gamezone.format.AmountFormat;
+
 import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Warranty;
 import java.time.LocalDate;
-import java.util.Locale;
 
 /**
  * Builds the text of the warranty certificate that the console menu shows to the
@@ -64,7 +65,7 @@ public final class WarrantyCertificateFormatter {
                 .append(" | Fin: ").append(warranty.getEndDate()).append("\n");
         certificate.append("Cobertura: ").append(warranty.coverageDescription()).append("\n");
         certificate.append("Costo adicional: ")
-                .append(String.format(Locale.US, "$%,.2f", warranty.getAdditionalCost())).append("\n");
+                .append(AmountFormat.money(warranty.getAdditionalCost())).append("\n");
         certificate.append("Estado: ")
                 .append(active ? "Vigente" : "No vigente").append("\n");
         return certificate.toString();

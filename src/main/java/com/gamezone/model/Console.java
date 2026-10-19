@@ -1,5 +1,7 @@
 package com.gamezone.model;
 
+import com.gamezone.format.AmountFormat;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,7 +44,7 @@ public class Console extends Product {
                 + " | Marca: " + brand
                 + " | Modelo: " + model
                 + " | Generacion: " + generation
-                + " | Precio: " + String.format("$%,.2f", getPrice())
+                + " | Precio: " + AmountFormat.moneyInComputerLocale(getPrice())
                 + " | Stock: " + getStock();
     }
 

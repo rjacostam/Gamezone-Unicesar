@@ -1,9 +1,10 @@
 package com.gamezone.ui;
 
+import com.gamezone.format.AmountFormat;
+
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
-import java.util.Locale;
 
 /**
  * Builds the text of the return receipt that the console menu shows to the user.
@@ -60,17 +61,17 @@ public final class ReturnReceiptFormatter {
             double itemDiscount = listPrice * ratio;
             receipt.append("- ").append(product.getId()).append(" ")
                     .append(product.getTitle())
-                    .append(" | Precio: ").append(String.format(Locale.US, "$%,.2f", listPrice))
-                    .append(" | Descuento: ").append(String.format(Locale.US, "-$%,.2f", itemDiscount))
+                    .append(" | Precio: ").append(AmountFormat.money(listPrice))
+                    .append(" | Descuento: ").append(AmountFormat.negativeMoney(itemDiscount))
                     .append(" | Reembolso: ")
-                    .append(String.format(Locale.US, "$%,.2f", listPrice - itemDiscount))
+                    .append(AmountFormat.money(listPrice - itemDiscount))
                     .append("\n");
         }
         receipt.append("Motivo: ").append(returnToFormat.getReason()).append("\n");
         receipt.append("Reembolso por garantías anuladas: ")
-                .append(String.format(Locale.US, "$%,.2f", returnToFormat.getWarrantyRefund())).append("\n");
+                .append(AmountFormat.money(returnToFormat.getWarrantyRefund())).append("\n");
         receipt.append("Monto reembolsado: ")
-                .append(String.format(Locale.US, "$%,.2f", returnToFormat.getRefundAmount())).append("\n");
+                .append(AmountFormat.money(returnToFormat.getRefundAmount())).append("\n");
         return receipt.toString();
     }
 }
