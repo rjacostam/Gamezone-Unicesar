@@ -147,3 +147,49 @@ Violation V-01 as it breaks this principle:
 | Consequence | A repository written for one file can be pointed at the other hierarchy: it compiles, because the signature is satisfied, and it writes a row with the columns of the other file. Nothing detects it at compile time and nothing fails at run time either, because the row is still a syntactically valid row. |
 | Proposed solution | The correction is the one of V-01, written in the Interface Segregation section: stop making the two hierarchies share one contract for two files, either by publishing a marker that names the file next to the columns, or by declaring the column contract in the hierarchy that owns the file. |
 | Other member's code | Yes. `ProductRepository` and `AccessoryRepository`, which are the two callers, belong to Developer 2. |
+## Interface Segregation Principle
+
+**Verdict: violation** (one point, V-01).
+
+Correct applications:
+
+- The validation layer is not one big validator: it is seven classes split by subject, and the
+  biggest of them, `ProductValidator`, offers five methods instead of the nineteen that a single
+  class covering the whole store would need. A caller that only validates a product never depends
+  on a single check of a warranty or of a promotion.
+- `Promotion` is a small contract with four members that every promotion genuinely needs:
+  `calculateDiscount` (line 40), `getDescription` (line 47), `getTypeCode` (line 55) and
+  `getExtraFields` (line 66), plus the data accessors. None of the three subclasses was forced to
+  answer something meaningless.
+- `Warranty` is the same shape: four methods that a warranty cannot do without, `getDurationInMonths`
+  (line 44), `getWarrantyType` (line 51), `getAdditionalCost` (line 57) and `coverageDescription`
+  (line 130). After the correction of V-09 the base class no longer carries a behaviour that only
+  the extended warranty has.
+- `GameZoneException` (line 10) declares one member, `getErrorCode` (line 56), and each subclass
+  adds nothing that a caller has to implement.
+- The two formatters of `com.gamezone.ui` do not implement an interface, so no class is forced to
+  offer a `format` it cannot build.
+
+Violation V-01:
+
+| Field | Content |
+|---|---|
+| ID | V-01 |
+| Principle | Interface Segregation Principle |
+| Module | Catalogue (Taller 1), accessories (R1, R7) |
+| Evidence | `Product` declares one contract for the extra columns of a data file: `public abstract List<String> getExtraFields();` (line 54). `Accessory extends Product` (line 14 in `Accessory`), so the three accessories are forced to answer it. `VideoGame` (line 65) and `Console` (line 74) answer with the three columns of `products.csv`. `Controller` (line 43) answers with one column, its connection type; `Cable` (line 46) with two, its length and its connector type; `Memory` (line 47) with two, its capacity and its memory type, and those are the columns of `accessories.csv`. Neither repository is written against a narrower contract: `ProductRepository` line 56 and `AccessoryRepository` line 141 both read the answer through the same inherited method. |
+| Explanation | The principle asks whether every class that inherits a contract can honour it, or whether it only inherits it because of the tree. An accessory is not stored in the product catalogue: it is in another file, with a different number of columns and a different meaning. Answering "which columns of `products.csv` are yours" is a question that does not exist for it, so the contract does not describe it. `Product` was made the parent of both hierarchies because it holds the identifier, the title, the price and the stock, and that single inheritance chain is what drags the file contract in with it. |
+| Consequence | The two hierarchies are forced to share one contract with two meanings, so the answer cannot be used without knowing which hierarchy it came from. A repository written for one file compiles against the other and writes the wrong columns. A third catalogue that stores its own kind of item would have to be squeezed into the same method with a third meaning, and the alternative, ignoring it, leaves a subclass that answers with a value nothing reads. |
+| Proposed solution | Segregate the two contracts. Either publish, next to the columns, a marker that names the file the product belongs to, so a caller can tell the two answers apart; or declare the column contract in a small interface owned by the persistence layer, for example `CatalogRow`, implemented by `VideoGame`, `Console` and each accessory, so each hierarchy declares only the file it is stored in. The second option also fixes the Dependency Inversion problem named below, because the domain would no longer know the column layout. Either way, `Product` stops carrying a contract that only some of its subclasses can honour. |
+| Other member's code | Yes. `ProductRepository` and `AccessoryRepository` are the two callers and belong to Developer 2. The correction touches `Product`, `Accessory` and the three accessory subclasses, which are mine. |
+
+V-01 breaks three more principles at once, and they are named here instead of being registered
+again:
+
+- **Liskov Substitution**, because the signature is satisfied and the meaning is not, so a
+  substitutable type can hand back the wrong thing. See the Liskov Substitution section.
+- **Single Responsibility**, because `Product` and `Promotion` change when the layout of a data
+  file changes, which is a reason that has nothing to do with a rule of the store.
+- **Dependency Inversion**, because the domain, which is the high level, is the one that knows
+  the column layout of the file, which is the low level detail. See the Dependency Inversion
+  section.
