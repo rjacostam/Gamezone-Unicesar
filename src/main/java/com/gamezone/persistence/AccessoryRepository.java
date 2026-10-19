@@ -138,19 +138,7 @@ public class AccessoryRepository {
         builder.append(accessory.getStock()).append(DELIMITER);
         builder.append(String.join(CONSOLE_SEPARATOR, accessory.getCompatibleConsoleIds()))
                 .append(DELIMITER);
-        if (accessory instanceof Controller) {
-            builder.append(valueOf(((Controller) accessory).getConnectionType()));
-        } else if (accessory instanceof Cable) {
-            Cable cable = (Cable) accessory;
-            builder.append(cable.getLengthInMeters()).append(DELIMITER)
-                    .append(valueOf(cable.getConnectorType()));
-        } else if (accessory instanceof Memory) {
-            Memory memory = (Memory) accessory;
-            builder.append(memory.getCapacityInGb()).append(DELIMITER)
-                    .append(valueOf(memory.getMemoryType()));
-        } else {
-            builder.append("").append(DELIMITER).append("");
-        }
+        builder.append(String.join(DELIMITER, accessory.getExtraFields()));
         return builder.toString();
     }
 
