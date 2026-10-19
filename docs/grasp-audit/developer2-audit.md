@@ -208,8 +208,8 @@ Correct applications:
 **Correct applications:**
 
 - `Customer.getSummary` and `Seller.getSummary` give the same summary in two classes without
-  any test on the type: the menu calls `getSummary()` on a `Person` reference and the right
-  version runs.
+  any test on the type: the menu calls `getSummary()` on a `Customer` and on a `Seller`
+  (`ConsoleMenu`, lines 208, 218 and 229) and the right version runs.
 - `listAllAccessories` and `findBestPromotionFor` filter with `getAccessoryType()` and with
   the result of `calculateDiscount`, so no type test is needed.
 - `findWarrantyByProduct` compares the end dates of two warranties instead of testing their
