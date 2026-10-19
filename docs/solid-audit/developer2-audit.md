@@ -135,17 +135,6 @@ Seven findings: V-01 to V-07, plus the problems reported for the consolidation.-
 | Proposed solution | Decide the contract once and make both obey it. The cheapest is the one already used by the accessory service: the identifier is trimmed and a null or blank answers `null`. The two lines of `ProductService.findById` change and nothing else does, because the trimmed form is what every caller already sends. |
 | Other member's code | Yes. `ProductService` is Developer 1's and `findById` is the method V-07 put in the interface, so the two implementations have to be corrected together or not at all. |
 
-**Correct applications:**
-
-- `Product.getExtraFields` is abstract (line 54) and `VideoGame` (line 65) and `Console`
-  (line 74) both answer a list of strings in the same column order the file expects, so
-  either one can replace `Product` wherever the list is used.
-- `Product.isConsole` answers `false` and only `Console` answers `true`. A caller that asks
-  the question works with any product, and the answer means the same thing in each class.
-- `Warranty.getTypeCode` is abstract and `BasicWarranty` and `ExtendedWarranty` answer the
-  markers of their own rows, so `WarrantyRepository.serialize` treats every warranty the
-  same way.
-
 ---
 
 ## Interface Segregation Principle
