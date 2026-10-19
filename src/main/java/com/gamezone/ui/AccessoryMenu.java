@@ -1,6 +1,7 @@
 package com.gamezone.ui;
 
 import com.gamezone.model.Accessory;
+import com.gamezone.model.AccessoryFactory;
 import com.gamezone.model.Product;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.ProductService;
@@ -64,7 +65,8 @@ public class AccessoryMenu extends Submenu {
         int stock = input.readInt("Cantidad en inventario: ");
         List<String> consoles = readCompatibleConsoles();
         String connection = input.readText("Tipo de conexión (Inalámbrico/Alámbrico): ");
-        Accessory controller = accessoryService.registerController(id, title, price, stock, consoles, connection);
+        Accessory controller = accessoryService.register(AccessoryFactory.create(AccessoryFactory.TYPE_CONTROLLER,
+                id, title, price, stock, consoles, List.of(connection)));
         System.out.println("Control registrado: " + controller.getDescription());
     }
 
@@ -76,7 +78,8 @@ public class AccessoryMenu extends Submenu {
         List<String> consoles = readCompatibleConsoles();
         double length = input.readDouble("Longitud en metros: ");
         String connector = input.readText("Tipo de conector (HDMI, USB, óptico...): ");
-        Accessory cable = accessoryService.registerCable(id, title, price, stock, consoles, length, connector);
+        Accessory cable = accessoryService.register(AccessoryFactory.create(AccessoryFactory.TYPE_CABLE,
+                id, title, price, stock, consoles, List.of(String.valueOf(length), connector)));
         System.out.println("Cable registrado: " + cable.getDescription());
     }
 
@@ -88,7 +91,8 @@ public class AccessoryMenu extends Submenu {
         List<String> consoles = readCompatibleConsoles();
         int capacity = input.readInt("Capacidad en GB: ");
         String type = input.readText("Tipo de memoria (SD, microSD, tarjeta interna): ");
-        Accessory memory = accessoryService.registerMemory(id, title, price, stock, consoles, capacity, type);
+        Accessory memory = accessoryService.register(AccessoryFactory.create(AccessoryFactory.TYPE_MEMORY,
+                id, title, price, stock, consoles, List.of(String.valueOf(capacity), type)));
         System.out.println("Memoria registrada: " + memory.getDescription());
     }
 
