@@ -1,18 +1,5 @@
 package com.gamezone.ui;
 
-import com.gamezone.exceptions.BusinessRuleException;
-import com.gamezone.exceptions.InvalidDataException;
-import com.gamezone.exceptions.PersistenceException;
-import com.gamezone.exceptions.ResourceNotFoundException;
-import com.gamezone.model.Accessory;
-import com.gamezone.model.Console;
-import com.gamezone.model.Customer;
-import com.gamezone.model.Product;
-import com.gamezone.model.Promotion;
-import com.gamezone.model.Return;
-import com.gamezone.model.Sale;
-import com.gamezone.model.Seller;
-import com.gamezone.model.Warranty;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
@@ -21,42 +8,32 @@ import com.gamezone.service.ReturnService;
 import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-
 /**
- * Console menu of the application.
+ * Main menu of the application.
  * <p>
- * It only reads the user input, calls the services and prints the results. It never uses
- * a repository. Every message shown to the user is in Spanish. Each kind of error gets its
- * own message, and an error in one operation never closes the application or shows a
- * stack trace.
+ * It shows the seven modules of the store and opens the submenu the user chooses. Each
+ * submenu reads the input, calls the services of its module and prints the results, so this
+ * class only builds them and moves between them. Every message shown to the user is in
+ * Spanish, and an error in one operation never closes the application or shows a stack
+ * trace.
  */
 public class ConsoleMenu {
 
-    private final ProductService productService;
-    private final PersonService personService;
-    private final SaleService saleService;
-    private final AccessoryService accessoryService;
-    private final PromotionService promotionService;
-    private final WarrantyService warrantyService;
-    private final ReturnService returnService;
     private final ConsoleInput input;
-    private final ReturnMenu returnMenu;
-    private final WarrantyMenu warrantyMenu;
-    private final PromotionMenu promotionMenu;
-    private final AccessoryMenu accessoryMenu;
-    private final SaleMenu saleMenu;
-    private final PersonMenu personMenu;
     private final ProductMenu productMenu;
+    private final PersonMenu personMenu;
+    private final SaleMenu saleMenu;
+    private final AccessoryMenu accessoryMenu;
+    private final PromotionMenu promotionMenu;
+    private final WarrantyMenu warrantyMenu;
+    private final ReturnMenu returnMenu;
 
     /**
-     * Creates the menu with the services it works with.
+     * Creates the main menu and one submenu per module, all of them sharing the same reader
+     * of the console.
      *
-     * @param productService service for products
-     * @param personService  service for customers and sellers
+     * @param productService   service for products
+     * @param personService    service for customers and sellers
      * @param saleService      service for sales
      * @param accessoryService service for accessories
      * @param promotionService service for promotions
@@ -66,13 +43,6 @@ public class ConsoleMenu {
     public ConsoleMenu(ProductService productService, PersonService personService, SaleService saleService,
                        AccessoryService accessoryService, PromotionService promotionService,
                        WarrantyService warrantyService, ReturnService returnService) {
-        this.productService = productService;
-        this.personService = personService;
-        this.saleService = saleService;
-        this.accessoryService = accessoryService;
-        this.promotionService = promotionService;
-        this.warrantyService = warrantyService;
-        this.returnService = returnService;
         this.input = new ConsoleInput();
         this.productMenu = new ProductMenu(input, productService);
         this.personMenu = new PersonMenu(input, personService);
@@ -113,25 +83,4 @@ public class ConsoleMenu {
             }
         } while (option != 0);
     }
-
-    /**
-     * Runs one menu operation and turns any error of the system into a clear message for the
-     * user, with a different text for each kind of error.
-     *
-     * @param action operation chosen by the user
-     */
-    private void runSafely(Runnable action) {
-        try {
-            action.run();
-        } catch (ResourceNotFoundException e) {
-            System.out.println("No se encontró el recurso solicitado: " + e.getMessage());
-        } catch (BusinessRuleException e) {
-            System.out.println("No se puede completar la operación: " + e.getMessage());
-        } catch (InvalidDataException e) {
-            System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
-        } catch (PersistenceException e) {
-            System.out.println("Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador.");
-        }
-    }
-
 }
