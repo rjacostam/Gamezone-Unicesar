@@ -123,6 +123,37 @@ Correct applications:
 
 ---
 
+## Low Coupling
+
+**Verdict: violation.**
+
+### V-02 — `ReturnService` depends on five collaborators and on the concrete product types
+
+| Field | Content |
+|---|---|
+| ID | V-02 |
+| Pattern | Low Coupling |
+| Module | Returns (R3) |
+| Evidence | `ReturnService` declares five collaborator fields (lines 55-59): `ReturnRepository repository`, `SaleService saleService`, `ProductService productService`, `AccessoryService accessoryService` and `WarrantyService warrantyService`. It also imports six model types (lines 3-8): `Accessory`, `Console`, `Customer`, `Product`, `Return` and `Sale`. The concrete types are used in `cancelWarrantiesOfConsoles` (line 179, `product instanceof Console`), in `restoreStock` (line 317, `product instanceof Accessory`) and in `viewReturnsByCustomer` (line 411, `sale.getCustomer()`). |
+| Explanation | A return needs the sale, and it needs somebody who owns each kind of stock. Instead of talking to one thing, the service holds four collaborators and has to know which of them owns each item, so adding a fifth kind of item would mean a fifth collaborator and another `instanceof`. The dependency is not expressed as an abstraction, it is expressed as knowledge of the concrete classes. |
+| Consequence | The number of collaborators a return needs grows with the number of modules the store sells, and a change of one line in one service is a reason to recompile and retest this one. The `instanceof` checks are also duplicated in V-03 and V-04, so the same knowledge is expressed in three different shapes. |
+| Proposed solution | Give the stock a single owner instead of two. The cleanest form is a small interface with `restoreUnits(String id, int quantity)` and `findById(String id)`, implemented by `ProductService` and `AccessoryService`, and have `ReturnService` hold the list of them. The `instanceof` tests then disappear because each service restores its own items. The signature of `registerReturn` does not change, so the menu is not affected. |
+| Other member's code | Yes. `ProductService` and `AccessoryService` would have to be declared as implementations of the new interface. `ProductService` is Developer 1's and `AccessoryService` is mine. |
+
+**Correct applications:**
+
+- `PersonService` depends only on `PersonRepository`. It does not call the catalogue, the
+  sales or the menu, and it does not know they exist.
+- `PromotionService` depends only on `PromotionRepository`. Even `findBestPromotionFor`, which
+  takes a `Sale`, reads it through the methods of `Sale` instead of reaching into the sale
+  module.
+- `PromotionRepository` depends only on the three promotion classes, never on a service, which
+  is the rule the architecture sets for the persistence layer.
+- The R6 validators are used as static calls, so a service that adopts them does not gain a
+  new collaborator object to construct or to keep alive.
+
+---
+
 ## Findings reported for the consolidation
 
 These problems were found while auditing my own code, but the fix is not mine alone. They
