@@ -22,13 +22,15 @@ instead of being audited here.
 | Promotions | R2 | `PromotionRepository`, `PromotionService` | `saveAll`, `loadAll`, `serialize`, `deserialize`, `registerPercentageDiscount`, `registerCategoryDiscount`, `registerBulkPurchaseDiscount`, `listAllPromotions`, `listActivePromotions`, `findBestPromotionFor`, `findById` |
 | Warranties | R4 | `WarrantyRepository`, `WarrantyService`, `WarrantyRecord` | `saveAll`, `loadAll`, `toRecord`, `readQuietly`, `loadWarranties`, `toWarranty`, `assignBasicWarranty`, `assignExtendedWarranty`, `cancelWarranties`, `removeOneWarranty`, `findWarrantyByProduct`, `covers`, `listAllWarranties`, `listActiveWarranties`, `listWarrantiesExpiringSoon` |
 | Returns | R3 | `ReturnRepository`, `ReturnService` | `saveAll`, `loadAll`, `registerReturn`, `resolveReturnedProducts`, `countUnits`, `countReturnedUnits`, `restoreStock`, `cancelWarrantiesOfConsoles`, `viewAllReturns`, `viewReturnsByCustomer`, `viewReturnsBySale`, `calculateMonthlySales`, `calculateMonthlyReturns`, `generateMonthlyBalance` |
-| Exception and validation layer | R6 | the seven repositories, the seven services, `ConsoleMenu.runSafely`, `Main` | every public repository method, every `validate...` delegation, the two `catch` blocks |
+| Exception and validation layer | R6 | the seven repositories and the seven services | every public repository method and every `validate...` delegation inside my services |
 
 Not audited here: `Product`, `VideoGame`, `Console`, `Accessory`, `Controller`, `Cable`,
 `Memory`, `Promotion`, `PercentageDiscount`, `CategoryDiscount`, `BulkPurchaseDiscount`,
-`BasicWarranty`, `ExtendedWarranty` (Developer 1), `Sale`, `SaleService`, `SaleRepository`,
-`ConsoleMenu` except `runSafely`, `Main` except the startup catch, and the exception and
-validator classes themselves (Developer 1).
+`BasicWarranty`, `ExtendedWarranty`, `Return`, `Warranty` (Developer 1), `Sale`,
+`SaleService`, `SaleRepository`, `ConsoleMenu`, `Main`, and the exception and validator
+classes themselves (Technical Leader and Developer 1). `Main.main` and
+`ConsoleMenu.runSafely` are not audited here either: both classes are mine, but the
+Technical Leader already includes them in his own report, and a class must be audited once.
 
 ---
 
@@ -38,13 +40,13 @@ validator classes themselves (Developer 1).
 |---|---|---|---|
 | Information Expert | 1 | 4 | 0 |
 | Creator | 0 | 5 | 0 |
-| Controller | 0 | 4 | 0 |
+| Controller | 0 | 2 | 0 |
 | Low Coupling | 1 | 3 | 0 |
 | High Cohesion | 0 | 6 | 0 |
 | Polymorphism | 2 | 2 | 0 |
 | Pure Fabrication | 1 | 3 | 0 |
 | Indirection | 0 | 4 | 0 |
-| Protected Variations | 0 | 6 | 0 |
+| Protected Variations | 0 | 5 | 0 |
 
 Five findings: V-01 to V-05, plus five problems reported for the consolidation.
 
@@ -110,11 +112,6 @@ Correct applications:
 
 Correct applications:
 
-- `Main.main` is the controller of the application. It creates the repositories, the services
-  and the menu, injects each dependency and starts the run. It contains no business rule.
-- `ConsoleMenu.runSafely` (lines 111-122) handles the events of a submenu and routes each
-  failure to a different message, so the user never sees a stack trace. It decides nothing
-  about the business.
 - `AccessoryService.restoreStock` and `WarrantyService.cancelWarranties` coordinate a change
   over several objects, which is what a controller does inside its own module.
 - `ReturnService.registerReturn` coordinates the eight steps of a return, in order, across the
@@ -292,9 +289,6 @@ Correct applications:
 - The R6 validation layer protects the services from the change of the validation strategy: a
   service calls `ProductValidator.validateProductData` and nothing else, so replacing the
   internal implementation of the validators does not touch a single service.
-- The R6 exceptions protect the menu. `ConsoleMenu.runSafely` (lines 111-122) knows the four
-  types and nothing else, so a service can be migrated to the typed exceptions one at a time
-  without breaking the menu.
 - `PersonService.registerCustomer` writes the file before it adds the customer to the list
   (lines 101-104), so the order in which the in-memory state and the file change is fixed in one
   place and cannot drift.
