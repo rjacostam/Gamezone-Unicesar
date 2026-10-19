@@ -66,8 +66,9 @@ public class Main {
             StoreCatalog catalog = new StoreCatalog(
                     List.of(productService::listAllProducts, accessoryService::listAllAccessories),
                     List.of(productService, accessoryService));
-            SaleService saleService = new SaleService(saleRepository, catalog, productService, personService,
-                    accessoryService, promotionService, warrantyService);
+            SaleService saleService = new SaleService(saleRepository, catalog,
+                    List.of(productService, accessoryService), personService,
+                    promotionService, warrantyService);
             warrantyService.loadWarranties(saleService.listAllSales());
             ReturnService returnService = new ReturnService(returnRepository, saleService, productService,
                     accessoryService, warrantyService);

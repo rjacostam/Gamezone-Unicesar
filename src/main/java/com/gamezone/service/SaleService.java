@@ -10,7 +10,7 @@ import com.gamezone.model.Promotion;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.model.Warranty;
-import com.gamezone.persistence.SaleRepository;
+import com.gamezone.persistence.SaleStore;
 import com.gamezone.validation.PersonValidator;
 import com.gamezone.validation.ProductValidator;
 import com.gamezone.validation.SaleValidator;
@@ -41,42 +41,36 @@ import java.util.Map;
  */
 public class SaleService implements SaleFinder {
 
-    private final SaleRepository repository;
+    private final SaleStore repository;
     private final StoreCatalog catalog;
-    private final ProductService productService;
     private final PersonService personService;
-    private final AccessoryService accessoryService;
-    private final PromotionService promotionService;
-    private final WarrantyService warrantyService;
+    private final PromotionChooser promotions;
+    private final WarrantyAssigner warranties;
     private final List<Sale> sales;
     /** Catalogues that own the stock of the items of a sale, in search order. */
-    private final List<InventoryCatalog> inventoryCatalogs;
+    private final List<StockUpdater> stockUpdaters;
 
     /**
      * Creates the service and loads the stored sales, linking them to the products,
      * accessories and people already loaded by the other services.
      *
-     * @param repository       repository used to persist sales
+     * @param repository       storage of the sales
      * @param catalog          catalogue of everything the store sells
-     * @param productService   service that manages video games and consoles
+     * @param stockUpdaters    catalogues that update the stock of what is sold, products first
      * @param personService    service that manages customers and sellers
-     * @param accessoryService service that manages accessories
-     * @param promotionService service that chooses the promotion of each sale
-     * @param warrantyService  service that creates the warranties of the consoles sold
+     * @param promotions       chooser of the best promotion of each sale
+     * @param warranties       assigner of the warranties of the consoles sold
      * @throws PersistenceException if the sales file cannot be read
      */
-    public SaleService(SaleRepository repository, StoreCatalog catalog, ProductService productService,
-                       PersonService personService,
-                       AccessoryService accessoryService, PromotionService promotionService,
-                       WarrantyService warrantyService) {
+    public SaleService(SaleStore repository, StoreCatalog catalog, List<StockUpdater> stockUpdaters,
+                       PersonService personService, PromotionChooser promotions,
+                       WarrantyAssigner warranties) {
         this.repository = repository;
         this.catalog = catalog;
-        this.productService = productService;
+        this.stockUpdaters = List.copyOf(stockUpdaters);
         this.personService = personService;
-        this.accessoryService = accessoryService;
-        this.inventoryCatalogs = List.of(productService, accessoryService);
-        this.promotionService = promotionService;
-        this.warrantyService = warrantyService;
+        this.promotions = promotions;
+        this.warranties = warranties;
         this.sales = repository.loadAll(catalog.listAll(),
                 personService.listCustomers(), personService.listSellers());
     }
@@ -296,7 +290,7 @@ public class SaleService implements SaleFinder {
     }
 
     private void applyBestPromotion(Sale sale) {
-        Promotion promotion = promotionService.findBestPromotionFor(sale);
+        Promotion promotion = promotions.findBestPromotionFor(sale);
         if (promotion != null) {
             sale.applyDiscount(promotion.getName(), promotion.calculateDiscount(sale));
         }
@@ -305,9 +299,9 @@ public class SaleService implements SaleFinder {
     private void assignWarranties(Sale sale, List<String> extendedRequests) {
         for (Product product : sale.getProducts()) {
             if (product.isConsole()) {
-                warrantyService.assignBasicWarranty(product, sale, sale.getDate());
+                warranties.assignBasicWarranty(product, sale, sale.getDate());
                 if (containsIgnoreCase(extendedRequests, product.getId())) {
-                    Warranty extended = warrantyService.assignExtendedWarranty(product, sale, sale.getDate());
+                    Warranty extended = warranties.assignExtendedWarranty(product, sale, sale.getDate());
                     sale.addExtendedWarrantyCost(extended.getAdditionalCost());
                 }
             }
@@ -325,15 +319,15 @@ public class SaleService implements SaleFinder {
      * testing the concrete type of the item.
      *
      * @param item product or accessory of the sale
-     * @return the catalogue that holds that same item; the product catalogue if none does
+     * @return the catalogue that holds that same item; the first catalogue (products) if none does
      */
-    private InventoryCatalog catalogOf(Product item) {
-        for (InventoryCatalog catalog : inventoryCatalogs) {
+    private StockUpdater catalogOf(Product item) {
+        for (StockUpdater catalog : stockUpdaters) {
             if (catalog.findById(item.getId()) == item) {
                 return catalog;
             }
         }
-        return productService;
+        return stockUpdaters.get(0);
     }
 
     private boolean containsIgnoreCase(List<String> values, String value) {
