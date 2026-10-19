@@ -20,11 +20,11 @@ import java.util.Locale;
  * through the public interface of the warranty and arranges them in the order
  * and with the labels the user reads.
  *
- * <p>The text produced here is the same text
- * {@code Warranty.generateWarrantyCertificate} produced, character by character,
- * so switching the menu over changes nothing the user sees. That method has not
- * been removed yet: the menu still calls it until the Technical Leader moves the
- * call, and it is deleted once no call is left.
+ * <p>This is the only place where the certificate of a warranty is built. The
+ * text is the same text {@code Warranty.generateWarrantyCertificate} produced,
+ * character by character, so moving the menu over changed nothing the user sees.
+ * That method was removed once the menu stopped calling it, and this class took
+ * its place.
  *
  * @see ReturnReceiptFormatter
  */

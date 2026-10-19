@@ -19,11 +19,10 @@ import java.util.Locale;
  * public interface of the return and arranges them in the order and with the
  * labels the user reads.
  *
- * <p>The text produced here is the same text {@code Return.generateReturnReceipt}
- * produced, character by character, so switching the menu over changes nothing
- * the user sees. That method has not been removed yet: the menu still calls it
- * until the Technical Leader moves the call, and it is deleted once no call is
- * left.
+ * <p>This is the only place where the receipt of a return is built. The text is
+ * the same text {@code Return.generateReturnReceipt} produced, character by
+ * character, so moving the menu over changed nothing the user sees. That method
+ * was removed once the menu stopped calling it, and this class took its place.
  *
  * @see WarrantyCertificateFormatter
  */
