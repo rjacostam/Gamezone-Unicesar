@@ -1,5 +1,9 @@
 package com.gamezone.service;
 
+import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.InvalidDataException;
+import com.gamezone.exceptions.PersistenceException;
+import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Accessory;
 import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
@@ -9,8 +13,10 @@ import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.model.Warranty;
 import com.gamezone.persistence.SaleRepository;
+import com.gamezone.validation.PersonValidator;
+import com.gamezone.validation.ProductValidator;
+import com.gamezone.validation.SaleValidator;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,9 +29,17 @@ import java.util.Map;
  * It checks the sale rules, creates the sale with items from the product and accessory
  * catalogs, applies the best active promotion, assigns the warranties of the consoles, and
  * asks the service that owns each item to update the inventory. It never touches another
- * module's repository. A rejected
- * operation throws an {@link IllegalArgumentException} with a message in Spanish that the
- * menu can show to the user.
+ * module's repository.
+ * <p>
+ * File errors do not reach the caller as a checked exception. The repository
+ * already turns them into a {@link PersistenceException}, because a failure of
+ * the disk is a failure of the application and not a mistake of the user.
+ * <p>
+ * A rejected operation throws an {@link InvalidDataException} for a bad value, a
+ * {@link ResourceNotFoundException} when the customer, the seller or a product of
+ * the sale does not exist, or a {@link BusinessRuleException} when a rule of the
+ * store is broken, always with a message in Spanish that the menu can show to
+ * the user.
  */
 public class SaleService {
 
@@ -47,7 +61,7 @@ public class SaleService {
      * @param accessoryService service that manages accessories
      * @param promotionService service that chooses the promotion of each sale
      * @param warrantyService  service that creates the warranties of the consoles sold
-     * @throws IllegalStateException if the sales file cannot be read
+     * @throws PersistenceException if the sales file cannot be read
      */
     public SaleService(SaleRepository repository, ProductService productService, PersonService personService,
                        AccessoryService accessoryService, PromotionService promotionService,
@@ -58,12 +72,8 @@ public class SaleService {
         this.accessoryService = accessoryService;
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
-        try {
-            this.sales = repository.loadAll(getCatalog(),
-                    personService.listCustomers(), personService.listSellers());
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo cargar el historial de ventas", e);
-        }
+        this.sales = repository.loadAll(getCatalog(),
+                personService.listCustomers(), personService.listSellers());
     }
 
     /**
@@ -88,19 +98,21 @@ public class SaleService {
      * @param productIdsWithExtendedWarranty consoles of the sale that get an extended
      *                                       warranty; empty or {@code null} for none
      * @return the registered sale
-     * @throws IllegalArgumentException if there are no products, if the customer, the
-     *                                  seller or a product does not exist, if there is not
-     *                                  enough stock, or if an extended warranty is requested
-     *                                  for an item that is not a console of the sale
+     * @throws InvalidDataException      if the customer or the seller are missing
+     * @throws BusinessRuleException     if there are no products, if there is not
+     *                                   enough stock, or if an extended warranty is
+     *                                   requested for an item that is not a
+     *                                   console of the sale
+     * @throws ResourceNotFoundException if the customer, the seller or a product
+     *                                   does not exist
+     * @throws PersistenceException      if the sales file cannot be written
      */
     public Sale registerSale(String customerId, String sellerId, List<String> productIds,
                              List<String> productIdsWithExtendedWarranty) {
         // 1. The sale needs at least one item, an existing customer and an existing seller.
-        if (productIds == null || productIds.isEmpty()) {
-            throw new IllegalArgumentException("La venta debe contener al menos un producto.");
-        }
         Customer customer = requireCustomer(customerId);
         Seller seller = requireSeller(sellerId);
+        SaleValidator.validateSaleData(customer, seller, productIds);
 
         // 2. Resolve every item as a product or an accessory and check its stock.
         List<Product> soldProducts = resolveItems(productIds);
@@ -198,30 +210,46 @@ public class SaleService {
         return catalog;
     }
 
+    /**
+     * Looks for the customer of the sale and makes sure it exists.
+     *
+     * @param customerId customer identification
+     * @return the customer found
+     * @throws ResourceNotFoundException if no customer uses that identification
+     */
     private Customer requireCustomer(String customerId) {
         Customer customer = personService.findCustomerById(customerId);
-        if (customer == null) {
-            throw new IllegalArgumentException("El cliente con identificación " + customerId + " no existe.");
-        }
+        PersonValidator.validatePersonExists(customer, customerId);
         return customer;
     }
 
+    /**
+     * Looks for the seller of the sale and makes sure it exists.
+     *
+     * @param sellerId seller identification or employee code
+     * @return the seller found
+     * @throws ResourceNotFoundException if no seller uses that identification
+     */
     private Seller requireSeller(String sellerId) {
         Seller seller = personService.findSellerById(sellerId);
-        if (seller == null) {
-            throw new IllegalArgumentException("El vendedor " + sellerId + " no existe.");
-        }
+        PersonValidator.validatePersonExists(seller, sellerId);
         return seller;
     }
 
+    /**
+     * Turns the requested identifiers into the items they name, one entry per
+     * unit, and makes sure every one of them exists.
+     *
+     * @param productIds identifiers of the units sold
+     * @return the items sold, in the order they were requested
+     * @throws ResourceNotFoundException if an item does not exist in the product
+     *                                   catalog or in the accessory catalog
+     */
     private List<Product> resolveItems(List<String> productIds) {
         List<Product> items = new ArrayList<>();
         for (String productId : productIds) {
             Product product = findItem(productId);
-            if (product == null) {
-                throw new IllegalArgumentException(
-                        "El producto o accesorio con identificador " + productId + " no existe.");
-            }
+            ProductValidator.validateProductExists(product, productId);
             items.add(product);
         }
         return items;
@@ -235,24 +263,33 @@ public class SaleService {
         return unitsByProduct;
     }
 
+    /**
+     * Checks that the store has enough units of every product that the sale
+     * takes.
+     *
+     * @param unitsByProduct units sold per product
+     * @throws BusinessRuleException if the stock of a product is not enough
+     */
     private void checkStock(Map<Product, Integer> unitsByProduct) {
         for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
-            if (!entry.getKey().hasStock(entry.getValue())) {
-                throw new IllegalArgumentException("Stock insuficiente para " + entry.getKey().getTitle()
-                        + ". Disponible: " + entry.getKey().getStock() + ", solicitado: " + entry.getValue() + ".");
-            }
+            ProductValidator.validateStockAvailability(entry.getKey(), entry.getValue());
         }
     }
 
-    private List<String> validateExtendedRequests(List<Product> items, List<String> productIdsWithExtendedWarranty) {
+    /**
+     * Checks that every identifier that asked for an extended warranty names a
+     * console of the sale.
+     *
+     * @param items                         units of the sale
+     * @param productIdsWithExtendedWarranty identifiers asked for the extended warranty
+     * @return the same identifiers, ready to be used
+     * @throws BusinessRuleException if an identifier is not a console of the sale
+     */
+    private List<String> validateExtendedRequests(List<Product> items,
+                                                 List<String> productIdsWithExtendedWarranty) {
         List<String> extendedRequests = productIdsWithExtendedWarranty == null
                 ? new ArrayList<>() : productIdsWithExtendedWarranty;
-        for (String requestedId : extendedRequests) {
-            if (!containsConsole(items, requestedId)) {
-                throw new IllegalArgumentException(
-                        "La garantía extendida solo aplica a consolas incluidas en la venta: " + requestedId + ".");
-            }
-        }
+        SaleValidator.validateExtendedWarrantyRequest(items, extendedRequests);
         return extendedRequests;
     }
 
@@ -285,15 +322,6 @@ public class SaleService {
         }
     }
 
-    private boolean containsConsole(List<Product> products, String id) {
-        for (Product product : products) {
-            if (product instanceof Console && product.getId().equalsIgnoreCase(id)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private boolean containsIgnoreCase(List<String> values, String value) {
         for (String candidate : values) {
             if (candidate.equalsIgnoreCase(value)) {
@@ -311,12 +339,13 @@ public class SaleService {
         return product;
     }
 
+    /**
+     * Saves the sales currently registered.
+     *
+     * @throws PersistenceException if the sales file cannot be written
+     */
     private void saveSales() {
-        try {
-            repository.saveAll(sales);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo guardar el historial de ventas", e);
-        }
+        repository.saveAll(sales);
     }
 
     private String nextSaleId() {
