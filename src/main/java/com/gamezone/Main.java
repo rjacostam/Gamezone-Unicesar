@@ -14,6 +14,7 @@ import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
 import com.gamezone.service.ReturnService;
 import com.gamezone.service.SaleService;
+import com.gamezone.service.StoreCatalog;
 import com.gamezone.service.WarrantyService;
 import com.gamezone.ui.AccessoryMenu;
 import com.gamezone.ui.ConsoleInput;
@@ -24,6 +25,8 @@ import com.gamezone.ui.PromotionMenu;
 import com.gamezone.ui.ReturnMenu;
 import com.gamezone.ui.SaleMenu;
 import com.gamezone.ui.WarrantyMenu;
+
+import java.util.List;
 
 
 /**
@@ -60,7 +63,10 @@ public class Main {
             AccessoryService accessoryService = new AccessoryService(accessoryRepository, productService);
             PromotionService promotionService = new PromotionService(promotionRepository);
             WarrantyService warrantyService = new WarrantyService(warrantyRepository);
-            SaleService saleService = new SaleService(saleRepository, productService, personService,
+            StoreCatalog catalog = new StoreCatalog(
+                    List.of(productService::listAllProducts, accessoryService::listAllAccessories),
+                    List.of(productService, accessoryService));
+            SaleService saleService = new SaleService(saleRepository, catalog, productService, personService,
                     accessoryService, promotionService, warrantyService);
             warrantyService.loadWarranties(saleService.listAllSales());
             ReturnService returnService = new ReturnService(returnRepository, saleService, productService,
@@ -71,7 +77,7 @@ public class Main {
             ConsoleMenu menu = new ConsoleMenu(input,
                     new ProductMenu(input, productService),
                     personMenu,
-                    new SaleMenu(input, saleService, productService, personMenu),
+                    new SaleMenu(input, saleService, catalog, productService, personMenu),
                     new AccessoryMenu(input, accessoryService, productService),
                     new PromotionMenu(input, promotionService),
                     new WarrantyMenu(input, warrantyService),

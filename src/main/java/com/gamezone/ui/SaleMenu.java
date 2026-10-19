@@ -4,6 +4,7 @@ import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.SaleService;
+import com.gamezone.service.StoreCatalog;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -16,6 +17,7 @@ import java.util.List;
 public class SaleMenu extends Submenu {
 
     private final SaleService saleService;
+    private final StoreCatalog catalog;
     private final ProductService productService;
     private final PersonMenu personMenu;
 
@@ -24,13 +26,15 @@ public class SaleMenu extends Submenu {
      *
      * @param input          reader of the console
      * @param saleService    service for sales
+     * @param catalog        catalogue of everything the store sells
      * @param productService service for products, used to offer the extended warranty
      * @param personMenu     people submenu, used to list the sellers
      */
-    public SaleMenu(ConsoleInput input, SaleService saleService, ProductService productService,
+    public SaleMenu(ConsoleInput input, SaleService saleService, StoreCatalog catalog, ProductService productService,
                     PersonMenu personMenu) {
         super(input);
         this.saleService = saleService;
+        this.catalog = catalog;
         this.productService = productService;
         this.personMenu = personMenu;
     }
@@ -89,12 +93,12 @@ public class SaleMenu extends Submenu {
     }
 
     private void listCatalog() {
-        List<Product> catalog = saleService.getCatalog();
-        if (catalog.isEmpty()) {
+        List<Product> items = catalog.listAll();
+        if (items.isEmpty()) {
             System.out.println("No hay productos ni accesorios registrados.");
             return;
         }
-        for (Product item : catalog) {
+        for (Product item : items) {
             System.out.println(item.getDescription());
         }
     }

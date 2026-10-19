@@ -42,6 +42,7 @@ import java.util.Map;
 public class SaleService implements SaleFinder {
 
     private final SaleRepository repository;
+    private final StoreCatalog catalog;
     private final ProductService productService;
     private final PersonService personService;
     private final AccessoryService accessoryService;
@@ -56,6 +57,7 @@ public class SaleService implements SaleFinder {
      * accessories and people already loaded by the other services.
      *
      * @param repository       repository used to persist sales
+     * @param catalog          catalogue of everything the store sells
      * @param productService   service that manages video games and consoles
      * @param personService    service that manages customers and sellers
      * @param accessoryService service that manages accessories
@@ -63,17 +65,19 @@ public class SaleService implements SaleFinder {
      * @param warrantyService  service that creates the warranties of the consoles sold
      * @throws PersistenceException if the sales file cannot be read
      */
-    public SaleService(SaleRepository repository, ProductService productService, PersonService personService,
+    public SaleService(SaleRepository repository, StoreCatalog catalog, ProductService productService,
+                       PersonService personService,
                        AccessoryService accessoryService, PromotionService promotionService,
                        WarrantyService warrantyService) {
         this.repository = repository;
+        this.catalog = catalog;
         this.productService = productService;
         this.personService = personService;
         this.accessoryService = accessoryService;
         this.inventoryCatalogs = List.of(productService, accessoryService);
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
-        this.sales = repository.loadAll(getCatalog(),
+        this.sales = repository.loadAll(catalog.listAll(),
                 personService.listCustomers(), personService.listSellers());
     }
 
@@ -209,17 +213,6 @@ public class SaleService implements SaleFinder {
     }
 
     /**
-     * Returns every item that can be sold: video games, consoles and accessories.
-     *
-     * @return products followed by accessories
-     */
-    public List<Product> getCatalog() {
-        List<Product> catalog = new ArrayList<>(productService.listAllProducts());
-        catalog.addAll(accessoryService.listAllAccessories());
-        return catalog;
-    }
-
-    /**
      * Looks for the customer of the sale and makes sure it exists.
      *
      * @param customerId customer identification
@@ -257,7 +250,7 @@ public class SaleService implements SaleFinder {
     private List<Product> resolveItems(List<String> productIds) {
         List<Product> items = new ArrayList<>();
         for (String productId : productIds) {
-            Product product = findItem(productId);
+            Product product = catalog.findById(productId);
             ProductValidator.validateProductExists(product, productId);
             items.add(product);
         }
@@ -350,14 +343,6 @@ public class SaleService implements SaleFinder {
             }
         }
         return false;
-    }
-
-    private Product findItem(String id) {
-        Product product = productService.findById(id);
-        if (product == null) {
-            product = accessoryService.findById(id);
-        }
-        return product;
     }
 
     /**
