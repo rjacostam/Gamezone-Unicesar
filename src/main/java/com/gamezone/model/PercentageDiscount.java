@@ -1,6 +1,7 @@
 package com.gamezone.model;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -36,10 +37,7 @@ public class PercentageDiscount extends Promotion {
         if (sale == null || !isActive(sale.getDate())) {
             return 0;
         }
-        double base = 0;
-        for (Product product : sale.getProducts()) {
-            base += product.getPrice();
-        }
+        double base = sale.getSubtotal();
         return base * percentage / 100.0;
     }
 
@@ -53,6 +51,27 @@ public class PercentageDiscount extends Promotion {
         return "[" + getId() + "] " + getName()
                 + " | " + getStartDate() + " a " + getEndDate()
                 + " | " + String.format(Locale.US, "%.2f%%", percentage) + " sobre el total";
+    }
+
+    /**
+     * Returns the marker of this promotion type, the one already written in the
+     * promotion file.
+     * @return PERCENTAGE
+     */
+    @Override
+    public String getTypeCode() {
+        return "PERCENTAGE";
+    }
+
+    /**
+     * Returns the two columns that only this promotion writes after its
+     * percentage. A percentage discount has no second value, so the second column
+     * is empty, exactly as the promotion file already stores it.
+     * @return a two element list with the percentage and an empty string
+     */
+    @Override
+    public List<String> getExtraFields() {
+        return List.of(String.valueOf(percentage), "");
     }
 
     /**

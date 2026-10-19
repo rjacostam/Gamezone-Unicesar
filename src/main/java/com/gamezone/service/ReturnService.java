@@ -4,8 +4,6 @@ import com.gamezone.exceptions.BusinessRuleException;
 import com.gamezone.exceptions.InvalidDataException;
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.exceptions.ResourceNotFoundException;
-import com.gamezone.model.Accessory;
-import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
@@ -59,6 +57,9 @@ public class ReturnService {
     private WarrantyService warrantyService;
     private List<Return> returns;
 
+    /** Catalogues that own the stock of the items of a return, in search order. */
+    private final List<InventoryCatalog> inventoryCatalogs;
+
     /**
      * Builds the service and loads the returns, linking each one to the sales
      * that were already registered.
@@ -82,6 +83,7 @@ public class ReturnService {
         this.productService = productService;
         this.accessoryService = accessoryService;
         this.warrantyService = warrantyService;
+        this.inventoryCatalogs = List.of(productService, accessoryService);
         this.returns = new ArrayList<>(repository.loadAll(saleService.listAllSales()));
     }
 
@@ -176,7 +178,7 @@ public class ReturnService {
     private double cancelWarrantiesOfConsoles(Sale sale, List<Product> returnedProducts) {
         double refund = 0;
         for (Product product : returnedProducts) {
-            if (!(product instanceof Console)) {
+            if (!product.isConsole()) {
                 continue;
             }
             refund += warrantyService.cancelWarranties(product.getId(), sale.getId());
@@ -208,11 +210,11 @@ public class ReturnService {
                 throw new InvalidDataException("producto de la devolución", "es obligatorio");
             }
             String wanted = requestedId.trim();
-            if (countUnits(sale, wanted) == 0) {
+            if (sale.countUnitsOf(wanted) == 0) {
                 throw new BusinessRuleException(
                         "El producto " + wanted + " no pertenece a la venta " + sale.getId());
             }
-            returnedProducts.add(findProduct(sale, wanted));
+            returnedProducts.add(sale.findProductById(wanted));
         }
         validateAvailableUnits(sale, productIds);
         return returnedProducts;
@@ -235,23 +237,6 @@ public class ReturnService {
             ReturnValidator.validateUnitsAvailable(sale, productId, entry.getValue(),
                     alreadyReturned);
         }
-    }
-
-    /**
-     * Counts how many units of a product were sold in a sale.
-     *
-     * @param sale      sale to inspect
-     * @param productId identifier of the product
-     * @return number of units of that product in the sale
-     */
-    private int countUnits(Sale sale, String productId) {
-        int total = 0;
-        for (Product product : sale.getProducts()) {
-            if (product.getId().equalsIgnoreCase(productId)) {
-                total++;
-            }
-        }
-        return total;
     }
 
     /**
@@ -297,32 +282,42 @@ public class ReturnService {
      * Restores the stock of the returned units, delegating each unit to the
      * service that owns it.
      * <p>
-     * An accessory is restored through {@code AccessoryService} and everything
-     * else, video games and consoles, through {@code ProductService}. Each
-     * identifier is restored in a single call with the number of units returned,
-     * instead of one call per unit.
+     * The catalogue that holds an item is not guessed from the type of the item:
+     * every catalogue is asked whether it has it, and the one that does is the one
+     * that restores it. Each identifier is restored in a single call with the number
+     * of units returned, instead of one call per unit.
      * <p>
      * Before the A4 adjustment the accessories were simply skipped, so the stock
-     * of a returned accessory was never given back. Delegating by type is what
+     * of a returned accessory was never given back. Asking the catalogues is what
      * fixes it, and it keeps a single owner for each inventory: the catalogue
      * owns the products and the accessory service owns the accessories.
      *
      * @param returnedProducts units returned
      */
     private void restoreStock(List<Product> returnedProducts) {
-        Map<String, Integer> productUnits = new LinkedHashMap<>();
-        Map<String, Integer> accessoryUnits = new LinkedHashMap<>();
+        Map<String, Integer> unitsById = new LinkedHashMap<>();
         for (Product product : returnedProducts) {
-            Map<String, Integer> target =
-                    product instanceof Accessory ? accessoryUnits : productUnits;
-            target.merge(product.getId(), 1, Integer::sum);
+            unitsById.merge(product.getId(), 1, Integer::sum);
         }
-        for (Map.Entry<String, Integer> entry : productUnits.entrySet()) {
-            productService.restoreStock(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Integer> entry : unitsById.entrySet()) {
+            catalogOf(entry.getKey()).restoreStock(entry.getKey(), entry.getValue());
         }
-        for (Map.Entry<String, Integer> entry : accessoryUnits.entrySet()) {
-            accessoryService.restoreStock(entry.getKey(), entry.getValue());
+    }
+
+    /**
+     * Finds the catalogue that owns an item, asking each catalogue for it instead of
+     * testing the concrete type of the item.
+     *
+     * @param productId identifier of the returned unit
+     * @return the catalogue that holds that item; the product catalogue if none does
+     */
+    private InventoryCatalog catalogOf(String productId) {
+        for (InventoryCatalog catalog : inventoryCatalogs) {
+            if (catalog.findById(productId) != null) {
+                return catalog;
+            }
         }
+        return productService;
     }
 
     /**
@@ -335,22 +330,6 @@ public class ReturnService {
     private boolean isReturnOf(Sale sale, Return registeredReturn) {
         Sale returnSale = registeredReturn.getSale();
         return returnSale != null && returnSale.getId().equalsIgnoreCase(sale.getId());
-    }
-
-    /**
-     * Looks for a product inside the units of a sale.
-     *
-     * @param sale      sale to inspect
-     * @param productId identifier of the product
-     * @return the product found, or null when the sale does not contain it
-     */
-    private Product findProduct(Sale sale, String productId) {
-        for (Product product : sale.getProducts()) {
-            if (product.getId().equalsIgnoreCase(productId)) {
-                return product;
-            }
-        }
-        return null;
     }
 
     /**

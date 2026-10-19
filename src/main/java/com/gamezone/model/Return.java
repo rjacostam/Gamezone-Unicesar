@@ -3,7 +3,6 @@ package com.gamezone.model;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Return of one or more products of a sale already registered in the store. The
@@ -94,9 +93,14 @@ public class Return {
      * Returns the proportion of the original sale that was discounted, which is
      * its discount divided by its subtotal. The result is never negative and
      * never above one, so a refunded amount can never go below zero.
+     *
+     * <p>It is public because the return receipt needs the same proportion to
+     * print the discount of each returned unit, and the return is the class that
+     * owns it. The receipt formatter asks for it here instead of recalculating it
+     * from the sale.
      * @return discount ratio between zero and one
      */
-    private double discountRatio() {
+    public double discountRatio() {
         if (sale == null) {
             return 0;
         }
@@ -106,46 +110,6 @@ public class Return {
             return 0;
         }
         return Math.min(discount / subtotal, 1.0);
-    }
-
-    /**
-     * Builds the receipt the customer receives, in Spanish. It shows the return
-     * identifier and its date, the original sale with its date and the customer,
-     * then for each returned unit its list price, the proportional part of the
-     * discount that is taken away and the amount really refunded, and finally
-     * the reason and the total refunded.
-     * @return receipt ready to be shown to the user
-     */
-    public String generateReturnReceipt() {
-        StringBuilder receipt = new StringBuilder();
-        receipt.append("=== GameZone Unicesar - Comprobante de devolucion ===\n");
-        receipt.append("Devolucion: ").append(id).append("\n");
-        receipt.append("Fecha: ").append(date).append("\n");
-        if (sale != null) {
-            receipt.append("Venta original: ").append(sale.getId()).append("\n");
-            receipt.append("Fecha de la venta: ").append(sale.getDate()).append("\n");
-            if (sale.getCustomer() != null) {
-                receipt.append("Cliente: ").append(sale.getCustomer().getName()).append("\n");
-            }
-        }
-        receipt.append("Productos devueltos:\n");
-        for (Product product : returnedProducts) {
-            double listPrice = product.getPrice();
-            double itemDiscount = listPrice * discountRatio();
-            receipt.append("- ").append(product.getId()).append(" ")
-                    .append(product.getTitle())
-                    .append(" | Precio: ").append(String.format(Locale.US, "$%,.2f", listPrice))
-                    .append(" | Descuento: ").append(String.format(Locale.US, "-$%,.2f", itemDiscount))
-                    .append(" | Reembolso: ")
-                    .append(String.format(Locale.US, "$%,.2f", listPrice - itemDiscount))
-                    .append("\n");
-        }
-        receipt.append("Motivo: ").append(reason).append("\n");
-        receipt.append("Reembolso por garantías anuladas: ")
-                .append(String.format(Locale.US, "$%,.2f", warrantyRefund)).append("\n");
-        receipt.append("Monto reembolsado: ")
-                .append(String.format(Locale.US, "$%,.2f", refundAmount)).append("\n");
-        return receipt.toString();
     }
 
     /**

@@ -26,7 +26,7 @@ import java.util.List;
  * {@link BusinessRuleException} when a rule of the store is broken, with a
  * message in Spanish, because the console menu shows it directly to the user.
  */
-public class ProductService {
+public class ProductService implements InventoryCatalog {
     private ProductRepository repository;
     private List<Product> products;
 
@@ -124,6 +124,7 @@ public class ProductService {
      * @param id identifier to look for
      * @return the product found, or null when no product uses that identifier
      */
+    @Override
     public Product findById(String id) {
         for (Product product : products) {
             if (product.getId().equalsIgnoreCase(id)) {
@@ -143,6 +144,7 @@ public class ProductService {
      *                                   stock is not enough
      * @throws PersistenceException      if the catalogue file cannot be written
      */
+    @Override
     public void updateStock(String productId, int quantity) {
         Product product = findById(productId);
         ProductValidator.validateProductExists(product, productId);
@@ -152,18 +154,20 @@ public class ProductService {
 
     /**
      * Adds returned units back to the stock of a product and saves the catalogue.
-     * It is used by the return module, so the inventory is only changed here.
+     * It is used by the return module. The product changes its own stock through
+     * {@link Product#increaseStock(int)}, and the service only finds it and saves.
      * @param productId identifier of the product to update
      * @param quantity amount of units to add to the stock
      * @throws InvalidDataException      if the quantity is not greater than zero
      * @throws ResourceNotFoundException if the product does not exist
      * @throws PersistenceException      if the catalogue file cannot be written
      */
+    @Override
     public void restoreStock(String productId, int quantity) {
         ProductValidator.validateQuantity(quantity);
         Product product = findById(productId);
         ProductValidator.validateProductExists(product, productId);
-        product.setStock(product.getStock() + quantity);
+        product.increaseStock(quantity);
         saveCatalogue();
     }
 

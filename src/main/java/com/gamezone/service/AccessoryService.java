@@ -36,7 +36,7 @@ import java.util.List;
  * that every compatible console identifier belongs to a console of the
  * inventory.
  */
-public class AccessoryService {
+public class AccessoryService implements InventoryCatalog {
 
     private AccessoryRepository repository;
     private ProductService productService;
@@ -205,6 +205,7 @@ public class AccessoryService {
      * @return the accessory found, or null when no accessory uses that
      *         identifier
      */
+    @Override
     public Accessory findById(String id) {
         if (id == null || id.isBlank()) {
             return null;
@@ -233,6 +234,7 @@ public class AccessoryService {
      *                                   stock is not enough
      * @throws PersistenceException      if the accessories file cannot be written
      */
+    @Override
     public void updateStock(String accessoryId, int quantity) {
         Accessory accessory = findById(accessoryId);
         AccessoryValidator.validateAccessoryExists(accessory, accessoryId);
@@ -252,6 +254,7 @@ public class AccessoryService {
  * @throws ResourceNotFoundException if the accessory does not exist
  * @throws PersistenceException      if the accessories file cannot be written
  */
+    @Override
     public void restoreStock(String accessoryId, int quantity) {
         ProductValidator.validateQuantity(quantity);
         Accessory accessory = findById(accessoryId);

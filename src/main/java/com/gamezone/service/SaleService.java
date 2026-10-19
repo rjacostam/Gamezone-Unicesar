@@ -4,8 +4,6 @@ import com.gamezone.exceptions.BusinessRuleException;
 import com.gamezone.exceptions.InvalidDataException;
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.exceptions.ResourceNotFoundException;
-import com.gamezone.model.Accessory;
-import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Promotion;
@@ -50,6 +48,8 @@ public class SaleService {
     private final PromotionService promotionService;
     private final WarrantyService warrantyService;
     private final List<Sale> sales;
+    /** Catalogues that own the stock of the items of a sale, in search order. */
+    private final List<InventoryCatalog> inventoryCatalogs;
 
     /**
      * Creates the service and loads the stored sales, linking them to the products,
@@ -70,6 +70,7 @@ public class SaleService {
         this.productService = productService;
         this.personService = personService;
         this.accessoryService = accessoryService;
+        this.inventoryCatalogs = List.of(productService, accessoryService);
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
         this.sales = repository.loadAll(getCatalog(),
@@ -308,7 +309,7 @@ public class SaleService {
 
     private void assignWarranties(Sale sale, List<String> extendedRequests) {
         for (Product product : sale.getProducts()) {
-            if (product instanceof Console) {
+            if (product.isConsole()) {
                 warrantyService.assignBasicWarranty(product, sale, sale.getDate());
                 if (containsIgnoreCase(extendedRequests, product.getId())) {
                     Warranty extended = warrantyService.assignExtendedWarranty(product, sale, sale.getDate());
@@ -320,12 +321,24 @@ public class SaleService {
 
     private void updateInventory(Map<Product, Integer> unitsByProduct) {
         for (Map.Entry<Product, Integer> entry : unitsByProduct.entrySet()) {
-            if (entry.getKey() instanceof Accessory) {
-                accessoryService.updateStock(entry.getKey().getId(), entry.getValue());
-            } else {
-                productService.updateStock(entry.getKey().getId(), entry.getValue());
+            catalogOf(entry.getKey()).updateStock(entry.getKey().getId(), entry.getValue());
+        }
+    }
+
+    /**
+     * Finds the catalogue that owns an item, asking each catalogue for it instead of
+     * testing the concrete type of the item.
+     *
+     * @param item product or accessory of the sale
+     * @return the catalogue that holds that same item; the product catalogue if none does
+     */
+    private InventoryCatalog catalogOf(Product item) {
+        for (InventoryCatalog catalog : inventoryCatalogs) {
+            if (catalog.findById(item.getId()) == item) {
+                return catalog;
             }
         }
+        return productService;
     }
 
     private boolean containsIgnoreCase(List<String> values, String value) {

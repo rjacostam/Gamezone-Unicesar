@@ -1,5 +1,8 @@
 package com.gamezone.model;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Game console sold by the store. On top of the data inherited from Product it
  * keeps its brand, its model name and the generation it belongs to.
@@ -51,6 +54,25 @@ public class Console extends Product {
     @Override
     public String getCategory() {
         return "CONSOLE";
+    }
+
+    /**
+     * Tells whether this product is a console.
+     * @return true, because this product is a console
+     */
+    @Override
+    public boolean isConsole() {
+        return true;
+    }
+
+    /**
+     * Returns the three columns that only a console has, in the order the
+     * catalogue file expects them.
+     * @return brand, model and generation of this console
+     */
+    @Override
+    public List<String> getExtraFields() {
+        return Arrays.asList(brand, model, generation);
     }
 
     /**

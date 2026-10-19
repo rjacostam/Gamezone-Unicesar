@@ -133,23 +133,12 @@ public class PromotionRepository {
      */
     private String serialize(Promotion promotion) {
         StringBuilder builder = new StringBuilder();
-        builder.append(getTypeOf(promotion)).append(DELIMITER);
+        builder.append(promotion.getTypeCode()).append(DELIMITER);
         builder.append(promotion.getId()).append(DELIMITER);
         builder.append(promotion.getName()).append(DELIMITER);
         builder.append(promotion.getStartDate()).append(DELIMITER);
         builder.append(promotion.getEndDate()).append(DELIMITER);
-        if (promotion instanceof CategoryDiscount) {
-            CategoryDiscount discount = (CategoryDiscount) promotion;
-            builder.append(discount.getPercentage()).append(DELIMITER)
-                    .append(valueOf(discount.getTargetCategory()));
-        } else if (promotion instanceof BulkPurchaseDiscount) {
-            BulkPurchaseDiscount discount = (BulkPurchaseDiscount) promotion;
-            builder.append(discount.getPercentage()).append(DELIMITER)
-                    .append(discount.getMinimumQuantity());
-        } else if (promotion instanceof PercentageDiscount) {
-            builder.append(((PercentageDiscount) promotion).getPercentage())
-                    .append(DELIMITER).append("");
-        }
+        builder.append(String.join(DELIMITER, promotion.getExtraFields()));
         return builder.toString();
     }
 
@@ -207,25 +196,6 @@ public class PromotionRepository {
             return null;
         }
         return null;
-    }
-
-    /**
-     * Returns the type marker stored in the first column of the file for a
-     * promotion. The marker is derived from the concrete class instead of
-     * depending on a method that every subclass would have to implement, because
-     * the model of this module does not declare a type discriminator.
-     *
-     * @param promotion promotion to inspect
-     * @return the type marker of the promotion
-     */
-    private String getTypeOf(Promotion promotion) {
-        if (promotion instanceof PercentageDiscount) {
-            return TYPE_PERCENTAGE;
-        }
-        if (promotion instanceof CategoryDiscount) {
-            return TYPE_CATEGORY;
-        }
-        return TYPE_BULK;
     }
 
     /**
