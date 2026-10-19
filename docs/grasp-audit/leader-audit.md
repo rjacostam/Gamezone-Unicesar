@@ -93,3 +93,33 @@ This finding is registered once, so the same rule does not appear in several vio
 
   Low coupling does not mean the fewest possible dependencies, but no unnecessary ones.
   None of these can be removed.
+
+## High Cohesion
+
+**Verdict: violation** (two points).
+
+Correct application: `ConsoleMenu.runSafely` (line 111) keeps in one place the handling of
+the exceptions and their conversion into messages for the user, so this logic is not
+repeated in every operation of the menu.
+
+| Field | Content |
+|---|---|
+| ID | V-03 |
+| Pattern | High Cohesion |
+| Module | Sales (Taller 1), receipt breakdown (Requirement 2) |
+| Evidence | `Sale.generateReceipt()` (lines 105–126) builds Spanish text for the user with currency format (`$%,.2f`) and messages such as "sin promoción aplicable". |
+| Explanation | `Sale` is a model class that holds the data of the sale and computes its amounts. Building the receipt is a different responsibility: how the information is shown to the user. |
+| Consequence | A change only in the presentation, such as printing the receipt or making a PDF, forces a change in `Sale` even though the calculations did not change. |
+| Proposed solution | Move the receipt to a new class `ReceiptGenerator` in the `ui` package. Only `ConsoleMenu` uses the receipt today (lines 284, 305, 314 and 570), so the layers are respected. The receipt must stay exactly the same: data, texts, currency format, order and line breaks. The correction is guided by Pure Fabrication. |
+| Other member's code | No. |
+
+| Field | Content |
+|---|---|
+| ID | V-04 |
+| Pattern | High Cohesion |
+| Module | User interface (Taller 1 and integrations of Requirements 1–6) |
+| Evidence | `ConsoleMenu` (698 lines) holds the seven submenus: `productMenu` (line 127), `personMenu` (183), `saleMenu` (235), `accessoryMenu` (321), `promotionMenu` (421), `warrantyMenu` (494) and `returnMenu` (539), plus the input helpers (`readText`, `readInt`, `readDouble`, lines 620–664) and the error handling. |
+| Explanation | Although everything is related to the console, one class handles all the modules of the store, reads the data, prints the listings and handles the errors. |
+| Consequence | Every new module or operation makes the class bigger and harder to understand, and changes of different modules happen in the same file. |
+| Proposed solution | Split it into `ProductMenu`, `PersonMenu`, `SaleMenu`, `AccessoryMenu`, `PromotionMenu`, `WarrantyMenu` and `ReturnMenu`, and leave `ConsoleMenu` as the main menu that gives access to them. The input helpers that every submenu uses go to their own class. Patterns applied: High Cohesion and Pure Fabrication. |
+| Other member's code | No. |
