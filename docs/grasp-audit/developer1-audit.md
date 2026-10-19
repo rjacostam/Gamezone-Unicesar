@@ -239,3 +239,45 @@ Violation V-04:
 | Consequence | A warranty whose name is written differently, with another accent or in another language, silently receives the coverage of the basic warranty and the certificate is wrong with no error and no exception. A third warranty type needs a new `if` inside `Warranty`, so a change in a subclass becomes a change in its parent. |
 | Proposed solution | Move the coverage to the subclass. `coverageDescription()` becomes abstract in `Warranty` next to `getWarrantyType`, and `BasicWarranty` and `ExtendedWarranty` answer with their own text, so the certificate keeps calling the method without knowing the type. |
 | Other member's code | No. |
+## Pure Fabrication
+
+**Verdict: correct.**
+
+Correct applications:
+
+- The seven validators of `com.gamezone.validation` add behaviour without adding data: each one
+  is declared `final`, has a private constructor and offers only static methods, so it cannot be
+  instantiated or extended and it holds no state. They exist because these checks did not belong
+  to the model: `ProductValidator` (96 lines) groups the eight checks of a product,
+  `PromotionValidator` (122 lines) those of a promotion and of its code, and
+  `WarrantyValidator` (53 lines) the date rules of a warranty.
+- These classes are not invented to move a method away from where it belongs. Every check
+  answers a question about a value that comes from outside, and the classes that receive those
+  values were audited as correct in Information Expert, because the model already holds
+  everything it needs.
+- `GameZoneException` is also a fabricated concept: a failure is not a `Product` nor a `Sale`,
+  so the class has no data of its own beyond the code and the message that identify it.
+- The price format with `String.format(Locale.US, "$%,.2f", price)` is repeated in several model
+  classes, but it is not extracted into a fabricated formatter on purpose: moving it would hide
+  the money behind another indirection while the real problem of V-03 is the wording of the
+  documents, which the presentation layer will resolve with its own formatters.
+
+## Indirection
+
+**Verdict: correct.**
+
+Correct applications:
+
+- `Promotion` (line 12) is the indirection that lets `SaleService` and `ConsoleMenu` work with
+  promotions without knowing the three concrete types. The service, audited by the Technical
+  Leader, only calls `calculateDiscount` and `getDescription` on the base type.
+- `Accessory.getAccessoryType` (line 55) is the indirection behind
+  `ConsoleMenu.readAccessoryType`: the menu converts a number into a code and builds the
+  accessory, and it never keeps a case per accessory subclass.
+- `GameZoneException` is indirection for the handlers: `ConsoleMenu.runSafely`, audited by the
+  Technical Leader, catches the base type and one handler covers the four subclasses, so adding a
+  fifth kind of failure does not add a fifth catch.
+- `Warranty` (line 14) is indirection for the sale: the sale keeps a warranty and never asks
+  whether it is basic or extended, it only reads its duration and its cost.
+- The `validation` package is indirection between the interface and the model: `ConsoleMenu`
+  obtains a checked object instead of repeating the format rules in each of its submenus.
