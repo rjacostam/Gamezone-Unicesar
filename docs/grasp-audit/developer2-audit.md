@@ -104,6 +104,25 @@ Correct applications:
 
 ---
 
+## Controller
+
+**Verdict: correct.**
+
+Correct applications:
+
+- `Main.main` is the controller of the application. It creates the repositories, the services
+  and the menu, injects each dependency and starts the run. It contains no business rule.
+- `ConsoleMenu.runSafely` (lines 111-122) handles the events of a submenu and routes each
+  failure to a different message, so the user never sees a stack trace. It decides nothing
+  about the business.
+- `AccessoryService.restoreStock` and `WarrantyService.cancelWarranties` coordinate a change
+  over several objects, which is what a controller does inside its own module.
+- `ReturnService.registerReturn` coordinates the eight steps of a return, in order, across the
+  catalogue, the accessories, the warranties and the file. It is the controller of that
+  process without deciding any of the rules it applies.
+
+---
+
 ## Findings reported for the consolidation
 
 These problems were found while auditing my own code, but the fix is not mine alone. They
