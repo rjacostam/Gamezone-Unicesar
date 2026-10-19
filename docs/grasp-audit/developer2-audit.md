@@ -44,11 +44,11 @@ Technical Leader already includes them in his own report, and a class must be au
 | Low Coupling | 1 | 3 | 0 |
 | High Cohesion | 0 | 6 | 0 |
 | Polymorphism | 2 | 2 | 0 |
-| Pure Fabrication | 1 | 2 | 0 |
+| Pure Fabrication | 0 | 3 | 0 |
 | Indirection | 0 | 4 | 0 |
 | Protected Variations | 0 | 5 | 0 |
 
-Five findings: V-01 to V-05, plus five problems reported for the consolidation.
+Four findings: V-01 to V-04, plus five problems reported for the consolidation.
 
 ---
 
@@ -225,23 +225,22 @@ Correct applications:
 
 ## Pure Fabrication
 
-**Verdict: violation.**
+**Verdict: correct.**
 
-### V-05 — `WarrantyRecord` adds a concept of its own
+Correct applications:
 
-| Field | Content |
-|---|---|
-| ID | V-05 |
-| Pattern | Pure Fabrication |
-| Module | Warranties (R4), adjustment A2 |
-| Evidence | `WarrantyRecord` (lines 20-99) holds five final fields (`type`, `id`, `productId`, `saleId`, `startDate`), one constructor and five getters. It has no method that does anything, and it is not part of the business language of the store. It exists only to carry one line of `data/warranties.csv` from the repository to the service. |
-| Explanation | A fabricated class is one added to a system without modelling anything of the business. This one models a line of a file, not a warranty: it cannot answer whether it is active, what it covers or how long it lasts, because the warranty itself already answers all of that. |
-| Consequence | There are two names for the same thing in the warranty module. A reader has to learn when the system works with a `Warranty` and when it works with a `WarrantyRecord`, and every new member of `WarrantyService` has to convert between them. |
-| Proposed solution | Keep the class, because removing it would put the resolution of the sale and the product back inside the repository and break the layered architecture that adjustment A2 was made to fix. The honest record is that the class is a justified fabrication and not a domain concept, and that is what this finding documents. If the correction is accepted, the alternative is a private static nested record inside `WarrantyRepository`, which keeps the file out of the public API of the package without adding a name to the domain. |
-| Other member's code | No. `WarrantyRecord` is entirely mine. |
-
-**Correct applications:**
-
+- `WarrantyRecord` (lines 20-99) holds five final fields (`type`, `id`, `productId`, `saleId`,
+  `startDate`), one constructor and five getters, with no behaviour at all. It is therefore a
+  pure fabrication: it models one line of `data/warranties.csv`, not a warranty of the store,
+  because it cannot answer whether it is active, what it covers or how long it lasts. The
+  fabrication is **justified by adjustment A2**. `WarrantyRepository.loadAll` takes no
+  arguments, so the repository cannot reach the sales module; without this class the
+  repository would have to resolve the `Sale` and the `Product` of every record itself, and
+  the layers would close a cycle, `SaleService` to `WarrantyService` to `WarrantyRepository`
+  back to `SaleService`. The class is the smallest object that breaks that cycle and it keeps
+  the column layout of the file inside the persistence layer, which is what Protected
+  Variations asks for. It is kept exactly as it is, so this is a correct application of the
+  pattern and not a finding to correct in Phase 2.
 - `PersonRepository.readQuietly` is a named step, not a new class. It gives a name to the
   behaviour of turning a disk failure into the typed exception, without widening the API of
   the package.
