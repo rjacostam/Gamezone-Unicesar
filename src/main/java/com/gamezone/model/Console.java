@@ -47,22 +47,32 @@ public class Console extends Product {
     }
 
     /**
+     * The category a console reports, and the single answer to the question
+     * "is this product a console". Both {@link #getCategory()} and
+     * {@link #isConsole()} read this constant, so a console cannot be one thing
+     * and the other, and a change of the category moves both at once.
+     */
+    public static final String CATEGORY = "CONSOLE";
+
+    /**
      * Returns the category of this product, so a promotion can target consoles
      * only.
-     * @return CONSOLE
+     * @return {@link #CATEGORY}
      */
     @Override
     public String getCategory() {
-        return "CONSOLE";
+        return CATEGORY;
     }
 
     /**
-     * Tells whether this product is a console.
-     * @return true, because this product is a console
+     * Tells whether this product is a console. The answer is read from the
+     * category this product reports instead of being written by hand, so the two
+     * answers to that question can never disagree.
+     * @return true, because this product reports the console category
      */
     @Override
     public boolean isConsole() {
-        return true;
+        return CATEGORY.equals(getCategory());
     }
 
     /**
