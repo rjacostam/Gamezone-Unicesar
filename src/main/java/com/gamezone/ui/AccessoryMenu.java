@@ -1,7 +1,6 @@
 package com.gamezone.ui;
 
 import com.gamezone.model.Accessory;
-import com.gamezone.model.Console;
 import com.gamezone.model.Product;
 import com.gamezone.service.AccessoryService;
 import com.gamezone.service.ProductService;
@@ -96,7 +95,7 @@ public class AccessoryMenu extends Submenu {
     private List<String> readCompatibleConsoles() {
         System.out.println("Consolas del inventario:");
         for (Product product : productService.listAllProducts()) {
-            if (product instanceof Console) {
+            if (product.isConsole()) {
                 System.out.println("  " + product.getId() + " - " + product.getTitle());
             }
         }
