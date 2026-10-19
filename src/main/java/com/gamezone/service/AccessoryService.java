@@ -1,14 +1,17 @@
 package com.gamezone.service;
 
+import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.InvalidDataException;
+import com.gamezone.exceptions.PersistenceException;
+import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Accessory;
 import com.gamezone.model.Cable;
-import com.gamezone.model.Console;
 import com.gamezone.model.Controller;
 import com.gamezone.model.Memory;
-import com.gamezone.model.Product;
 import com.gamezone.persistence.AccessoryRepository;
+import com.gamezone.validation.AccessoryValidator;
+import com.gamezone.validation.ProductValidator;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,13 +21,15 @@ import java.util.List;
  * that every compatible console really exists in the catalogue, and saves the
  * accessories after every change so the data survives between executions.
  * <p>
- * File errors do not reach the caller as a checked exception. They become an
- * {@link IllegalStateException}, the same way {@code ProductService} does it,
- * because a failure of the disk is a failure of the application and not a
- * mistake of the user.
+ * File errors do not reach the caller as a checked exception. The repository
+ * already turns them into a {@link PersistenceException}, the same way
+ * {@code ProductService} does it, because a failure of the disk is a failure of
+ * the application and not a mistake of the user.
  * <p>
- * Rejected data becomes an {@link IllegalArgumentException} with a message in
- * Spanish, because the console menu shows it directly to the user.
+ * Rejected data becomes an {@link InvalidDataException}, a
+ * {@link ResourceNotFoundException} when a searched console does not exist, or a
+ * {@link BusinessRuleException} when a rule of the store is broken, with a
+ * message in Spanish, because the console menu shows it directly to the user.
  * <p>
  * The service needs {@code ProductService} for two reasons: to check that the
  * identifier of a new accessory is not already used by a product, and to check
@@ -32,15 +37,6 @@ import java.util.List;
  * inventory.
  */
 public class AccessoryService {
-
-    /** Type discriminator of a controller. */
-    private static final String TYPE_CONTROLLER = "CONTROLLER";
-
-    /** Type discriminator of a cable. */
-    private static final String TYPE_CABLE = "CABLE";
-
-    /** Type discriminator of a memory card. */
-    private static final String TYPE_MEMORY = "MEMORY";
 
     private AccessoryRepository repository;
     private ProductService productService;
@@ -52,16 +48,12 @@ public class AccessoryService {
      * @param repository     repository used to read and write the accessories
      * @param productService service of the catalogue, used to validate
      *                       identifiers and compatible consoles
-     * @throws IllegalStateException if the accessories file cannot be read
+     * @throws PersistenceException if the accessories file cannot be read
      */
     public AccessoryService(AccessoryRepository repository, ProductService productService) {
         this.repository = repository;
         this.productService = productService;
-        try {
-            this.accessories = new ArrayList<>(repository.loadAll());
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo cargar el catalogo de accesorios", e);
-        }
+        this.accessories = new ArrayList<>(repository.loadAll());
     }
 
     /**
@@ -76,9 +68,11 @@ public class AccessoryService {
      * @param compatibleConsoleIds ids of the consoles the controller works with
      * @param connectionType       wireless or wired connection
      * @return the registered controller
-     * @throws IllegalArgumentException if the data is invalid or the identifier
-     *                                  is already in use
-     * @throws IllegalStateException   if the accessories file cannot be written
+     * @throws InvalidDataException      if the data is invalid
+     * @throws ResourceNotFoundException if a compatible console does not exist
+     * @throws BusinessRuleException     if the identifier is already in use, or
+     *                                   if a compatible product is not a console
+     * @throws PersistenceException      if the accessories file cannot be written
      */
     public Controller registerController(String id, String title, double price, int stock,
                                          List<String> compatibleConsoleIds, String connectionType) {
@@ -103,9 +97,11 @@ public class AccessoryService {
      * @param lengthInMeters       length of the cable in meters
      * @param connectorType        connector of the cable, for example HDMI
      * @return the registered cable
-     * @throws IllegalArgumentException if the data is invalid or the identifier
-     *                                  is already in use
-     * @throws IllegalStateException   if the accessories file cannot be written
+     * @throws InvalidDataException      if the data is invalid
+     * @throws ResourceNotFoundException if a compatible console does not exist
+     * @throws BusinessRuleException     if the identifier is already in use, or
+     *                                   if a compatible product is not a console
+     * @throws PersistenceException      if the accessories file cannot be written
      */
     public Cable registerCable(String id, String title, double price, int stock,
                                List<String> compatibleConsoleIds, double lengthInMeters,
@@ -131,9 +127,11 @@ public class AccessoryService {
      * @param capacityInGb         storage capacity in gigabytes
      * @param memoryType           type of memory, for example microSD
      * @return the registered memory card
-     * @throws IllegalArgumentException if the data is invalid or the identifier
-     *                                  is already in use
-     * @throws IllegalStateException   if the accessories file cannot be written
+     * @throws InvalidDataException      if the data is invalid
+     * @throws ResourceNotFoundException if a compatible console does not exist
+     * @throws BusinessRuleException     if the identifier is already in use, or
+     *                                   if a compatible product is not a console
+     * @throws PersistenceException      if the accessories file cannot be written
      */
     public Memory registerMemory(String id, String title, double price, int stock,
                                  List<String> compatibleConsoleIds, int capacityInGb,
@@ -163,16 +161,11 @@ public class AccessoryService {
      * @param type type to filter by, {@code CONTROLLER}, {@code CABLE} or
      *             {@code MEMORY}
      * @return accessories of the given type, empty when there is none
-     * @throws IllegalArgumentException if the type is not one of the three
-     *                                  types of accessory
+     * @throws InvalidDataException if the type is not one of the three types
+     *                              of accessory
      */
     public List<Accessory> listAccessoriesByType(String type) {
-        if (!TYPE_CONTROLLER.equalsIgnoreCase(type)
-                && !TYPE_CABLE.equalsIgnoreCase(type)
-                && !TYPE_MEMORY.equalsIgnoreCase(type)) {
-            throw new IllegalArgumentException(
-                    "El tipo de accesorio debe ser CONTROLLER, CABLE o MEMORY");
-        }
+        AccessoryValidator.validateAccessoryType(type);
         String searched = type.trim();
         List<Accessory> result = new ArrayList<>();
         for (Accessory accessory : accessories) {
@@ -235,17 +228,14 @@ public class AccessoryService {
      *
      * @param accessoryId identifier of the accessory to update
      * @param quantity    units being removed from the stock
-     * @throws IllegalArgumentException if the accessory does not exist, if the
-     *                                  quantity is negative or if the stock is
-     *                                  not enough
-     * @throws IllegalStateException    if the accessories file cannot be written
+     * @throws ResourceNotFoundException if the accessory does not exist
+     * @throws BusinessRuleException     if the quantity is negative or if the
+     *                                   stock is not enough
+     * @throws PersistenceException      if the accessories file cannot be written
      */
     public void updateStock(String accessoryId, int quantity) {
         Accessory accessory = findById(accessoryId);
-        if (accessory == null) {
-            throw new IllegalArgumentException(
-                    "No existe un accesorio con el identificador " + accessoryId);
-        }
+        AccessoryValidator.validateAccessoryExists(accessory, accessoryId);
         accessory.decreaseStock(quantity);
         saveCatalogue();
     }
@@ -258,19 +248,14 @@ public class AccessoryService {
  *
  * @param accessoryId identifier of the accessory to update
  * @param quantity    amount of units to add to the stock
- * @throws IllegalArgumentException if the quantity is not greater than zero or
- *                                  if the accessory does not exist
- * @throws IllegalStateException    if the accessories file cannot be written
+ * @throws InvalidDataException      if the quantity is not greater than zero
+ * @throws ResourceNotFoundException if the accessory does not exist
+ * @throws PersistenceException      if the accessories file cannot be written
  */
     public void restoreStock(String accessoryId, int quantity) {
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("La cantidad a restaurar debe ser mayor que cero");
-        }
+        ProductValidator.validateQuantity(quantity);
         Accessory accessory = findById(accessoryId);
-        if (accessory == null) {
-            throw new IllegalArgumentException(
-                    "No existe un accesorio con el identificador " + accessoryId);
-        }
+        AccessoryValidator.validateAccessoryExists(accessory, accessoryId);
         accessory.setStock(accessory.getStock() + quantity);
         saveCatalogue();
     }
@@ -282,27 +267,16 @@ public class AccessoryService {
      * @param title accessory title
      * @param price unit price
      * @param stock available stock
-     * @throws IllegalArgumentException if the identifier or the title is empty,
-     *                                  if the price is not greater than zero,
-     *                                  if the stock is negative, or if the
-     *                                  identifier is already used by an
-     *                                  accessory or by a product
+     * @throws InvalidDataException  if the identifier or the title is empty, if
+     *                               the price is not greater than zero, or if
+     *                               the stock is negative
+     * @throws BusinessRuleException if the identifier is already used by an
+     *                               accessory or by a product
      */
     private void validateAccessoryData(String id, String title, double price, int stock) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("El identificador del accesorio es obligatorio");
-        }
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("El titulo del accesorio es obligatorio");
-        }
-        if (price <= 0) {
-            throw new IllegalArgumentException("El precio debe ser mayor que cero.");
-        }
-        if (stock < 0) {
-            throw new IllegalArgumentException("El stock no puede ser negativo");
-        }
+        ProductValidator.validateProductData(id, title, price, stock);
         if (isIdentifierInUse(id.trim())) {
-            throw new IllegalArgumentException(
+            throw new BusinessRuleException(
                     "Ya existe un accesorio o un producto con el identificador " + id.trim());
         }
     }
@@ -313,8 +287,11 @@ public class AccessoryService {
      * with a video game.
      *
      * @param compatibleConsoleIds identifiers to check, may be null or empty
-     * @throws IllegalArgumentException if an identifier does not exist in the
-     *                                  catalogue or does not belong to a console
+     * @throws InvalidDataException      if an identifier is empty
+     * @throws ResourceNotFoundException if an identifier does not exist in the
+     *                                   catalogue
+     * @throws BusinessRuleException     if an identifier does not belong to a
+     *                                   console
      */
     private void validateCompatibleConsoles(List<String> compatibleConsoleIds) {
         if (compatibleConsoleIds == null) {
@@ -322,19 +299,11 @@ public class AccessoryService {
         }
         for (String consoleId : compatibleConsoleIds) {
             if (consoleId == null || consoleId.isBlank()) {
-                throw new IllegalArgumentException(
-                        "La consola compatible no puede estar vacia");
+                throw new InvalidDataException(
+                        "consola compatible", "no puede estar vacia");
             }
-            Product product = productService.findById(consoleId.trim());
-            if (product == null) {
-                throw new IllegalArgumentException(
-                        "No existe una consola con el identificador " + consoleId.trim());
-            }
-            if (!(product instanceof Console)) {
-                throw new IllegalArgumentException(
-                        "El accesorio solo puede ser compatible con consolas y "
-                                + consoleId.trim() + " no es una consola");
-            }
+            AccessoryValidator.validateCompatibleConsole(
+                    productService.findById(consoleId.trim()), consoleId.trim());
         }
     }
 
@@ -362,7 +331,7 @@ public class AccessoryService {
      * content of the service.
      *
      * @param accessory accessory to add
-     * @throws IllegalStateException if the accessories file cannot be written
+     * @throws PersistenceException if the accessories file cannot be written
      */
     private void addAccessory(Accessory accessory) {
         accessories.add(accessory);
@@ -372,13 +341,9 @@ public class AccessoryService {
     /**
      * Saves the accessories currently registered.
      *
-     * @throws IllegalStateException if the accessories file cannot be written
+     * @throws PersistenceException if the accessories file cannot be written
      */
     private void saveCatalogue() {
-        try {
-            repository.saveAll(accessories);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo guardar el catalogo de accesorios", e);
-        }
+        repository.saveAll(accessories);
     }
 }
