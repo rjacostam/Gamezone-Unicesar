@@ -26,7 +26,7 @@ import java.util.List;
  * {@link BusinessRuleException} when a rule of the store is broken, with a
  * message in Spanish, because the console menu shows it directly to the user.
  */
-public class ProductService {
+public class ProductService implements InventoryCatalog {
     private ProductRepository repository;
     private List<Product> products;
 
@@ -124,6 +124,7 @@ public class ProductService {
      * @param id identifier to look for
      * @return the product found, or null when no product uses that identifier
      */
+    @Override
     public Product findById(String id) {
         for (Product product : products) {
             if (product.getId().equalsIgnoreCase(id)) {
@@ -143,6 +144,7 @@ public class ProductService {
      *                                   stock is not enough
      * @throws PersistenceException      if the catalogue file cannot be written
      */
+    @Override
     public void updateStock(String productId, int quantity) {
         Product product = findById(productId);
         ProductValidator.validateProductExists(product, productId);
@@ -160,6 +162,7 @@ public class ProductService {
      * @throws ResourceNotFoundException if the product does not exist
      * @throws PersistenceException      if the catalogue file cannot be written
      */
+    @Override
     public void restoreStock(String productId, int quantity) {
         ProductValidator.validateQuantity(quantity);
         Product product = findById(productId);
