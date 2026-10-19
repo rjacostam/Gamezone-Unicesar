@@ -427,3 +427,13 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
 |---|---|---|---|---|---|---|---|
 | 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Quitar el aviso del compilador sobre las excepciones | ¿Por qué javac avisa que las clases serializables no declaran serialVersionUID? | RuntimeException implementa Serializable, así que las cinco clases heredan esa obligación y el compilador avisa con -Xlint:serial. Sin ese campo, un cambio en la estructura de la clase rompe la deserialización de excepciones antiguas. | Accepted declarar private static final long serialVersionUID = 1L en las cinco, con un comentario que explica que mantiene la misma versión al recompilar. Verifiqué que el aviso desaparece. | fix: declare serialVersionUID in the exception hierarchy |
+## Requirement 7 Phase 2 - GRASP refactor
+
+In this phase the Technical Leader authorised the use of AI to review code, not only to write
+it. The entries below record how the tool was used in each correction.
+
+### Entry 36
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Anotar que en esta fase la IA si esta autorizada para revisar codigo, y fijar desde el primer momento que la revision es sobre el estado real de la rama y no sobre lo que yo recordaba de la rama anterior | La rama cambio por completo respecto a la que tenia en la cabeza: ahora existe el log de correcciones, la consolidacion renumero los hallazgos y el repositorio se movio. Que hago antes de escribir la primera linea de codigo? | Verificar el estado real en vez de asumirlo: git fetch y git checkout de la rama indicada, lectura del pom, busqueda de los marcadores de tipo que hoy escriben los repositorios y lectura de la solucion acordada en la auditoria consolidada. | Accepted trabajar siempre sobre el codigo leido en ese momento, no sobre el que recuerda de otra rama. Ademas, mvn no estaba instalado en mi equipo,asi que instale Maven 3.9.9 de forma portable en C:\Temp\opencode\tools apuntando al JDK 25 ya instalado, para poder correr el mvn clean compile que pidio el lider sin instalar nada en el sistema. | refactor: add increaseStock to Product (V-01) |
