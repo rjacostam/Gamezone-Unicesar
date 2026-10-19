@@ -1,0 +1,45 @@
+# Consolidated GRASP Audit — GameZone Unicesar
+
+Consolidated by: Rafael Junior Acosta Mendoza (Technical Leader).
+
+Audited code: `develop` at commit `6c10ce2`. The three individual reports use this same
+commit, so every line number below refers to it.
+
+Source reports:
+
+- `docs/grasp-audit/leader-audit.md` (cited as *leader*);
+- `docs/grasp-audit/developer1-audit.md` (cited as *dev1*);
+- `docs/grasp-audit/developer2-audit.md` (cited as *dev2*).
+
+## Coverage
+
+The system has 48 classes. Each one was audited by its owner, once. Two classes were split
+by method, following the responsibility table of Requirement 7.
+
+| Package | Class | Audited by |
+|---|---|---|
+| (root) | `Main` | Technical Leader |
+| `ui` | `ConsoleMenu` | Technical Leader |
+| `model` | `Sale` (all methods except `canBeReturned`) | Technical Leader |
+| `model` | `Sale.canBeReturned` | Developer 1 |
+| `model` | `Product`, `VideoGame`, `Console` | Developer 1 |
+| `model` | `Accessory`, `Controller`, `Cable`, `Memory` | Developer 1 |
+| `model` | `Promotion`, `PercentageDiscount`, `CategoryDiscount`, `BulkPurchaseDiscount` | Developer 1 |
+| `model` | `Warranty`, `BasicWarranty`, `ExtendedWarranty` | Developer 1 |
+| `model` | `Return` | Developer 1 |
+| `model` | `Person`, `Customer`, `Seller` | Developer 2 |
+| `persistence` | `SaleRepository` | Technical Leader |
+| `persistence` | `ProductRepository` | Developer 1 |
+| `persistence` | `PersonRepository`, `AccessoryRepository`, `PromotionRepository`, `ReturnRepository`, `WarrantyRepository`, `WarrantyRecord` | Developer 2 |
+| `service` | `SaleService` | Technical Leader |
+| `service` | `ProductService` (all methods except `restoreStock`) | Developer 1 |
+| `service` | `ProductService.restoreStock` | Technical Leader |
+| `service` | `PersonService`, `AccessoryService`, `PromotionService`, `ReturnService`, `WarrantyService` | Developer 2 |
+| `exceptions` | `GameZoneException`, `ResourceNotFoundException`, `BusinessRuleException`, `InvalidDataException`, `PersistenceException` | Developer 1 |
+| `validation` | the seven validators | Developer 1 |
+
+No class was left without an audit and none was audited twice. During the review of the pull
+requests, two overlaps were found and returned to their author before merging:
+Developer 2 had included `Main` and `ConsoleMenu.runSafely`, which belong to the Technical
+Leader, and an opinion on the validators, which belong to Developer 1. Both were removed from
+`developer2-audit.md`.
