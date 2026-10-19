@@ -9,6 +9,7 @@ import com.gamezone.persistence.ReturnRepository;
 import com.gamezone.persistence.SaleRepository;
 import com.gamezone.persistence.WarrantyRepository;
 import com.gamezone.service.AccessoryService;
+import com.gamezone.service.MonthlyBalanceService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
@@ -82,7 +83,8 @@ public class Main {
                     new AccessoryMenu(input, accessoryService, productService),
                     new PromotionMenu(input, promotionService),
                     new WarrantyMenu(input, warrantyService),
-                    new ReturnMenu(input, returnService, saleService));
+                    new ReturnMenu(input, returnService,
+                            new MonthlyBalanceService(saleService, returnService), saleService));
             menu.start();
         } catch (PersistenceException e) {
             System.out.println("No fue posible cargar los datos del sistema. Contacte al administrador.");
