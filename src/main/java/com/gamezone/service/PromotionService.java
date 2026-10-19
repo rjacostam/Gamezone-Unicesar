@@ -1,13 +1,16 @@
 package com.gamezone.service;
 
+import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.InvalidDataException;
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.BulkPurchaseDiscount;
 import com.gamezone.model.CategoryDiscount;
 import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Promotion;
 import com.gamezone.model.Sale;
 import com.gamezone.persistence.PromotionRepository;
+import com.gamezone.validation.PromotionValidator;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,27 +21,15 @@ import java.util.List;
  * saves the promotions after every change so the data survives between
  * executions.
  * <p>
- * File errors do not reach the caller as a checked exception. They become an
- * {@link IllegalStateException}, the same way {@code ProductService} and
- * {@code AccessoryService} do it, because a failure of the disk is a failure of
- * the application and not a mistake of the user.
+ * File errors do not reach the caller as a checked exception. The repository
+ * already turns them into a {@link PersistenceException}, because a failure of
+ * the disk is a failure of the application and not a mistake of the user.
  * <p>
- * Rejected data becomes an {@link IllegalArgumentException} with a message in
- * Spanish, because the console menu shows it directly to the user.
+ * Rejected data becomes an {@link InvalidDataException}, or a
+ * {@link BusinessRuleException} when a rule of the store is broken, with a
+ * message in Spanish, because the console menu shows it directly to the user.
  */
 public class PromotionService {
-
-    /** Category accepted by a category discount for video games. */
-    private static final String CATEGORY_VIDEOGAME = "VIDEOGAME";
-
-    /** Category accepted by a category discount for consoles. */
-    private static final String CATEGORY_CONSOLE = "CONSOLE";
-
-    /** Category accepted by a category discount for accessories. */
-    private static final String CATEGORY_ACCESSORY = "ACCESSORY";
-
-    /** Highest percentage accepted by any promotion. */
-    private static final double MAX_PERCENTAGE = 100;
 
     private PromotionRepository repository;
     private List<Promotion> promotions;
@@ -47,15 +38,11 @@ public class PromotionService {
      * Creates the service and loads the promotions stored in the repository.
      *
      * @param repository repository used to read and write the promotions
-     * @throws IllegalStateException if the promotions file cannot be read
+     * @throws PersistenceException if the promotions file cannot be read
      */
     public PromotionService(PromotionRepository repository) {
         this.repository = repository;
-        try {
-            this.promotions = new ArrayList<>(repository.loadAll());
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo cargar el catalogo de promociones", e);
-        }
+        this.promotions = new ArrayList<>(repository.loadAll());
     }
 
     /**
@@ -67,9 +54,9 @@ public class PromotionService {
      * @param endDate   last day the promotion is valid
      * @param percentage discount percentage, greater than zero and at most 100
      * @return the registered promotion
-     * @throws IllegalArgumentException if the data is invalid or the identifier
-     *                                  is already registered
-     * @throws IllegalStateException    if the promotions file cannot be written
+     * @throws InvalidDataException  if the data is invalid
+     * @throws BusinessRuleException if the identifier is already registered
+     * @throws PersistenceException  if the promotions file cannot be written
      */
     public PercentageDiscount registerPercentageDiscount(String id, String name,
                                                           LocalDate startDate, LocalDate endDate,
@@ -94,10 +81,10 @@ public class PromotionService {
      * @param targetCategory category the discount applies to, {@code VIDEOGAME},
      *                       {@code CONSOLE} or {@code ACCESSORY}
      * @return the registered promotion
-     * @throws IllegalArgumentException if the data is invalid, if the category
-     *                                  is not accepted, or if the identifier is
-     *                                  already registered
-     * @throws IllegalStateException    if the promotions file cannot be written
+     * @throws InvalidDataException  if the data is invalid or the category is
+     *                               not accepted
+     * @throws BusinessRuleException if the identifier is already registered
+     * @throws PersistenceException  if the promotions file cannot be written
      */
     public CategoryDiscount registerCategoryDiscount(String id, String name,
                                                      LocalDate startDate, LocalDate endDate,
@@ -122,9 +109,9 @@ public class PromotionService {
      * @param minimumQuantity units the sale must include, greater than zero
      * @param percentage      discount percentage, greater than zero and at most 100
      * @return the registered promotion
-     * @throws IllegalArgumentException if the data is invalid or the identifier
-     *                                  is already registered
-     * @throws IllegalStateException    if the promotions file cannot be written
+     * @throws InvalidDataException  if the data is invalid
+     * @throws BusinessRuleException if the identifier is already registered
+     * @throws PersistenceException  if the promotions file cannot be written
      */
     public BulkPurchaseDiscount registerBulkPurchaseDiscount(String id, String name,
                                                              LocalDate startDate, LocalDate endDate,
@@ -233,29 +220,15 @@ public class PromotionService {
      * @param name      name of the promotion
      * @param startDate first day the promotion is valid
      * @param endDate   last day the promotion is valid
-     * @throws IllegalArgumentException if the identifier or the name is empty,
-     *                                  if the identifier is already registered,
-     *                                  if a date is missing, or if the end date
-     *                                  is before the start date
+     * @throws InvalidDataException  if the identifier or the name is empty, if
+     *                               a date is missing, or if the end date is
+     *                               before the start date
+     * @throws BusinessRuleException if the identifier is already registered
      */
     private void validateCommonData(String id, String name, LocalDate startDate, LocalDate endDate) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("El identificador de la promoción es obligatorio");
-        }
-        if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("El nombre de la promoción es obligatorio");
-        }
-        if (startDate == null || endDate == null) {
-            throw new IllegalArgumentException(
-                    "Las fechas de inicio y fin de la promoción son obligatorias");
-        }
-        if (endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException(
-                    "La fecha de fin no puede ser anterior a la fecha de inicio");
-        }
+        PromotionValidator.validatePromotionData(id, name, startDate, endDate);
         if (isIdentifierInUse(id.trim())) {
-            throw new IllegalArgumentException(
-                    "Ya existe una promoción con el identificador " + id.trim());
+            PromotionValidator.validateUniquePromotion(findById(id.trim()), id.trim());
         }
     }
 
@@ -263,14 +236,11 @@ public class PromotionService {
      * Checks that a discount percentage is usable in a calculation.
      *
      * @param percentage discount percentage to check
-     * @throws IllegalArgumentException if the percentage is not greater than
-     *                                  zero or is greater than 100
+     * @throws InvalidDataException if the percentage is not greater than zero
+     *                              or is greater than 100
      */
     private void validatePercentage(double percentage) {
-        if (percentage <= 0 || percentage > MAX_PERCENTAGE) {
-            throw new IllegalArgumentException(
-                    "El porcentaje debe ser mayor que cero y menor o igual a 100");
-        }
+        PromotionValidator.validatePercentage(percentage);
     }
 
     /**
@@ -279,20 +249,12 @@ public class PromotionService {
      * adjustment A1 added accessories as a target category.
      *
      * @param targetCategory category to check
-     * @throws IllegalArgumentException if the category is empty or is not
-     *                                  {@code VIDEOGAME}, {@code CONSOLE} nor
-     *                                  {@code ACCESSORY}
+     * @throws InvalidDataException if the category is empty or is not
+     *                              {@code VIDEOGAME}, {@code CONSOLE} nor
+     *                              {@code ACCESSORY}
      */
     private void validateTargetCategory(String targetCategory) {
-        if (targetCategory == null || targetCategory.isBlank()) {
-            throw new IllegalArgumentException("La categoría de la promoción es obligatoria");
-        }
-        if (!CATEGORY_VIDEOGAME.equalsIgnoreCase(targetCategory.trim())
-                && !CATEGORY_CONSOLE.equalsIgnoreCase(targetCategory.trim())
-                && !CATEGORY_ACCESSORY.equalsIgnoreCase(targetCategory.trim())) {
-            throw new IllegalArgumentException(
-                    "La categoría debe ser VIDEOGAME, CONSOLE o ACCESSORY");
-        }
+        PromotionValidator.validateCategory(targetCategory);
     }
 
     /**
@@ -300,13 +262,10 @@ public class PromotionService {
      * reachable.
      *
      * @param minimumQuantity units the sale must include
-     * @throws IllegalArgumentException if the quantity is not greater than zero
+     * @throws InvalidDataException if the quantity is not greater than zero
      */
     private void validateMinimumQuantity(int minimumQuantity) {
-        if (minimumQuantity <= 0) {
-            throw new IllegalArgumentException(
-                    "La cantidad mínima debe ser mayor que cero");
-        }
+        PromotionValidator.validateMinimumQuantity(minimumQuantity);
     }
 
     /**
@@ -331,7 +290,7 @@ public class PromotionService {
      * service.
      *
      * @param promotion promotion to add
-     * @throws IllegalStateException if the promotions file cannot be written
+     * @throws PersistenceException if the promotions file cannot be written
      */
     private void addPromotion(Promotion promotion) {
         promotions.add(promotion);
@@ -341,13 +300,9 @@ public class PromotionService {
     /**
      * Saves the promotions currently registered.
      *
-     * @throws IllegalStateException if the promotions file cannot be written
+     * @throws PersistenceException if the promotions file cannot be written
      */
     private void saveCatalogue() {
-        try {
-            repository.saveAll(promotions);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo guardar el catalogo de promociones", e);
-        }
+        repository.saveAll(promotions);
     }
 }

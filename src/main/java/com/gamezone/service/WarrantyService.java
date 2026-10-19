@@ -1,5 +1,7 @@
 package com.gamezone.service;
 
+import com.gamezone.exceptions.InvalidDataException;
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.BasicWarranty;
 import com.gamezone.model.ExtendedWarranty;
 import com.gamezone.model.Product;
@@ -7,8 +9,8 @@ import com.gamezone.model.Sale;
 import com.gamezone.model.Warranty;
 import com.gamezone.persistence.WarrantyRecord;
 import com.gamezone.persistence.WarrantyRepository;
+import com.gamezone.validation.WarrantyValidator;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,10 +33,9 @@ import java.util.Locale;
  * service. Building the warranties is the job of this class, which already knows
  * the sales and is the layer that owns the warranty rules.
  * <p>
- * File errors do not reach the caller as a checked exception. They become an
- * {@link IllegalStateException}, the same way the other services do it, because
- * a failure of the disk is a failure of the application and not a mistake of the
- * user.
+ * File errors do not reach the caller as a checked exception. The repository
+ * already turns them into a {@link PersistenceException}, because a failure of
+ * the disk is a failure of the application and not a mistake of the user.
  */
 public class WarrantyService {
 
@@ -80,23 +81,19 @@ public class WarrantyService {
      *
      * @param sales sales already registered, used to resolve the sale and the
      *              product of each record
-     * @throws IllegalStateException if the warranties file cannot be read
+     * @throws PersistenceException if the warranties file cannot be read
      */
     public void loadWarranties(List<Sale> sales) {
-        try {
-            List<WarrantyRecord> records = repository.loadAll();
-            List<Warranty> loaded = new ArrayList<>();
-            for (WarrantyRecord record : records) {
-                Warranty warranty = toWarranty(record, sales);
-                if (warranty != null) {
-                    loaded.add(warranty);
-                }
+        List<WarrantyRecord> records = repository.loadAll();
+        List<Warranty> loaded = new ArrayList<>();
+        for (WarrantyRecord record : records) {
+            Warranty warranty = toWarranty(record, sales);
+            if (warranty != null) {
+                loaded.add(warranty);
             }
-            warranties.clear();
-            warranties.addAll(loaded);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo cargar el catalogo de garantias", e);
         }
+        warranties.clear();
+        warranties.addAll(loaded);
     }
 
     /**
@@ -176,9 +173,9 @@ public class WarrantyService {
      * @param sale      sale the product was bought in
      * @param startDate first day the warranty is valid
      * @return the assigned warranty
-     * @throws IllegalArgumentException if the product, the sale or the date is
-     *                                  missing
-     * @throws IllegalStateException    if the warranties file cannot be written
+     * @throws InvalidDataException if the product, the sale or the date is
+     *                              missing
+     * @throws PersistenceException if the warranties file cannot be written
      */
     public BasicWarranty assignBasicWarranty(Product product, Sale sale, LocalDate startDate) {
         validateAssignment(product, sale, startDate);
@@ -196,9 +193,9 @@ public class WarrantyService {
      * @param sale      sale the product was bought in
      * @param startDate first day the warranty is valid
      * @return the assigned warranty
-     * @throws IllegalArgumentException if the product, the sale or the date is
-     *                                  missing
-     * @throws IllegalStateException    if the warranties file cannot be written
+     * @throws InvalidDataException if the product, the sale or the date is
+     *                              missing
+     * @throws PersistenceException if the warranties file cannot be written
      */
     public ExtendedWarranty assignExtendedWarranty(Product product, Sale sale, LocalDate startDate) {
         validateAssignment(product, sale, startDate);
@@ -310,7 +307,7 @@ public class WarrantyService {
      * @param saleId    identifier of the sale the warranties come from
      * @return amount to give back for the cancelled warranties, zero when there
      *         was none
-     * @throws IllegalStateException if the warranties file cannot be written
+     * @throws PersistenceException if the warranties file cannot be written
      */
     public double cancelWarranties(String productId, String saleId) {
         if (productId == null || productId.isBlank()
@@ -373,14 +370,11 @@ public class WarrantyService {
      *
      * @param daysAhead how many days ahead are considered
      * @return warranties that are valid today and end within that window
-     * @throws IllegalArgumentException if the number of days is not greater than
-     *                                  zero
+     * @throws InvalidDataException if the number of days is not greater than
+     *                              zero
      */
     public List<Warranty> listWarrantiesExpiringSoon(int daysAhead) {
-        if (daysAhead <= 0) {
-            throw new IllegalArgumentException(
-                    "La cantidad de días debe ser mayor que cero");
-        }
+        WarrantyValidator.validateDaysAhead(daysAhead);
         LocalDate limit = LocalDate.now().plusDays(daysAhead);
         List<Warranty> expiring = new ArrayList<>();
         for (Warranty warranty : listActiveWarranties()) {
@@ -418,20 +412,11 @@ public class WarrantyService {
      * @param product   product covered by the warranty
      * @param sale      sale the product was bought in
      * @param startDate first day the warranty is valid
-     * @throws IllegalArgumentException if the product, the sale or the date is
-     *                                  missing
+     * @throws InvalidDataException if the product, the sale or the date is
+     *                              missing
      */
     private void validateAssignment(Product product, Sale sale, LocalDate startDate) {
-        if (product == null) {
-            throw new IllegalArgumentException("El producto de la garantía es obligatorio");
-        }
-        if (sale == null) {
-            throw new IllegalArgumentException("La venta de la garantía es obligatoria");
-        }
-        if (startDate == null) {
-            throw new IllegalArgumentException(
-                    "La fecha de inicio de la garantía es obligatoria");
-        }
+        WarrantyValidator.validateWarrantyData(product, sale, startDate);
     }
 
     /**
@@ -480,7 +465,7 @@ public class WarrantyService {
      * always reflects the content of the service.
      *
      * @param warranty warranty to add
-     * @throws IllegalStateException if the warranties file cannot be written
+     * @throws PersistenceException if the warranties file cannot be written
      */
     private void addWarranty(Warranty warranty) {
         warranties.add(warranty);
@@ -490,13 +475,9 @@ public class WarrantyService {
     /**
      * Saves the warranties currently registered.
      *
-     * @throws IllegalStateException if the warranties file cannot be written
+     * @throws PersistenceException if the warranties file cannot be written
      */
     private void saveCatalogue() {
-        try {
-            repository.saveAll(warranties);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo guardar el catalogo de garantias", e);
-        }
+        repository.saveAll(warranties);
     }
 }
