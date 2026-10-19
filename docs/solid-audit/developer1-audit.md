@@ -114,3 +114,36 @@ Violation V-02:
 | Consequence | A new kind of console, for example a portable console that belongs to the catalogue, has to be changed in two places instead of one, and nothing warns when only one of them was done. The rules that ask "is this a console" and the rules that filter by category can then answer differently about the same product, which is the exact defect that V-04 was registered to remove, reappearing one level below. |
 | Proposed solution | Keep one answer and derive the other. The category cannot disappear, because `ProductRepository` writes it as the marker of the row, so the predicate should be derived from the same constant the subclass uses for its category, instead of a second hard-coded literal. Then a rename of the category or a new console type is a single change and the two answers cannot disagree. |
 | Other member's code | Partly. The six call sites include `SaleService`, `SaleMenu` and `AccessoryMenu`, which belong to the Technical Leader, but the two literals that have to agree are both in `Product` and `Console`, which are mine, so the correction is mine. |
+## Liskov Substitution Principle
+
+**Verdict: violation** (one point, V-01, registered under the Interface Segregation Principle).
+
+Correct applications:
+
+- `Warranty.coverageDescription` (line 130) is abstract and each warranty answers with its own
+  text, so a `BasicWarranty` can be used anywhere a `Warranty` is expected without the caller
+  having to know which one it holds.
+- `Product.isConsole` (line 62) has a default that is correct for most subclasses, and `Console`
+  narrows it. The default is not a behaviour that only makes sense for the base class.
+- `Accessory.getDescription` (line 65) builds the common part of the text and each accessory calls
+  `super.getDescription()` and appends its own attributes (`Controller` line 54, `Cable` line 58,
+  `Memory` line 59), so every accessory answers with a complete description and none of them has
+  to be tested to know it is one.
+- `Promotion.calculateDiscount` (line 40) can be answered with zero: a promotion that is not
+  active returns zero, and a caller handles that the same way for the three types.
+- `GameZoneException` and its subclasses keep the same contract: every one of them builds a
+  message and offers `getErrorCode`, so catching the base type is enough and no subclass needs a
+  special case.
+
+Violation V-01 as it breaks this principle:
+
+| Field | Content |
+|---|---|
+| ID | V-01 |
+| Principle | Liskov Substitution Principle |
+| Module | Catalogue (Taller 1), accessories (R1, R7) |
+| Evidence | `Product` declares `public abstract List<String> getExtraFields();` (line 54) and `Accessory extends Product` (line 14 in `Accessory`), so the three accessories inherit the contract. `VideoGame` (line 65) and `Console` (line 74) answer with the three columns of `products.csv`, while `Controller` (line 43), `Cable` (line 46) and `Memory` (line 47) answer with the one or two columns of `accessories.csv`. Both answers satisfy the signature and both are read through the base type: `ProductRepository` line 56 and `AccessoryRepository` line 141. |
+| Explanation | Substitution asks whether a subclass can be used wherever its parent is used, and here it can be, because the method exists and returns a list of strings. What it cannot do is return the *same meaning*. A caller that holds a `Product` and calls `getExtraFields()` receives columns, and there is nothing in the answer that says which file those columns belong to. The two hierarchies share one contract with two different meanings, which is the case where a substitutable type quietly hands back the wrong thing. |
+| Consequence | A repository written for one file can be pointed at the other hierarchy: it compiles, because the signature is satisfied, and it writes a row with the columns of the other file. Nothing detects it at compile time and nothing fails at run time either, because the row is still a syntactically valid row. |
+| Proposed solution | The correction is the one of V-01, written in the Interface Segregation section: stop making the two hierarchies share one contract for two files, either by publishing a marker that names the file next to the columns, or by declaring the column contract in the hierarchy that owns the file. |
+| Other member's code | Yes. `ProductRepository` and `AccessoryRepository`, which are the two callers, belong to Developer 2. |
