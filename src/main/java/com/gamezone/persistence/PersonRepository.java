@@ -1,5 +1,6 @@
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Seller;
 
@@ -70,9 +71,9 @@ public class PersonRepository {
      * Saves every customer, replacing the previous content of the file.
      *
      * @param customers customers to persist
-     * @throws IOException if the file cannot be written
+     * @throws PersistenceException if the file cannot be written
      */
-    public void saveCustomers(List<Customer> customers) throws IOException {
+    public void saveCustomers(List<Customer> customers) {
         List<String> lines = new ArrayList<>();
         for (Customer customer : customers) {
             lines.add(String.join(DELIMITER,
@@ -81,7 +82,12 @@ public class PersonRepository {
                     customer.getPhone(),
                     customer.getEmail()));
         }
-        write(customersFile, lines);
+        try {
+            write(customersFile, lines);
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de escritura en el archivo " + customersFile, e);
+        }
     }
 
     /**
@@ -91,11 +97,11 @@ public class PersonRepository {
      * corrupted line never prevents the application from starting.
      *
      * @return list of the stored customers, empty when the file does not exist
-     * @throws IOException if the file cannot be read
+     * @throws PersistenceException if the file cannot be read
      */
-    public List<Customer> loadCustomers() throws IOException {
+    public List<Customer> loadCustomers() {
         List<Customer> customers = new ArrayList<>();
-        for (String record : read(customersFile)) {
+        for (String record : readRecords(customersFile)) {
             String[] fields = record.split(DELIMITER, -1);
             if (fields.length == CUSTOMER_FIELD_COUNT && hasContent(fields)) {
                 customers.add(new Customer(
@@ -112,9 +118,9 @@ public class PersonRepository {
      * Saves every seller, replacing the previous content of the file.
      *
      * @param sellers sellers to persist
-     * @throws IOException if the file cannot be written
+     * @throws PersistenceException if the file cannot be written
      */
-    public void saveSellers(List<Seller> sellers) throws IOException {
+    public void saveSellers(List<Seller> sellers) {
         List<String> lines = new ArrayList<>();
         for (Seller seller : sellers) {
             lines.add(String.join(DELIMITER,
@@ -124,7 +130,12 @@ public class PersonRepository {
                     seller.getEmployeeCode(),
                     seller.getShift()));
         }
-        write(sellersFile, lines);
+        try {
+            write(sellersFile, lines);
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de escritura en el archivo " + sellersFile, e);
+        }
     }
 
     /**
@@ -134,11 +145,11 @@ public class PersonRepository {
      * corrupted line never prevents the application from starting.
      *
      * @return list of the stored sellers, empty when the file does not exist
-     * @throws IOException if the file cannot be read
+     * @throws PersistenceException if the file cannot be read
      */
-    public List<Seller> loadSellers() throws IOException {
+    public List<Seller> loadSellers() {
         List<Seller> sellers = new ArrayList<>();
-        for (String record : read(sellersFile)) {
+        for (String record : readRecords(sellersFile)) {
             String[] fields = record.split(DELIMITER, -1);
             if (fields.length == SELLER_FIELD_COUNT && hasContent(fields)) {
                 sellers.add(new Seller(
@@ -198,7 +209,7 @@ public class PersonRepository {
      * @return the records contained in the file
      * @throws IOException if the file cannot be read
      */
-    private List<String> read(Path file) throws IOException {
+    private List<String> readRecords(Path file) throws IOException {
         List<String> records = new ArrayList<>();
         if (!Files.exists(file)) {
             return records;
