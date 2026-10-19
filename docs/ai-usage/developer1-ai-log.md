@@ -756,3 +756,15 @@ how the tool was used to review each correction before it was pushed.
 | Answer | The defect is that `Product` declared one contract for two files, so only `Product` has to lose it. The accessories and the promotions each live in a single file, so declaring the contract on `Accessory` and on `Promotion` is correct and keeps both repositories of Developer 2 compiling and working untouched, which is the order the consolidated audit agreed: Developer 1 defines the contracts, then Developer 2 adapts his repositories. |
 | Decision | Accepted creating three contracts, one per file, and leaving both repositories of Developer 2 alone. `ProductRepository` reads the columns through `ProductCatalogRow` with a documented cast, which is safe because the catalogue only holds video games and consoles, and which is a dependency on an abstraction rather than on a concrete class. All three data files were read and written again with the old code and the new code and come out byte for byte identical. |
 | Related commit | refactor: split the catalog row contract per hierarchy (V-08) |
+### Entry 54
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-19 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 8 phase 2 - `feature/solid-refactor` |
+| Goal | Make the catalogue answer the small contracts of V-09 and then stop depending on the fat interface |
+| Query | Developer 2 published `ItemFinder`, `StockUpdater` and `StockRestorer` and moved `AccessoryService` to them, but kept `InventoryCatalog`. What does `ProductService` have to declare, and when is it safe to drop the old one? |
+| Answer | `AccessoryService` declares all three, so the shape to copy was already in the branch. The three methods of `ProductService` already carried `@Override` and none of their bodies had to change, so the whole correction was the declaration line. The fat interface could not be dropped in that turn, because `SaleService` and `ReturnService` still held `List<InventoryCatalog>`; once the Technical Leader moved them, `ReturnService` to `List<StockRestorer>`, `InventoryCatalog` was left with no reader at all. |
+| Decision | Accepted mirroring `AccessoryService` exactly and changing nothing else, and waiting for the clients to move before dropping the fat interface. When it was dropped, the JavaDoc of `findById`, which said the two implementations of `InventoryCatalog` answer the same question, was corrected to name the `ItemFinder` contract they now share, because a link to an interface the class no longer implements is a lie in the documentation. The file `InventoryCatalog.java` was not deleted, since it belongs to Developer 2 and no code references it. Verified at run time that the class answers the three small contracts, that it no longer answers `InventoryCatalog`, and that it can be placed in the `StockRestorer[]` that `ReturnService` builds. |
+| Related commits | refactor: declare ProductService on the small inventory contracts (V-09), refactor: drop InventoryCatalog from ProductService (V-09) |
