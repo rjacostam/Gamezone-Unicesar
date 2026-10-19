@@ -154,6 +154,34 @@ Correct applications:
 
 ---
 
+## High Cohesion
+
+**Verdict: correct.**
+
+Correct applications:
+
+- `PersonService` only registers, lists and searches people. Every private helper
+  (`people`, `withCustomer`, `requireText` before R6) exists to serve one of those.
+- `PromotionService` only registers, lists and selects promotions. `validateCommonData`,
+  `validatePercentage`, `validateTargetCategory` and `validateMinimumQuantity` are all
+  promotion rules, so they belong together.
+- `WarrantyService` only assigns, cancels and lists warranties. The identifier generation
+  (`nextWarrantyId`, `parseIdNumber`) exists because of warranty assignment.
+- `AccessoryService` only manages accessories. After R6 its `validateAccessoryData` is three
+  lines that delegate to `ProductValidator`, and the remaining checks are accessory rules.
+- `ReturnRepository` only reads and writes `data/returns.csv`.
+- **`ReturnService` covers two responsibilities — returning products and the monthly financial
+  report** (`calculateMonthlySales`, line 464, `calculateMonthlyReturns`, line 487 and
+  `generateMonthlyBalance`, line 529). This was checked and is accepted. The statement of
+  Requirement 3 asks for one report that consolidates sales and returns, and
+  `ReturnService` is the only class that already knows both. Splitting it would need a
+  report service, which would have to receive both services and would only move the
+  dependencies one level up. The cohesion of this class is therefore a consequence of the
+  requirement, not an accident of the implementation, and it is recorded here so that the
+  trade-off is visible instead of hidden.
+
+---
+
 ## Findings reported for the consolidation
 
 These problems were found while auditing my own code, but the fix is not mine alone. They
