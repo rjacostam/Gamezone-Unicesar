@@ -176,3 +176,48 @@ Seven findings: V-01 to V-07, plus the problems reported for the consolidation.-
 
 ---
 
+## Dependency Inversion Principle
+
+**Verdict: violation.**
+
+### V-06 — `ReturnService` depends on five concrete classes
+
+| Field | Content |
+|---|---|
+| ID | V-06 |
+| Principle | Dependency Inversion |
+| Module | Returns (R3) |
+| Evidence | The class declares `private ReturnRepository repository` (line 53), `private SaleService saleService` (line 54), `private ProductService productService` (line 55), `private AccessoryService accessoryService` (line 56) and `private WarrantyService warrantyService` (line 57). The only abstraction it holds, `private final List<InventoryCatalog> inventoryCatalogs` (line 61), is used inside `restoreStock` and `catalogOf` only. |
+| Explanation | Four of the five are services of other modules and one is the storage of this one. Every one of them is named as a concrete type, so the return module cannot be built, read or tested without the sale module, the catalogue module, the accessory module, the warranty module and the file format. R7 already showed the cost: the type of stock an item has is decided by asking two of them, because the service holds the classes rather than the operation. |
+| Consequence | A change in `SaleService` is a reason to recompile and retest `ReturnService`, and the same for the other three. The class cannot be tested without five collaborators, and the reason a test needs them is that the code names them, not that the behaviour needs them. |
+| Proposed solution | Depend on the operation instead of on the class. Three small abstractions are enough: a `ReturnStore` with `loadAll` and `saveAll` for the repository, a `SaleFinder` with `findById` and `listAllSales`, and a `WarrantyCanceller` with `cancelWarranties`. The existing classes implement them without any change, the same way `ProductService` and `AccessoryService` already implement `InventoryCatalog`. |
+| Other member's code | Yes. `SaleService` and `ProductService` are not mine, and `AccessoryService` is mine, so the interfaces have to be agreed before Phase 2 of R8. |
+
+### V-07 — `AccessoryService` reaches into the concrete `ProductService` of another module
+
+| Field | Content |
+|---|---|
+| ID | V-07 |
+| Principle | Dependency Inversion |
+| Module | Accessories (R1) |
+| Evidence | The class holds `private ProductService productService` and uses it twice: `findAccessoriesCompatibleWith` calls `productService.findById(consoleId.trim())` (line 309) and the identifier check calls `productService.findById(id) != null` (line 328). Both are the same question, whether the catalogue holds an item with that identifier. |
+| Explanation | Both call sites are already the operation `InventoryCatalog.findById`, the abstraction the accessory service itself implements. Instead of using it, the module names the concrete class of the catalogue, so the accessory module is compiled and tested against the catalogue module. |
+| Consequence | The two modules cannot be built or tested apart, and a third catalogue, a subscription for example, would make this a second concrete field and a second `instanceof` on the question of whether an item exists. R7 removed exactly that kind of test from `ReturnService`, and the same knowledge is still expressed here as a field of a concrete class. |
+| Proposed solution | Replace the field with the abstraction the class already satisfies: hold a `List<InventoryCatalog>` of the catalogues it has to consult, or the narrower `CatalogSearch` of V-05, and ask `catalog.findById(...)`. The two call sites do not change their shape and `ProductService` needs no new method. |
+| Other member's code | Partly. The field type is Developer 1's class, but `InventoryCatalog` already exists and is the contract that fits, so the correction is mostly on my side. |
+
+**Correct applications:**
+
+- `InventoryCatalog` is a real abstraction and both catalogues implement it, so `ReturnService`
+  and `SaleService` can ask a list of them who owns an item without naming either class.
+  This is the Dependency Inversion applied to the one place where it was needed.
+- Every service receives its repository through the constructor and none of them builds
+  one: `PersonService`, `AccessoryService`, `PromotionService`, `ReturnService` and
+  `WarrantyService` all hold `new` nowhere in their body. The wiring happens once, in the
+  composition root, which is where it belongs.
+- `ReturnService.catalogOf` asks the catalogues in a fixed order and falls back to the
+  product catalogue (line 320), so the decision has a defined answer even when a catalogue
+  does not hold the item, instead of depending on which service happens to be called first.
+
+---
+
