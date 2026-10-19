@@ -133,3 +133,20 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | The tool found wrong class owners, a reference to the removed `Sale.generateReceipt`, a wrong claim about how the menu catches the exceptions and classes of other members listed as correct applications; it also found that a log entry attributed to me an AI authorisation I never gave. It listed the overlaps as decisions C1 to C7 for me to take. |
 | Decision | I returned each problem to its author before approving the PRs. I took the consolidation decisions (merging the overlaps into 13 violations, keeping the current output of every place in V-02 and registering OOS-02), and the tool wrote the consolidated audit and my answers to questions 2 and 5 in English from them. |
 | Related commit | PR #40, PR #41, `555d05d` to `573a18e` (consolidated audit), answers 2 and 5 |
+
+---
+
+# Requirement 8 — Phase 2 (Correction)
+
+## Entry 10
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-19 |
+| Tool | Claude Code (Claude Opus 5.5) |
+| Phase and branch | Requirement 8, Phase 2 — `feature/solid-refactor` |
+| Goal | Prepare the no regression check, correct my part of the thirteen violations, coordinate the order of the corrections and verify the work of the developers. |
+| Query | Asked the tool to run the reference on `develop`, write `solid-refactor-log.md` and the before and after diagrams, implement my corrections (V-01, V-02, V-03, V-04, V-06, V-09, V-10, V-11 and V-13 in my classes), update the README, and compile and test every commit of the developers. |
+| Answer | The tool did those changes one commit at a time and ran the two scripts after each one; every check gave the same output and the same data files as the reference. It also found three problems in the work of the team before they were merged: the persistence layer importing `service` (the factories and `ReturnStore`), the single `register` of promotions skipping the percentage, category and minimum validations, and the old per-type `register...` methods left in the services. |
+| Decision | Accepted. I gave the team the names of the contracts and the order of the turns, returned the three problems to Developer 2 before approving, and approved PRs #43 and #44 after the checks. |
+| Related commit | `9ea2217` to `0dde754` (my corrections and logs), `71fd7b4` (final verification), `a5057f4` (README) |
