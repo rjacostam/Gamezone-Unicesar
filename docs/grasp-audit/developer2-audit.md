@@ -44,7 +44,7 @@ Technical Leader already includes them in his own report, and a class must be au
 | Low Coupling | 1 | 3 | 0 |
 | High Cohesion | 0 | 6 | 0 |
 | Polymorphism | 2 | 2 | 0 |
-| Pure Fabrication | 1 | 3 | 0 |
+| Pure Fabrication | 1 | 2 | 0 |
 | Indirection | 0 | 4 | 0 |
 | Protected Variations | 0 | 5 | 0 |
 
@@ -245,9 +245,6 @@ Correct applications:
 - `PersonRepository.readQuietly` is a named step, not a new class. It gives a name to the
   behaviour of turning a disk failure into the typed exception, without widening the API of
   the package.
-- `ProductValidator`, `PersonValidator`, `SaleValidator`, `AccessoryValidator`,
-  `PromotionValidator`, `WarrantyValidator` and `ReturnValidator` are not fabricated: each one
-  names a rule of the store, such as the return window or the minimum quantity.
 - `GameZoneException` and its four subclasses name the four kinds of failure the statement
   asks the menu to tell apart, so each one earns its existence.
 
