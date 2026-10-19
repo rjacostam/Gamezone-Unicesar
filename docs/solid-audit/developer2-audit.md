@@ -117,7 +117,11 @@ Seven findings: V-01 to V-07, plus the problems reported for the consolidation.-
   branch to the writing side.
 - `Product.isConsole`, `Sale.countUnitsOf` and `Sale.findProductById`, added in R7, let
   their callers decide without being edited again when the catalogue grows a new kind of
-  item.## Liskov Substitution Principle
+  item.
+
+---
+
+## Liskov Substitution Principle
 
 **Verdict: violation.**
 
