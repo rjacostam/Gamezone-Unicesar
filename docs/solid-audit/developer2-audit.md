@@ -147,3 +147,32 @@ Seven findings: V-01 to V-07, plus the problems reported for the consolidation.-
 
 ---
 
+## Interface Segregation Principle
+
+**Verdict: violation.**
+
+### V-05 — No client of `InventoryCatalog` uses its three methods
+
+| Field | Content |
+|---|---|
+| ID | V-05 |
+| Principle | Interface Segregation |
+| Module | Correction of R7 (V-07) |
+| Evidence | The interface declares three methods: `findById` (line 36), `updateStock` (line 55) and `restoreStock` (line 71). Of the two clients, `SaleService.updateInventory` calls only `updateStock` (line 324) and `ReturnService.restoreStock` calls only `restoreStock` (line 303). Both call `findById` through `catalogOf`. No client of the interface ever calls all three. |
+| Explanation | An interface should be the smallest set of operations its clients need. This one is the union of what the sale module and the return module need, so each of them depends on one method it will never call. The interface was built for two consumers that need different things, which is the situation the principle warns about. |
+| Consequence | A fifth operation added for one module has to be declared in the interface and implemented by both catalogues, even when the other module can never use it, and a catalogue that has no meaning for that operation has to answer something artificial. The interface also grows for both clients every time either one grows. |
+| Proposed solution | Split it by client. A `CatalogSearch` with `findById`, and two interfaces that extend it: `StockUpdater` with `updateStock` for the sale path and `StockRestorer` with `restoreStock` for the return path. Each service then declares the field of the one interface it uses, and a catalogue only implements what it really does. The classes and the file formats do not change. |
+| Other member's code | Yes. `ProductService` is Developer 1's and `SaleService` is the Technical Leader's, so the split has to be agreed with both of them before Phase 2 of R8. |
+
+**Correct applications:**
+
+- The R6 validators are used as static calls and each service asks only for the rules it
+  applies: `ReturnService` calls `ReturnValidator` and `SaleValidator`, `AccessoryService`
+  calls `AccessoryValidator` and `ProductValidator`, and `PromotionService` calls only
+  `PromotionValidator`. No service is forced to know a rule of a module it does not touch.
+- `WarrantyRecord` is not an interface and does not pretend to be one: it declares five
+  getters and nothing else, so the only client that uses it, `WarrantyService.loadWarranties`,
+  depends on exactly the data it needs.
+
+---
+
