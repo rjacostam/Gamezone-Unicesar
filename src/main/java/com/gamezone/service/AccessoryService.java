@@ -37,7 +37,7 @@ import java.util.List;
  * that every compatible console identifier belongs to a console of the
  * inventory.
  */
-public class AccessoryService implements InventoryCatalog, StockUpdater, StockRestorer {
+public class AccessoryService implements StockUpdater, StockRestorer {
 
     private AccessoryRepository repository;
     private ItemFinder productService;
