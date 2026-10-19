@@ -116,6 +116,7 @@ and #44) were merged, and compared with the reference run of the same day.
 | Data files | The eight files of `run/data/` are **identical** to the reference |
 | Stack traces | None |
 | Key figures | Sale `S0001` total $3,040,000; sale `S0002` total $512,000; return `R0001` with warranty refund $250,000; October balance: sales $3,552,000, returns $2,500,000, net $1,052,000 |
+| `ReturnService`, `Main` | The two fields that named the concrete `ProductService` and `AccessoryService` are deleted. The constructor now receives `List<StockRestorer> stockRestorers` directly, products first and accessories after, copied with `List.copyOf` the same way `SaleService` copies its list of updaters, and `catalogOf` falls back to the first catalogue of the list instead of to a field. The service keeps exactly the three collaborators it uses, all of them contracts, and the composition of that list happens once in `Main`, which is where the objects are built. `Main` passes `List.of(productService, accessoryService)`, the order that decides the fallback. No line of the behaviour of a return changed. | V-11 | Dependency Inversion | `2eabff1` | Developer 2 |
 
 Every operation of the menu behaves exactly as before the correction: same inputs, same results,
 same messages and same data files.
