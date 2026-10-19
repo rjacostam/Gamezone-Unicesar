@@ -70,6 +70,8 @@ One row per change. Every violation of the consolidated audit must appear at lea
 
 | Class | Change made | Violation ID | Principle applied | Commit / PR | Responsible |
 |---|---|---|---|---|---|
+| `Submenu` | `runSafely` keeps its four catch blocks and their messages, and adds a final `catch (GameZoneException e)` with a general message. A new kind of error, added as a subclass of `GameZoneException`, is now shown to the user without editing `Submenu`. The new block is not reached by any current operation. No regression: both scripts identical. | V-04 | Open/Closed | `18411b3` | Technical Leader |
+| `ConsoleMenu`, `Main` | `ConsoleMenu` no longer creates its collaborators: it receives the `ConsoleInput` and the seven submenus through its constructor and keeps them as `Submenu`. `Main`, the composition root, builds them. The order of the options and every message are the same. No regression: both scripts identical. | V-13 | Dependency Inversion | `875f724` | Technical Leader |
 
 ## Final verification
 
