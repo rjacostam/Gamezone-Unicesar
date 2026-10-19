@@ -76,3 +76,45 @@ Seven findings: V-01 to V-07, plus the problems reported for the consolidation.-
 
 ---
 
+## Open/Closed Principle
+
+**Verdict: violation.**
+
+### V-02 — A new kind of accessory changes `AccessoryService` and `AccessoryRepository`
+
+| Field | Content |
+|---|---|
+| ID | V-02 |
+| Principle | Open/Closed |
+| Module | Accessories (R1) |
+| Evidence | Registration is split in three methods that repeat the same shape: `registerController` (line 77), `registerCable` (line 106) and `registerMemory` (line 136). Reading the file branches three more times: `AccessoryRepository.deserialize` tests `TYPE_CONTROLLER` (line 183), `TYPE_CABLE` (line 187) and `TYPE_MEMORY` (line 191). |
+| Explanation | The module is open for reading a new kind of accessory and closed for adding one. The kinds of accessory are written in six places, so a fourth kind is not an extension of the module, it is an edit of it. The class hierarchy already says which classes exist; the two classes repeat that list as code. |
+| Consequence | A fourth kind of accessory means editing the service and the repository, and any place that is missed produces a record that is written but cannot be read back, or read back as the wrong class. The three methods are also three copies of the same validation and save sequence, so a rule fixed in one is not fixed in the other two. |
+| Proposed solution | Move the creation of the concrete accessory to the model, with a factory such as `AccessoryFactory.create(type, id, title, price, stock, extras)`, and give the service one `register` method that takes the accessory the factory built. The repository then asks the same factory in `deserialize`, so the list of kinds exists once. |
+| Other member's code | Yes. `Accessory`, `Controller`, `Cable` and `Memory` are Developer 1's, and the menu that calls the three register methods is the Technical Leader's, so both need to agree before Phase 2 of R8. |
+
+### V-03 — A new kind of promotion changes `PromotionService` and `PromotionRepository`
+
+| Field | Content |
+|---|---|
+| ID | V-03 |
+| Principle | Open/Closed |
+| Module | Promotions (R2) |
+| Evidence | `PromotionService` repeats the registration in `registerPercentageDiscount` (line 61), `registerCategoryDiscount` (line 89) and `registerBulkPurchaseDiscount` (line 116). `PromotionRepository.deserialize` tests `TYPE_PERCENTAGE` (line 184), `TYPE_CATEGORY` (line 187) and `TYPE_BULK` (line 191). |
+| Explanation | The same defect as V-02 in the other module: the kinds of promotion are written as code in the service and again in the repository, so the module has to be edited to grow. |
+| Consequence | A second kind of percentage discount, for example a discount for a date range, is not added by extending the class; it is added by copying a method and adding a branch, and every branch copied is another place where a validation can drift. |
+| Proposed solution | The same factory, `PromotionFactory.create(type, id, name, start, end, extras)`, with one `register` method in the service and one call to the factory in `deserialize`. The three existing classes keep answering `calculateDiscount` and `getTypeCode`, so the file does not change. |
+| Other member's code | Yes. `PercentageDiscount`, `CategoryDiscount` and `BulkPurchaseDiscount` are Developer 1's and the menu is the Technical Leader's. |
+
+**Correct applications:**
+
+- `AccessoryRepository.serialize` writes the extra columns with
+  `String.join(DELIMITER, accessory.getExtraFields())` (line 141). Since the R7 correction,
+  a new kind of accessory publishes its own fields and this method is not edited, which is
+  what Open/Closed asks for.
+- `PromotionRepository.serialize` and `WarrantyRepository.serialize` write the marker with
+  `getTypeCode()` (lines 136 and 141), so a new kind of promotion or warranty does not add a
+  branch to the writing side.
+- `Product.isConsole`, `Sale.countUnitsOf` and `Sale.findProductById`, added in R7, let
+  their callers decide without being edited again when the catalogue grows a new kind of
+  item.
