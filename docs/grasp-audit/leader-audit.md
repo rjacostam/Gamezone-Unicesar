@@ -157,3 +157,45 @@ here.
   domain classes.
 - The corrections of V-03 and V-04 also apply this pattern (`ReceiptGenerator` and the
   input helper class).
+
+## Indirection
+
+**Verdict: correct.**
+
+`SaleService.registerSale` never uses the repositories of other modules. It updates the
+stock through `ProductService.updateStock` and `AccessoryService.updateStock`
+(lines 324–326), and assigns the warranties through `WarrantyService` (lines 312 and 314).
+Those services work as intermediaries: `SaleService` does not need to know how the data
+of each module is stored, and a change in a repository stays behind its own service. This
+also keeps the coupling low.
+
+## Protected Variations
+
+**Verdict: correct.**
+
+- `SaleRepository.toLine` and `fromLine` (lines 100–128) know the exact positions of the
+  file (`parts[2]` is the customer, `parts[5]` the promotion, `parts[7]` the warranty
+  cost), and they also accept older lines without the last columns. This knowledge stays
+  inside `SaleRepository`; the rest of the system works with `Sale` objects. If the file
+  format changes, only this class changes.
+- The `switch` in `ConsoleMenu.readAccessoryType` (line 399) and in the promotion category
+  selection (line 461) only turns the number typed by the user into a code. It does not
+  choose business behaviour by the type of an object. Adding a new option to the menu when
+  a new category appears is a normal change of the interface, so it is not a violation.
+
+## Summary
+
+| Pattern | Verdict | Findings |
+|---|---|---|
+| Information Expert | Violation | V-01 |
+| Creator | Correct | — |
+| Controller | Violation | V-02 |
+| Low Coupling | Correct | — |
+| High Cohesion | Violation | V-03, V-04 |
+| Polymorphism | Violation | V-05 |
+| Pure Fabrication | Correct | — |
+| Indirection | Correct | — |
+| Protected Variations | Correct | — |
+
+Boundary findings reported for the consolidation: V-01 and V-02 (Developer 1), V-05 (to be
+confirmed).
