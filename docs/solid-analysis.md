@@ -209,3 +209,92 @@ under other readings, which is the same lesson as the one above, seen from the o
 3. **The audit has to run on a known commit, and the reports have to say which one.** All of this
    was invisible because `675e61c` already contained the corrections of `675e61c`'s predecessor.
    An audit that runs after the corrections can only see the corrections, never their cost.
+
+---
+
+## Question 4 — Preserving the external behaviour of the system
+
+*Answered by Developer 2.*
+
+Requirement 8 corrects the inside of the system and promises that the outside does not move. A SOLID correction is harder to prove than a GRASP one, and the reason is worth stating before the answer: a violation can be corrected in a way that changes the observable behaviour and still looks like a clean correction to a reader of the diff. Nothing in the finding tells you which one happened. Only running the program does.
+
+So the strategy is not "review the diff carefully". It is that the same scripted run has to produce the same bytes before and after, on both the screen and on disk.
+
+### The two scripts are the contract
+
+`docs/regression/` holds two fixed input scripts that drive the console menu without any human keystroke:
+
+| Script | Lines | What it does |
+|---|---|---|
+| `menu-script.txt` | 283 | One run that goes through **every operation of the seven submenus**, and includes one error of each kind: a duplicate identifier, an invalid price, a non-existent customer, not enough stock, a month outside 1 to 12. |
+| `restart-script.txt` | 19 | A second run on the data the first one left behind, so every change that was saved is proven to be read again. |
+
+They are inputs, not tests. They have no expected values inside them: the expectation is the output of the same run on `develop`. That is deliberate, because a test that carries its own expected values has to be rewritten when the behaviour changes, and the point here is that the behaviour must not change.
+
+The pair covers what a single run cannot. The first run proves that every operation still answers; the second proves that the state the first one left is real, because the menu reads it back and shows the same figures. A correction that only changed memory would pass the first run and fail the second.
+
+### The acceptance criteria
+
+From `docs/grasp-refactor-log.md`, the run is accepted only when both of these hold:
+
+1. `out-run1.txt` and `out-run2.txt` are **identical** to the reference run.
+2. The **eight files of `run/data/`** are **identical** to the reference run.
+
+Both halves are required and neither is decoration. Identical output with different files means something was saved that the user was not told about; identical files with different output means a message or a receipt changed. The correction is internal, so both must hold.
+
+The run is made from a copy of the data:
+
+```bash
+mvn clean compile
+mkdir -p run && cp -r data run/
+cd run
+java -cp ../target/classes com.gamezone.Main < ../docs/regression/menu-script.txt > out-run1.txt
+java -cp ../target/classes com.gamezone.Main < ../docs/regression/restart-script.txt > out-run2.txt
+```
+
+`run/` is a working copy and is never committed. Sales, returns and warranties are dated with the day of the month, so the reference and the check are always run on the same day; comparing runs from different days would show a difference that no correction caused.
+
+### When it is run
+
+| Moment | What it establishes |
+|---|---|
+| **Reference, before any correction** | The behaviour as it was. `develop` at `ae12127`: 1,403 lines of output on the first run and 211 on the second. This is the row every later run is compared against. |
+| **Each pull request** | That the correction under review is invisible. Every correction in `docs/grasp-refactor-log.md` carries its own line in the correction log, and the Technical Leader ran the scripts before approving each turn. |
+| **Final, on `develop` after the merges** | That the corrections still are invisible once they are all together. `develop` at `63604f3`: 1,403 lines and 211 lines, **identical** to the reference, the eight data files **identical**, no stack trace. |
+
+The final run is the one that matters for the claim. Corrections can cancel each other: two of them can each be invisible alone and together produce an output nobody has seen. That is why the evidence shown at the end is a run of the merged `develop`, and not the last correction on its own.
+
+### The evidence presented at the end
+
+Not "it works". These figures, from `docs/grasp-refactor-log.md`, so that a reader can check them without trusting anyone:
+
+| Field | Value |
+|---|---|
+| Commit | `develop` at `63604f3`, merge of pull request #37 |
+| Compilation | No errors |
+| First run | 1,403 lines, **identical** to the reference |
+| Second run | 211 lines, **identical** to the reference |
+| Data files | The eight files of `run/data/` are **identical** to the reference |
+| Stack traces | None |
+| Key figures | Sale `S0001` total $3,040,000; sale `S0002` total $512,000; return `R0001` with warranty refund $250,000; October balance: sales $3,552,000, returns $2,500,000, net $1,052,000 |
+
+The key figures matter as much as the counts. A comparison that only says "the files are identical" is one the reader has to take on faith; naming four amounts and two totals lets a reader check the numbers against the data files they can open.
+
+### Why a SOLID correction has more ways to break it than a GRASP one
+
+The GRASP corrections moved a decision from one class to another. The SOLID corrections proposed in this audit mostly **change what a class promises**, and each of those has a way of leaving the outside unchanged that is easy to break:
+
+- **Segregating `InventoryCatalog`** moves the stock operations into smaller interfaces. A menu that never called `updateStock` must not start failing to compile, and a caller that used one interface must keep getting the same behaviour from the class that implements it.
+- **Moving the creation of an accessory into a factory** risks a constructor with a different order of arguments. The file has to come out byte for byte the same, which is checked by comparing the eight data files, not by reading the factory.
+- **Renaming a parameter or changing a return type** is invisible in a diff that only the writer reads, and visible in the output. Comparing the two output files is the only check that catches it.
+
+This is why the acceptance criteria compare **files and not only classes**. A change of signature compiles, passes review, and fails here.
+
+### What this strategy does not cover
+
+Stating it is part of the answer, because a guarantee with a hole in it is not a guarantee.
+
+- **Compilation is verified on one machine, by one person.** No automated build runs on every commit, so a correction is only as safe as the review that reads it.
+- **The scripts are a sample, not the whole space.** They cover every operation of the menu with one input each, plus one error of each kind. They do not cover a boundary nobody thought of, and they do not cover a user who types a value the script never types.
+- **The comparison is byte for byte, so an intentional message change cannot be made.** That is the correct bias for a refactor and the wrong one for a feature, and it means a correction that legitimately changes a message has to be separated from the refactor instead of smuggled into it.
+- **The two scripts run the same day or not at all.** A comparison across days fails for a reason no correction caused, and the schedule has to keep them together.
