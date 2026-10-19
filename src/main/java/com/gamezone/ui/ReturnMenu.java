@@ -2,6 +2,7 @@ package com.gamezone.ui;
 
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
+import com.gamezone.service.MonthlyBalanceService;
 import com.gamezone.service.ReturnService;
 import com.gamezone.service.SaleService;
 
@@ -15,18 +16,22 @@ import java.util.List;
 public class ReturnMenu extends Submenu {
 
     private final ReturnService returnService;
+    private final MonthlyBalanceService balanceService;
     private final SaleService saleService;
 
     /**
      * Creates the submenu.
      *
      * @param input         reader of the console
-     * @param returnService service for returns and the monthly balance
+     * @param returnService  service for returns
+     * @param balanceService service for the monthly balance of sales and returns
      * @param saleService   service for sales, used to show the original sale
      */
-    public ReturnMenu(ConsoleInput input, ReturnService returnService, SaleService saleService) {
+    public ReturnMenu(ConsoleInput input, ReturnService returnService, MonthlyBalanceService balanceService,
+                      SaleService saleService) {
         super(input);
         this.returnService = returnService;
+        this.balanceService = balanceService;
         this.saleService = saleService;
     }
 
@@ -101,9 +106,9 @@ public class ReturnMenu extends Submenu {
             System.out.println("El mes debe estar entre 1 y 12.");
             return;
         }
-        double sales = returnService.calculateMonthlySales(month, year);
-        double returns = returnService.calculateMonthlyReturns(month, year);
-        double balance = returnService.generateMonthlyBalance(month, year);
+        double sales = balanceService.calculateMonthlySales(month, year);
+        double returns = balanceService.calculateMonthlyReturns(month, year);
+        double balance = balanceService.generateMonthlyBalance(month, year);
         System.out.printf("Balance de %02d/%d%n", month, year);
         System.out.printf("  Total de ventas: $%,.2f%n", sales);
         System.out.printf("  Total de devoluciones: $%,.2f%n", returns);

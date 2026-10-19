@@ -9,13 +9,25 @@ import com.gamezone.persistence.ReturnRepository;
 import com.gamezone.persistence.SaleRepository;
 import com.gamezone.persistence.WarrantyRepository;
 import com.gamezone.service.AccessoryService;
+import com.gamezone.service.MonthlyBalanceService;
 import com.gamezone.service.PersonService;
 import com.gamezone.service.ProductService;
 import com.gamezone.service.PromotionService;
 import com.gamezone.service.ReturnService;
 import com.gamezone.service.SaleService;
+import com.gamezone.service.StoreCatalog;
 import com.gamezone.service.WarrantyService;
+import com.gamezone.ui.AccessoryMenu;
+import com.gamezone.ui.ConsoleInput;
 import com.gamezone.ui.ConsoleMenu;
+import com.gamezone.ui.PersonMenu;
+import com.gamezone.ui.ProductMenu;
+import com.gamezone.ui.PromotionMenu;
+import com.gamezone.ui.ReturnMenu;
+import com.gamezone.ui.SaleMenu;
+import com.gamezone.ui.WarrantyMenu;
+
+import java.util.List;
 
 
 /**
@@ -52,14 +64,27 @@ public class Main {
             AccessoryService accessoryService = new AccessoryService(accessoryRepository, productService);
             PromotionService promotionService = new PromotionService(promotionRepository);
             WarrantyService warrantyService = new WarrantyService(warrantyRepository);
-            SaleService saleService = new SaleService(saleRepository, productService, personService,
-                    accessoryService, promotionService, warrantyService);
+            StoreCatalog catalog = new StoreCatalog(
+                    List.of(productService::listAllProducts, accessoryService::listAllAccessories),
+                    List.of(productService, accessoryService));
+            SaleService saleService = new SaleService(saleRepository, catalog,
+                    List.of(productService, accessoryService), personService,
+                    promotionService, warrantyService);
             warrantyService.loadWarranties(saleService.listAllSales());
             ReturnService returnService = new ReturnService(returnRepository, saleService, productService,
                     accessoryService, warrantyService);
 
-            ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService, accessoryService,
-                    promotionService, warrantyService, returnService);
+            ConsoleInput input = new ConsoleInput();
+            PersonMenu personMenu = new PersonMenu(input, personService);
+            ConsoleMenu menu = new ConsoleMenu(input,
+                    new ProductMenu(input, productService),
+                    personMenu,
+                    new SaleMenu(input, saleService, catalog, productService, personMenu),
+                    new AccessoryMenu(input, accessoryService, productService),
+                    new PromotionMenu(input, promotionService),
+                    new WarrantyMenu(input, warrantyService),
+                    new ReturnMenu(input, returnService,
+                            new MonthlyBalanceService(saleService, returnService), saleService));
             menu.start();
         } catch (PersistenceException e) {
             System.out.println("No fue posible cargar los datos del sistema. Contacte al administrador.");

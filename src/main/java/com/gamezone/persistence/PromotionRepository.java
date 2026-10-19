@@ -1,10 +1,8 @@
 package com.gamezone.persistence;
 
 import com.gamezone.exceptions.PersistenceException;
-import com.gamezone.model.BulkPurchaseDiscount;
-import com.gamezone.model.CategoryDiscount;
-import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Promotion;
+import com.gamezone.model.PromotionFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -53,15 +51,6 @@ public class PromotionRepository {
 
     /** Number of columns of a record, including the header layout. */
     private static final int COLUMN_COUNT = 7;
-
-    /** Type discriminator of a percentage discount record. */
-    private static final String TYPE_PERCENTAGE = "PERCENTAGE";
-
-    /** Type discriminator of a category discount record. */
-    private static final String TYPE_CATEGORY = "CATEGORY";
-
-    /** Type discriminator of a bulk purchase discount record. */
-    private static final String TYPE_BULK = "BULK";
 
     /** Location of the file where the promotions are stored. */
     private final Path filePath;
@@ -180,22 +169,11 @@ public class PromotionRepository {
         try {
             LocalDate startDate = LocalDate.parse(columns[3]);
             LocalDate endDate = LocalDate.parse(columns[4]);
-            double percentage = Double.parseDouble(columns[5]);
-            if (TYPE_PERCENTAGE.equalsIgnoreCase(type)) {
-                return new PercentageDiscount(columns[1], columns[2], startDate, endDate, percentage);
-            }
-            if (TYPE_CATEGORY.equalsIgnoreCase(type)) {
-                return new CategoryDiscount(columns[1], columns[2], startDate, endDate,
-                        percentage, columns[6]);
-            }
-            if (TYPE_BULK.equalsIgnoreCase(type)) {
-                return new BulkPurchaseDiscount(columns[1], columns[2], startDate, endDate,
-                        Integer.parseInt(columns[6]), percentage);
-            }
+            return PromotionFactory.create(type, columns[1], columns[2], startDate, endDate,
+                    List.of(columns[5], columns[6]));
         } catch (NumberFormatException | java.time.format.DateTimeParseException e) {
             return null;
         }
-        return null;
     }
 
     /**

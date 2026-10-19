@@ -697,3 +697,74 @@ the review were applied.
 | Answer | A slip, and a long one. Nothing in the project asked for it: the template at the top of this file is in English with the fields Date, Tool, Phase and branch, Goal, Query, Answer, Decision and Related commit, and the entries of the first requirements follow it. The change happened when the GRASP correction started and it was carried forward without noticing, through twelve entries. Entries 26 to 33 had English content with the horizontal layout, and entries 34 to 48 had Spanish content as well. |
 | Decision | Accepted rewriting entries 26 to 48 in the format of the template, translating the content of 34 to 48 into English, restoring the separators between sections and the blank line before each entry. The content of the entries was not changed in substance: no query, answer or decision was rewritten, only the language and the layout. The entries are numbered continuously and no entry was merged or removed, so the numbering of the commits referenced by each entry still matches. |
 | Related commit | docs: bring the AI usage log back to the template format |
+
+---
+
+## Requirement 8 Phase 2 - SOLID refactor
+
+The Technical Leader authorised the use of AI to review code in this phase. The entries below record
+how the tool was used to review each correction before it was pushed.
+
+### Entry 50
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-19 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 8 phase 2 - `feature/solid-refactor` |
+| Goal | Check that `ProductService.findById` and `AccessoryService.findById` really answer the same contract before the interface is split |
+| Query | The leader asked for a null guard and a trim. Which of the eight cases that matter does each behaviour change, and can any of them reach the user? |
+| Answer | The null and blank cases already answered null before the change, because `equalsIgnoreCase(null)` and `equalsIgnoreCase("  ")` are both false, so the guard makes the rule explicit without changing any result. The only case whose result changes is the one with surrounding blanks, which used to answer null and now finds the product. |
+| Decision | Accepted the change, and verified that the case that changed can never reach the user: `ConsoleInput.readLine` trims every line (line 137) and `AccessoryService` trims again before calling (line 309), so no caller ever sent an untrimmed identifier. The other seven cases were checked one by one and give the same answer as before. |
+| Related commit | refactor: give both catalogues the same findById contract (V-07) |
+
+### Entry 51
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-19 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 8 phase 2 - `feature/solid-refactor` |
+| Goal | Give the console question one answer without changing it |
+| Query | The consolidated solution says to derive one answer from the other from a single constant. Which one should be derived, and can they still drift apart? |
+| Answer | The category has to keep the literal, because `ProductRepository` writes it as the marker of the row, so the category is the answer and the predicate is what is derived. Deriving it the other way round would have been a second literal again. They can no longer drift, because `isConsole()` reads `getCategory()` at call time instead of repeating a value, so a subclass that reported another category would be answered accordingly. |
+| Decision | Accepted adding `Console.CATEGORY`, returning it from `getCategory()` and answering `CATEGORY.equals(getCategory())` in `isConsole()`. Checked both products still report the same category and answer the same boolean as before, and that the predicate agrees with the text comparison it replaces. Three other places still hold the literal `CONSOLE`, and they were left alone on purpose: they answer a different question. |
+| Related commit | refactor: give the console question a single answer (V-05) |
+
+### Entry 52
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-19 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 8 phase 2 - `feature/solid-refactor` |
+| Goal | Count the call sites of the money format before moving them, and check that the output does not change |
+| Query | The leader said nine call sites of ours. How many are there really, and do they all use the same locale? |
+| Answer | Twelve, not nine, and they do not all use the same locale: ten pinned `Locale.US` and two, the descriptions of `VideoGame` and of `Console`, used the locale of the computer. That last pair is the same defect as the `ReceiptGenerator` of the leader, which is registered as OOS-02, and moving those two to `Locale.US` would have changed what the user reads on this machine, whose locale is `es_CO`. |
+| Decision | Accepted creating a component that offers both variants and moving all twelve, keeping each site on the variant it already used, which is what the consolidated solution asks for. A first comparison appeared to show a difference of three bytes, and the cause was not the change: the "before" tree had been extracted with `git show` through the console, which corrupted the accented characters. Re-extracted with `git archive` and compiled with the same compiler, both captures are 1564 bytes with the same SHA-256. |
+| Related commit | refactor: move the money and percentage formats to one component (V-02) |
+
+### Entry 53
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-19 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 8 phase 2 - `feature/solid-refactor` |
+| Goal | Separate the `getExtraFields` contract without breaking the branch that another member is working on |
+| Query | Removing the method from `Product` breaks `AccessoryRepository` and `PromotionRepository`, which are Developer 2's. Where do the declarations have to go so nothing breaks? |
+| Answer | The defect is that `Product` declared one contract for two files, so only `Product` has to lose it. The accessories and the promotions each live in a single file, so declaring the contract on `Accessory` and on `Promotion` is correct and keeps both repositories of Developer 2 compiling and working untouched, which is the order the consolidated audit agreed: Developer 1 defines the contracts, then Developer 2 adapts his repositories. |
+| Decision | Accepted creating three contracts, one per file, and leaving both repositories of Developer 2 alone. `ProductRepository` reads the columns through `ProductCatalogRow` with a documented cast, which is safe because the catalogue only holds video games and consoles, and which is a dependency on an abstraction rather than on a concrete class. All three data files were read and written again with the old code and the new code and come out byte for byte identical. |
+| Related commit | refactor: split the catalog row contract per hierarchy (V-08) |
+### Entry 54
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-19 |
+| Tool | Space Bunny (OpenCode) |
+| Phase and branch | Requirement 8 phase 2 - `feature/solid-refactor` |
+| Goal | Make the catalogue answer the small contracts of V-09 and then stop depending on the fat interface |
+| Query | Developer 2 published `ItemFinder`, `StockUpdater` and `StockRestorer` and moved `AccessoryService` to them, but kept `InventoryCatalog`. What does `ProductService` have to declare, and when is it safe to drop the old one? |
+| Answer | `AccessoryService` declares all three, so the shape to copy was already in the branch. The three methods of `ProductService` already carried `@Override` and none of their bodies had to change, so the whole correction was the declaration line. The fat interface could not be dropped in that turn, because `SaleService` and `ReturnService` still held `List<InventoryCatalog>`; once the Technical Leader moved them, `ReturnService` to `List<StockRestorer>`, `InventoryCatalog` was left with no reader at all. |
+| Decision | Accepted mirroring `AccessoryService` exactly and changing nothing else, and waiting for the clients to move before dropping the fat interface. When it was dropped, the JavaDoc of `findById`, which said the two implementations of `InventoryCatalog` answer the same question, was corrected to name the `ItemFinder` contract they now share, because a link to an interface the class no longer implements is a lie in the documentation. The file `InventoryCatalog.java` was not deleted, since it belongs to Developer 2 and no code references it. Verified at run time that the class answers the three small contracts, that it no longer answers `InventoryCatalog`, and that it can be placed in the `StockRestorer[]` that `ReturnService` builds. |
+| Related commits | refactor: declare ProductService on the small inventory contracts (V-09), refactor: drop InventoryCatalog from ProductService (V-09) |

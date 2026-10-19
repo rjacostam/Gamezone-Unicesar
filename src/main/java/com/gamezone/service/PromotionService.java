@@ -7,6 +7,7 @@ import com.gamezone.model.BulkPurchaseDiscount;
 import com.gamezone.model.CategoryDiscount;
 import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Promotion;
+import com.gamezone.model.PromotionFactory;
 import com.gamezone.model.Sale;
 import com.gamezone.persistence.PromotionRepository;
 import com.gamezone.validation.PromotionValidator;
@@ -29,7 +30,7 @@ import java.util.List;
  * {@link BusinessRuleException} when a rule of the store is broken, with a
  * message in Spanish, because the console menu shows it directly to the user.
  */
-public class PromotionService {
+public class PromotionService implements PromotionChooser {
 
     private PromotionRepository repository;
     private List<Promotion> promotions;
@@ -43,6 +44,74 @@ public class PromotionService {
     public PromotionService(PromotionRepository repository) {
         this.repository = repository;
         this.promotions = new ArrayList<>(repository.loadAll());
+    }
+
+    /**
+     * Registers a promotion of any kind, once it has been built by
+     * {@link PromotionFactory}.
+     *
+     * <p>This is the single entry point of the correction of violation V-06:
+     * the service no longer needs one method per kind, because it no longer
+     * decides which kind is being registered. The three methods that exist for
+     * each kind stay until the menus are moved to this one.
+     *
+     * @param promotion promotion to register
+     * @return the registered promotion
+     * @throws InvalidDataException  if the data is invalid
+     * @throws BusinessRuleException if the identifier is already registered
+     * @throws PersistenceException  if the promotions file cannot be written
+     */
+    public Promotion register(Promotion promotion) {
+        validateCommonData(promotion.getId(), promotion.getName(),
+                promotion.getStartDate(), promotion.getEndDate());
+        validateExtraData(promotion);
+        addPromotion(promotion);
+        return promotion;
+    }
+
+    /**
+     * Validates the columns the kind of promotion adds, using only what the
+     * promotion itself publishes: its {@code getTypeCode} says which kind it is
+     * and its {@code getExtraFields} carries the values, so no test on the
+     * concrete class is needed and a new kind only changes the factory.
+     * <p>
+     * The order of the checks is the one each of the three
+     * {@code register...} methods had: a bulk purchase discount rejects its
+     * minimum quantity before its percentage, and the other two reject the
+     * percentage first. A registration that fails shows the same message it
+     * showed before.
+     *
+     * @param promotion promotion to validate
+     * @throws InvalidDataException  if one of the values of the kind is not valid
+     * @throws BusinessRuleException if the percentage or the minimum quantity is
+     *                              not allowed
+     */
+    private void validateExtraData(Promotion promotion) {
+        List<String> extras = promotion.getExtraFields();
+        String typeCode = promotion.getTypeCode();
+        if (PromotionFactory.TYPE_BULK.equals(typeCode)) {
+            validateMinimumQuantity(Integer.parseInt(valueAt(extras, 1)));
+        }
+        validatePercentage(Double.parseDouble(valueAt(extras, 0)));
+        if (PromotionFactory.TYPE_CATEGORY.equals(typeCode)) {
+            validateTargetCategory(valueAt(extras, 1));
+        }
+    }
+
+    /**
+     * Returns one of the published columns, or an empty string when the promotion
+     * does not publish that position, so a value that was never set is validated
+     * as empty instead of failing to be read.
+     *
+     * @param extras columns published by the promotion
+     * @param index  position of the wanted column
+     * @return the value, or an empty string
+     */
+    private String valueAt(List<String> extras, int index) {
+        if (extras == null || index >= extras.size()) {
+            return "";
+        }
+        return extras.get(index);
     }
 
     /**
@@ -197,6 +266,7 @@ public class PromotionService {
  * @return the promotion with the greatest discount, or null when no active
  *         promotion gives a discount greater than zero
  */
+    @Override
     public Promotion findBestPromotionFor(Sale sale) {
         if (sale == null || sale.getDate() == null) {
             return null;

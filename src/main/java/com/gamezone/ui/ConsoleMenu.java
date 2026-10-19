@@ -1,56 +1,50 @@
 package com.gamezone.ui;
 
-import com.gamezone.service.AccessoryService;
-import com.gamezone.service.PersonService;
-import com.gamezone.service.ProductService;
-import com.gamezone.service.PromotionService;
-import com.gamezone.service.ReturnService;
-import com.gamezone.service.SaleService;
-import com.gamezone.service.WarrantyService;
-
 /**
  * Main menu of the application.
  * <p>
  * It shows the seven modules of the store and opens the submenu the user chooses. Each
- * submenu reads the input, calls the services of its module and prints the results, so this
- * class only builds them and moves between them. Every message shown to the user is in
+ * submenu reads the input, calls the services of its module and prints the results. The
+ * submenus are built by the composition root, {@code Main}, and received here as
+ * {@link Submenu}, so this class only moves between them. Every message shown to the user is in
  * Spanish, and an error in one operation never closes the application or shows a stack
  * trace.
  */
 public class ConsoleMenu {
 
     private final ConsoleInput input;
-    private final ProductMenu productMenu;
-    private final PersonMenu personMenu;
-    private final SaleMenu saleMenu;
-    private final AccessoryMenu accessoryMenu;
-    private final PromotionMenu promotionMenu;
-    private final WarrantyMenu warrantyMenu;
-    private final ReturnMenu returnMenu;
+    private final Submenu productMenu;
+    private final Submenu personMenu;
+    private final Submenu saleMenu;
+    private final Submenu accessoryMenu;
+    private final Submenu promotionMenu;
+    private final Submenu warrantyMenu;
+    private final Submenu returnMenu;
 
     /**
-     * Creates the main menu and one submenu per module, all of them sharing the same reader
-     * of the console.
+     * Creates the main menu with the reader of the console and the seven submenus, in the
+     * order of the options of the main menu.
      *
-     * @param productService   service for products
-     * @param personService    service for customers and sellers
-     * @param saleService      service for sales
-     * @param accessoryService service for accessories
-     * @param promotionService service for promotions
-     * @param warrantyService  service for warranties
-     * @param returnService    service for returns and the monthly balance
+     * @param input         reader of the console, shared with the submenus
+     * @param productMenu   option 1, products
+     * @param personMenu    option 2, people
+     * @param saleMenu      option 3, sales
+     * @param accessoryMenu option 4, accessories
+     * @param promotionMenu option 5, promotions
+     * @param warrantyMenu  option 6, warranties
+     * @param returnMenu    option 7, returns
      */
-    public ConsoleMenu(ProductService productService, PersonService personService, SaleService saleService,
-                       AccessoryService accessoryService, PromotionService promotionService,
-                       WarrantyService warrantyService, ReturnService returnService) {
-        this.input = new ConsoleInput();
-        this.productMenu = new ProductMenu(input, productService);
-        this.personMenu = new PersonMenu(input, personService);
-        this.saleMenu = new SaleMenu(input, saleService, productService, personMenu);
-        this.accessoryMenu = new AccessoryMenu(input, accessoryService, productService);
-        this.promotionMenu = new PromotionMenu(input, promotionService);
-        this.warrantyMenu = new WarrantyMenu(input, warrantyService);
-        this.returnMenu = new ReturnMenu(input, returnService, saleService);
+    public ConsoleMenu(ConsoleInput input, Submenu productMenu, Submenu personMenu, Submenu saleMenu,
+                       Submenu accessoryMenu, Submenu promotionMenu, Submenu warrantyMenu,
+                       Submenu returnMenu) {
+        this.input = input;
+        this.productMenu = productMenu;
+        this.personMenu = personMenu;
+        this.saleMenu = saleMenu;
+        this.accessoryMenu = accessoryMenu;
+        this.promotionMenu = promotionMenu;
+        this.warrantyMenu = warrantyMenu;
+        this.returnMenu = returnMenu;
     }
 
     /**

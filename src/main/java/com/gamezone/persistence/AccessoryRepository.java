@@ -2,9 +2,7 @@ package com.gamezone.persistence;
 
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Accessory;
-import com.gamezone.model.Cable;
-import com.gamezone.model.Controller;
-import com.gamezone.model.Memory;
+import com.gamezone.model.AccessoryFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,15 +49,6 @@ public class AccessoryRepository {
 
     /** Number of columns of a record, including the header layout. */
     private static final int COLUMN_COUNT = 8;
-
-    /** Type discriminator of a controller record. */
-    private static final String TYPE_CONTROLLER = "CONTROLLER";
-
-    /** Type discriminator of a cable record. */
-    private static final String TYPE_CABLE = "CABLE";
-
-    /** Type discriminator of a memory record. */
-    private static final String TYPE_MEMORY = "MEMORY";
 
     /** Location of the file where the accessories are stored. */
     private final Path filePath;
@@ -180,22 +169,11 @@ public class AccessoryRepository {
         try {
             double price = Double.parseDouble(columns[3]);
             int stock = Integer.parseInt(columns[4]);
-            if (TYPE_CONTROLLER.equalsIgnoreCase(type)) {
-                return new Controller(columns[1], columns[2], price, stock,
-                        compatibleConsoleIds, columns[6]);
-            }
-            if (TYPE_CABLE.equalsIgnoreCase(type)) {
-                return new Cable(columns[1], columns[2], price, stock,
-                        compatibleConsoleIds, Double.parseDouble(columns[6]), columns[7]);
-            }
-            if (TYPE_MEMORY.equalsIgnoreCase(type)) {
-                return new Memory(columns[1], columns[2], price, stock,
-                        compatibleConsoleIds, Integer.parseInt(columns[6]), columns[7]);
-            }
+            return AccessoryFactory.create(type, columns[1], columns[2], price, stock,
+                    compatibleConsoleIds, List.of(columns[6], columns[7]));
         } catch (NumberFormatException e) {
             return null;
         }
-        return null;
     }
 
     /**

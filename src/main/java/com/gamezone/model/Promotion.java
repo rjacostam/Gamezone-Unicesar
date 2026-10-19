@@ -10,7 +10,7 @@ import java.util.List;
  * calculated and how it is described, because the rule is different in each
  * case.
  */
-public abstract class Promotion {
+public abstract class Promotion implements PromotionCatalogRow {
     private String id;
     private String name;
     private LocalDate startDate;
@@ -53,17 +53,6 @@ public abstract class Promotion {
      * @return type marker of this promotion
      */
     public abstract String getTypeCode();
-
-    /**
-     * Returns the two columns that this kind of promotion writes after its
-     * percentage, in the order the promotion file expects them: the value that
-     * depends on the type, which is the target category for a category discount
-     * and the minimum quantity for a bulk purchase discount, and empty for a
-     * percentage discount. Each promotion type declares its own answer, so the
-     * repository does not have to find out which type it is holding.
-     * @return the two extra columns of this promotion, in file order
-     */
-    public abstract List<String> getExtraFields();
 
     /**
      * Tells whether the promotion applies on the given date, which happens when

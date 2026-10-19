@@ -5,6 +5,7 @@ import com.gamezone.exceptions.InvalidDataException;
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Accessory;
+import com.gamezone.model.AccessoryFactory;
 import com.gamezone.model.Cable;
 import com.gamezone.model.Controller;
 import com.gamezone.model.Memory;
@@ -31,15 +32,15 @@ import java.util.List;
  * {@link BusinessRuleException} when a rule of the store is broken, with a
  * message in Spanish, because the console menu shows it directly to the user.
  * <p>
- * The service needs {@code ProductService} for two reasons: to check that the
+ * The service needs the catalogue for two reasons: to check that the
  * identifier of a new accessory is not already used by a product, and to check
  * that every compatible console identifier belongs to a console of the
  * inventory.
  */
-public class AccessoryService implements InventoryCatalog {
+public class AccessoryService implements StockUpdater, StockRestorer {
 
     private AccessoryRepository repository;
-    private ProductService productService;
+    private ItemFinder productService;
     private List<Accessory> accessories;
 
     /**
@@ -50,10 +51,35 @@ public class AccessoryService implements InventoryCatalog {
      *                       identifiers and compatible consoles
      * @throws PersistenceException if the accessories file cannot be read
      */
-    public AccessoryService(AccessoryRepository repository, ProductService productService) {
+    public AccessoryService(AccessoryRepository repository, ItemFinder productService) {
         this.repository = repository;
         this.productService = productService;
         this.accessories = new ArrayList<>(repository.loadAll());
+    }
+
+    /**
+     * Registers an accessory of any kind, once it has been built by
+     * {@link AccessoryFactory}.
+     *
+     * <p>This is the single entry point of the correction of violation V-06:
+     * the service no longer needs one method per kind, because it no longer
+     * decides which kind is being registered. The three methods that exist for
+     * each kind stay until the menus are moved to this one.
+     *
+     * @param accessory accessory to register
+     * @return the registered accessory
+     * @throws InvalidDataException      if the data is invalid
+     * @throws ResourceNotFoundException if a compatible console does not exist
+     * @throws BusinessRuleException     if the identifier is already in use, or
+     *                                   if a compatible product is not a console
+     * @throws PersistenceException      if the accessories file cannot be written
+     */
+    public Accessory register(Accessory accessory) {
+        validateAccessoryData(accessory.getId(), accessory.getTitle(),
+                accessory.getPrice(), accessory.getStock());
+        validateCompatibleConsoles(accessory.getCompatibleConsoleIds());
+        addAccessory(accessory);
+        return accessory;
     }
 
     /**
