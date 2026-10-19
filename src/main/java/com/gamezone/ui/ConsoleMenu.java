@@ -44,6 +44,7 @@ public class ConsoleMenu {
     private final WarrantyService warrantyService;
     private final ReturnService returnService;
     private final ConsoleInput input;
+    private final ProductMenu productMenu;
 
     /**
      * Creates the menu with the services it works with.
@@ -67,6 +68,7 @@ public class ConsoleMenu {
         this.warrantyService = warrantyService;
         this.returnService = returnService;
         this.input = new ConsoleInput();
+        this.productMenu = new ProductMenu(input, productService);
     }
 
     /**
@@ -87,7 +89,7 @@ public class ConsoleMenu {
             System.out.println("0. Salir");
             option = input.readInt("Seleccione una opción: ");
             switch (option) {
-                case 1 -> productMenu();
+                case 1 -> productMenu.show();
                 case 2 -> personMenu();
                 case 3 -> saleMenu();
                 case 4 -> accessoryMenu();
@@ -117,62 +119,6 @@ public class ConsoleMenu {
             System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
         } catch (PersistenceException e) {
             System.out.println("Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador.");
-        }
-    }
-
-    // ---------------------------------------------------------------- products
-
-    private void productMenu() {
-        System.out.println();
-        System.out.println("--- Gestión de productos ---");
-        System.out.println("1. Registrar videojuego");
-        System.out.println("2. Registrar consola");
-        System.out.println("3. Listar inventario");
-        System.out.println("0. Volver");
-        int option = input.readInt("Seleccione una opción: ");
-        runSafely(() -> {
-            switch (option) {
-                case 1 -> registerVideoGame();
-                case 2 -> registerConsole();
-                case 3 -> listProducts();
-                case 0 -> { }
-                default -> System.out.println("Opción no válida.");
-            }
-        });
-    }
-
-    private void registerVideoGame() {
-        String id = input.readText("Identificador: ");
-        String title = input.readText("Título: ");
-        double price = input.readDouble("Precio: ");
-        int stock = input.readInt("Cantidad en inventario: ");
-        String platform = input.readText("Plataforma: ");
-        String genre = input.readText("Género: ");
-        String ageRating = input.readText("Clasificación de edad: ");
-        Product game = productService.registerVideoGame(id, title, price, stock, platform, genre, ageRating);
-        System.out.println("Videojuego registrado: " + game.getDescription());
-    }
-
-    private void registerConsole() {
-        String id = input.readText("Identificador: ");
-        String title = input.readText("Título: ");
-        double price = input.readDouble("Precio: ");
-        int stock = input.readInt("Cantidad en inventario: ");
-        String brand = input.readText("Marca: ");
-        String model = input.readText("Modelo: ");
-        String generation = input.readText("Generación: ");
-        Product console = productService.registerConsole(id, title, price, stock, brand, model, generation);
-        System.out.println("Consola registrada: " + console.getDescription());
-    }
-
-    private void listProducts() {
-        List<Product> products = productService.listAllProducts();
-        if (products.isEmpty()) {
-            System.out.println("No hay productos registrados.");
-            return;
-        }
-        for (Product product : products) {
-            System.out.println(product.getDescription());
         }
     }
 
