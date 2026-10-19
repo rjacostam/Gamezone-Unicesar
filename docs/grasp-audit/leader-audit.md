@@ -52,3 +52,44 @@ Correct applications:
   the sales it creates (line 143: `sales.add(sale)`). Both are conditions of the pattern.
 - `Main.main` (lines 41–60) creates the repositories, the services and the menu. It has
   the data needed to build them, such as the paths of the data files.
+
+## Controller
+
+**Verdict: violation.**
+
+`ConsoleMenu` receives the input of the user and delegates the operations to the
+services, which is correct, except for one business decision.
+
+| Field | Content |
+|---|---|
+| ID | V-02 |
+| Pattern | Controller |
+| Module | User interface and warranties (Requirement 4); validation (Requirement 6) |
+| Evidence | The rule "only consoles accept an extended warranty" is decided in three places: `ConsoleMenu.registerSale` (line 277: `if (product instanceof Console && readYesNo(...))`), `SaleService.assignWarranties` (line 311: `if (product instanceof Console)`) and `SaleValidator.validateExtendedWarrantyRequest` (lines 65–85: `product.getCategory().equalsIgnoreCase("CONSOLE")`). |
+| Explanation | The menu takes a business decision instead of only capturing the request and delegating it. The same rule is spread across the interface, the service and the validator. |
+| Consequence | If the rule changes, several places must be modified, and if one is forgotten the system behaves inconsistently. The rule would also have to be copied into any other interface. |
+| Proposed solution | Keep the rule in one single place that decides whether a product accepts an extended warranty, and make `ConsoleMenu`, `SaleService` and `SaleValidator` delegate to it. The class that will own the rule is agreed in the consolidation. |
+| Other member's code | Yes, Developer 1 (`SaleValidator`). |
+
+This finding is registered once, so the same rule does not appear in several violations.
+
+## Low Coupling
+
+**Verdict: correct.**
+
+- `SaleRepository.loadAll(products, customers, sellers)` (line 81) receives the objects
+  already loaded and searches them with its own private methods (`findCustomer`,
+  `findSeller`, `findProduct`, lines 131–156). It only imports classes of the model and
+  the exceptions (lines 3–7). If it called `PersonService` or `ProductService`, it would
+  depend on other modules and break the layer order.
+- `SaleService` has six dependencies and every one is used to register a sale:
+  - `SaleRepository`: loads the sales in the constructor (line 75) and saves them in
+    `saveSales` (line 354);
+  - `PersonService`: lines 76, 227 and 240 (`requireCustomer`, `requireSeller`);
+  - `ProductService` and `AccessoryService`: `getCatalog` (lines 214–215), `findItem`
+    (lines 341–343) and `updateInventory` (lines 324–326);
+  - `PromotionService`: `applyBestPromotion` (line 303);
+  - `WarrantyService`: `assignWarranties` (lines 312 and 314).
+
+  Low coupling does not mean the fewest possible dependencies, but no unnecessary ones.
+  None of these can be removed.
