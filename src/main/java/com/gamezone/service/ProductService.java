@@ -152,7 +152,8 @@ public class ProductService {
 
     /**
      * Adds returned units back to the stock of a product and saves the catalogue.
-     * It is used by the return module, so the inventory is only changed here.
+     * It is used by the return module. The product changes its own stock through
+     * {@link Product#increaseStock(int)}, and the service only finds it and saves.
      * @param productId identifier of the product to update
      * @param quantity amount of units to add to the stock
      * @throws InvalidDataException      if the quantity is not greater than zero
@@ -163,7 +164,7 @@ public class ProductService {
         ProductValidator.validateQuantity(quantity);
         Product product = findById(productId);
         ProductValidator.validateProductExists(product, productId);
-        product.setStock(product.getStock() + quantity);
+        product.increaseStock(quantity);
         saveCatalogue();
     }
 
