@@ -29,7 +29,7 @@ import java.util.List;
  */
 public class MonthlyBalanceService {
 
-    private final SaleService saleService;
+    private final SaleFinder saleService;
     private final ReturnService returnService;
 
     /**
@@ -39,7 +39,7 @@ public class MonthlyBalanceService {
      * @param saleService   service of the sales, used to list them
      * @param returnService service of the returns, used to list them
      */
-    public MonthlyBalanceService(SaleService saleService, ReturnService returnService) {
+    public MonthlyBalanceService(SaleFinder saleService, ReturnService returnService) {
         this.saleService = saleService;
         this.returnService = returnService;
     }

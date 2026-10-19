@@ -51,14 +51,14 @@ public class ReturnService {
     private static final int ID_DIGITS = 4;
 
     private ReturnStore repository;
-    private SaleService saleService;
+    private SaleFinder saleService;
     private ProductService productService;
     private AccessoryService accessoryService;
     private WarrantyCanceller warrantyService;
     private List<Return> returns;
 
     /** Catalogues that own the stock of the items of a return, in search order. */
-    private final List<InventoryCatalog> inventoryCatalogs;
+    private final List<StockRestorer> inventoryCatalogs;
 
     /**
      * Builds the service and loads the returns, linking each one to the sales
@@ -75,7 +75,7 @@ public class ReturnService {
      *                        warranties of the returned consoles
      * @throws PersistenceException if the returns file cannot be read
      */
-    public ReturnService(ReturnStore repository, SaleService saleService,
+    public ReturnService(ReturnStore repository, SaleFinder saleService,
                          ProductService productService, AccessoryService accessoryService,
                          WarrantyCanceller warrantyService) {
         this.repository = repository;
@@ -311,8 +311,8 @@ public class ReturnService {
      * @param productId identifier of the returned unit
      * @return the catalogue that holds that item; the product catalogue if none does
      */
-    private InventoryCatalog catalogOf(String productId) {
-        for (InventoryCatalog catalog : inventoryCatalogs) {
+    private StockRestorer catalogOf(String productId) {
+        for (StockRestorer catalog : inventoryCatalogs) {
             if (catalog.findById(productId) != null) {
                 return catalog;
             }
