@@ -146,7 +146,7 @@ Violation V-01 as it breaks this principle:
 | Explanation | Substitution asks whether a subclass can be used wherever its parent is used, and here it can be, because the method exists and returns a list of strings. What it cannot do is return the *same meaning*. A caller that holds a `Product` and calls `getExtraFields()` receives columns, and there is nothing in the answer that says which file those columns belong to. The two hierarchies share one contract with two different meanings, which is the case where a substitutable type quietly hands back the wrong thing. |
 | Consequence | A repository written for one file can be pointed at the other hierarchy: it compiles, because the signature is satisfied, and it writes a row with the columns of the other file. Nothing detects it at compile time and nothing fails at run time either, because the row is still a syntactically valid row. |
 | Proposed solution | The correction is the one of V-01, written in the Interface Segregation section: stop making the two hierarchies share one contract for two files, either by publishing a marker that names the file next to the columns, or by declaring the column contract in the hierarchy that owns the file. |
-| Other member's code | Yes. `ProductRepository` and `AccessoryRepository`, which are the two callers, belong to Developer 2. |
+| Other member's code | Partly. `ProductRepository` and `Product`, which publishes the layout, are both mine, so the catalogue half of V-01 can be corrected without anyone else. `AccessoryRepository` (line 141), the other caller of the same contract, belongs to Developer 2 and is the half that has to be agreed with him. |
 ## Interface Segregation Principle
 
 **Verdict: violation** (one point, V-01).
@@ -181,7 +181,7 @@ Violation V-01:
 | Explanation | The principle asks whether every class that inherits a contract can honour it, or whether it only inherits it because of the tree. An accessory is not stored in the product catalogue: it is in another file, with a different number of columns and a different meaning. Answering "which columns of `products.csv` are yours" is a question that does not exist for it, so the contract does not describe it. `Product` was made the parent of both hierarchies because it holds the identifier, the title, the price and the stock, and that single inheritance chain is what drags the file contract in with it. |
 | Consequence | The two hierarchies are forced to share one contract with two meanings, so the answer cannot be used without knowing which hierarchy it came from. A repository written for one file compiles against the other and writes the wrong columns. A third catalogue that stores its own kind of item would have to be squeezed into the same method with a third meaning, and the alternative, ignoring it, leaves a subclass that answers with a value nothing reads. |
 | Proposed solution | Segregate the two contracts. Either publish, next to the columns, a marker that names the file the product belongs to, so a caller can tell the two answers apart; or declare the column contract in a small interface owned by the persistence layer, for example `CatalogRow`, implemented by `VideoGame`, `Console` and each accessory, so each hierarchy declares only the file it is stored in. The second option also fixes the Dependency Inversion problem named below, because the domain would no longer know the column layout. Either way, `Product` stops carrying a contract that only some of its subclasses can honour. |
-| Other member's code | Yes. `ProductRepository` and `AccessoryRepository` are the two callers and belong to Developer 2. The correction touches `Product`, `Accessory` and the three accessory subclasses, which are mine. |
+| Other member's code | Partly. `ProductRepository` is mine, and so are `Product`, `Accessory` and the three accessory subclasses, so the contract and the caller that serves the catalogue file are both under my responsibility. `AccessoryRepository` is the only part that belongs to Developer 2, and it is the half of the defect that has to be agreed with him, because the proposed correction changes the columns he writes. |
 
 V-01 breaks three more principles at once, and they are named here instead of being registered
 again:
@@ -227,18 +227,18 @@ Violation V-01 as it breaks this principle:
 | Explanation | The dependency should go from the storage towards the policy, not the other way round. Here the policy has been made to depend on the storage format: the order and the number of the columns are decided by the domain classes, because the domain classes are the ones answering. `ProductRepository` is supposed to be the class that knows the file, and after this change it is the class that knows the least about it. |
 | Consequence | Reordering, renaming or adding a column of `products.csv` is a change to `Product`, `VideoGame` and `Console`, reviewed as a change to the business model. The domain can no longer be reused by anything that stores the catalogue somewhere else, because its shape is fixed by one file. It is also what makes the Interface Segregation defect of V-01 possible: because the domain owns the layout, the two hierarchies were forced into a single method. |
 | Proposed solution | Invert it: the persistence layer declares the layout and the domain does not know about it. A mapper in `persistence` per hierarchy, or the `CatalogRow` interface named in V-01 that the repositories consume and that the domain classes answer with attributes rather than with an ordered column list, moves the detail back to where it belongs. This is the same edit as the one proposed in V-01, so it is one correction and not two. |
-| Other member's code | Yes. The `ProductRepository` and `PromotionRepository` that would own the layout belong to Developer 2. |
+| Other member's code | Partly. `ProductRepository` and `Product`, which is the class that publishes the layout, are both mine, so the catalogue half of this defect can be corrected without anyone else. `PromotionRepository` is the class that would own the layout of the promotion file and belongs to Developer 2, and `AccessoryRepository` is the other half of the two-meanings problem. |
 ## Findings registered for the consolidation
 
 These are not new defects. They are findings of this audit that touch code of another member,
 and that the consolidation has to merge with the other reports instead of counting them twice.
 
-- **V-01 touches two repositories of Developer 2.** `ProductRepository` (line 56) and
-  `AccessoryRepository` (line 141) are the two callers of the `getExtraFields` contract that has
-  two meanings, and they are the classes that would own the layout in the proposed correction.
-  The correction has to be agreed with him before it is written, because moving the columns into
-  `persistence` changes the two files he maintains. The whole defect and its correction are in
-  the Interface Segregation section.
+- **V-01 touches one repository of Developer 2, not two.** `ProductRepository` (line 56) is
+  mine, and so are `Product`, `Accessory` and the three accessory subclasses, so the catalogue
+  half of the correction is entirely under my responsibility and can be written without waiting.
+  The half that has to be agreed with Developer 2 is `AccessoryRepository` (line 141), the other
+  caller, because the proposed correction changes the columns it writes. The whole defect and
+  its correction are in the Interface Segregation section.
 - **V-03 touches `Sale` of the Technical Leader.** `Sale.generateReceipt` writes money with the
   same literal `String.format(Locale.US, "$%,.2f", ...)`, so the two findings are the same
   decision in two places and should become one, with a single fabricated formatter used by all
