@@ -26,7 +26,7 @@ import java.util.List;
  * {@link BusinessRuleException} when a rule of the store is broken, with a
  * message in Spanish, because the console menu shows it directly to the user.
  */
-public class ProductService implements InventoryCatalog, StockUpdater, StockRestorer {
+public class ProductService implements StockUpdater, StockRestorer {
     private ProductRepository repository;
     private List<Product> products;
 
@@ -126,8 +126,8 @@ public class ProductService implements InventoryCatalog, StockUpdater, StockRest
      * {@code null} instead of walking the catalogue. Surrounding blanks are
      * removed before comparing, so a value typed with a trailing space finds the
      * same product as one typed without it. Both rules are the ones
-     * {@code AccessoryService.findById} follows, so the two implementations of
-     * {@link InventoryCatalog} answer the same question the same way.
+     * {@code AccessoryService.findById} follows, so the two catalogues answer the
+     * same question the same way through the same {@link ItemFinder} contract.
      *
      * @param id identifier to look for
      * @return the product found, or null when the identifier is null or blank or
