@@ -324,8 +324,9 @@ and that the Technical Leader must consolidate with his own:
 
 - **V-03 and the leader's V-03 describe the same defect.** The model classes build the Spanish
   text of the documents: `Sale.generateReceipt` on his side, and
-  `Return.generateReturnReceipt`, `Warranty.generateWarrantyCertificate`, `getDescription` and
-  `getDescription` of `Accessory` on mine. The correction is the same one, a formatter per
+  `Return.generateReturnReceipt`, `Warranty.generateWarrantyCertificate` and the
+  `getDescription` of `Product` and of `Accessory` on mine. The correction is the same one, a
+  formatter per
   document in the presentation layer, so both findings should become one.
 - **V-05 and the leader's V-02 describe the same rule.** "Only consoles accept an extended
   warranty" is spread over four classes. He already merged his own three occurrences into one
