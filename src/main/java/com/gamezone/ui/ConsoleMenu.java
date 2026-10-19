@@ -22,11 +22,9 @@ import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  * Console menu of the application.
@@ -45,7 +43,7 @@ public class ConsoleMenu {
     private final PromotionService promotionService;
     private final WarrantyService warrantyService;
     private final ReturnService returnService;
-    private final Scanner scanner;
+    private final ConsoleInput input;
 
     /**
      * Creates the menu with the services it works with.
@@ -68,7 +66,7 @@ public class ConsoleMenu {
         this.promotionService = promotionService;
         this.warrantyService = warrantyService;
         this.returnService = returnService;
-        this.scanner = new Scanner(System.in);
+        this.input = new ConsoleInput();
     }
 
     /**
@@ -87,7 +85,7 @@ public class ConsoleMenu {
             System.out.println("6. Gestión de garantías");
             System.out.println("7. Gestión de devoluciones");
             System.out.println("0. Salir");
-            option = readInt("Seleccione una opción: ");
+            option = input.readInt("Seleccione una opción: ");
             switch (option) {
                 case 1 -> productMenu();
                 case 2 -> personMenu();
@@ -131,7 +129,7 @@ public class ConsoleMenu {
         System.out.println("2. Registrar consola");
         System.out.println("3. Listar inventario");
         System.out.println("0. Volver");
-        int option = readInt("Seleccione una opción: ");
+        int option = input.readInt("Seleccione una opción: ");
         runSafely(() -> {
             switch (option) {
                 case 1 -> registerVideoGame();
@@ -144,25 +142,25 @@ public class ConsoleMenu {
     }
 
     private void registerVideoGame() {
-        String id = readText("Identificador: ");
-        String title = readText("Título: ");
-        double price = readDouble("Precio: ");
-        int stock = readInt("Cantidad en inventario: ");
-        String platform = readText("Plataforma: ");
-        String genre = readText("Género: ");
-        String ageRating = readText("Clasificación de edad: ");
+        String id = input.readText("Identificador: ");
+        String title = input.readText("Título: ");
+        double price = input.readDouble("Precio: ");
+        int stock = input.readInt("Cantidad en inventario: ");
+        String platform = input.readText("Plataforma: ");
+        String genre = input.readText("Género: ");
+        String ageRating = input.readText("Clasificación de edad: ");
         Product game = productService.registerVideoGame(id, title, price, stock, platform, genre, ageRating);
         System.out.println("Videojuego registrado: " + game.getDescription());
     }
 
     private void registerConsole() {
-        String id = readText("Identificador: ");
-        String title = readText("Título: ");
-        double price = readDouble("Precio: ");
-        int stock = readInt("Cantidad en inventario: ");
-        String brand = readText("Marca: ");
-        String model = readText("Modelo: ");
-        String generation = readText("Generación: ");
+        String id = input.readText("Identificador: ");
+        String title = input.readText("Título: ");
+        double price = input.readDouble("Precio: ");
+        int stock = input.readInt("Cantidad en inventario: ");
+        String brand = input.readText("Marca: ");
+        String model = input.readText("Modelo: ");
+        String generation = input.readText("Generación: ");
         Product console = productService.registerConsole(id, title, price, stock, brand, model, generation);
         System.out.println("Consola registrada: " + console.getDescription());
     }
@@ -187,7 +185,7 @@ public class ConsoleMenu {
         System.out.println("2. Listar clientes");
         System.out.println("3. Listar vendedores");
         System.out.println("0. Volver");
-        int option = readInt("Seleccione una opción: ");
+        int option = input.readInt("Seleccione una opción: ");
         runSafely(() -> {
             switch (option) {
                 case 1 -> registerCustomer();
@@ -200,10 +198,10 @@ public class ConsoleMenu {
     }
 
     private void registerCustomer() {
-        String id = readText("Identificación: ");
-        String name = readText("Nombre: ");
-        String phone = readText("Teléfono: ");
-        String email = readText("Correo electrónico: ");
+        String id = input.readText("Identificación: ");
+        String name = input.readText("Nombre: ");
+        String phone = input.readText("Teléfono: ");
+        String email = input.readText("Correo electrónico: ");
         Customer customer = personService.registerCustomer(id, name, phone, email);
         System.out.println("Cliente registrado: " + customer.getSummary());
     }
@@ -241,13 +239,13 @@ public class ConsoleMenu {
         System.out.println("4. Ventas atendidas por un vendedor");
         System.out.println("5. Ver detalle de una venta");
         System.out.println("0. Volver");
-        int option = readInt("Seleccione una opción: ");
+        int option = input.readInt("Seleccione una opción: ");
         runSafely(() -> {
             switch (option) {
                 case 1 -> registerSale();
                 case 2 -> printSales(saleService.listAllSales());
-                case 3 -> printSales(saleService.findSalesByCustomer(readText("Identificación del cliente: ")));
-                case 4 -> printSales(saleService.findSalesBySeller(readText("Identificación o código del vendedor: ")));
+                case 3 -> printSales(saleService.findSalesByCustomer(input.readText("Identificación del cliente: ")));
+                case 4 -> printSales(saleService.findSalesBySeller(input.readText("Identificación o código del vendedor: ")));
                 case 5 -> showSaleDetail();
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
@@ -256,17 +254,17 @@ public class ConsoleMenu {
     }
 
     private void registerSale() {
-        String customerId = readText("Identificación del cliente: ");
+        String customerId = input.readText("Identificación del cliente: ");
         listSellers();
-        String sellerId = readText("Identificación o código del vendedor: ");
+        String sellerId = input.readText("Identificación o código del vendedor: ");
         listCatalog();
         List<String> productIds = new ArrayList<>();
         while (true) {
-            String productId = readOptionalText("Identificador del producto o accesorio (Enter para terminar): ");
+            String productId = input.readOptionalText("Identificador del producto o accesorio (Enter para terminar): ");
             if (productId.isEmpty()) {
                 break;
             }
-            int quantity = readInt("Cantidad: ");
+            int quantity = input.readInt("Cantidad: ");
             for (int i = 0; i < quantity; i++) {
                 productIds.add(productId);
             }
@@ -275,7 +273,7 @@ public class ConsoleMenu {
         for (String productId : new LinkedHashSet<>(productIds)) {
             Product product = productService.findById(productId);
             if (product != null && product.isConsole()
-                    && readYesNo("¿Desea agregar garantía extendida a " + product.getTitle() + "? (s/n): ")) {
+                    && input.readYesNo("¿Desea agregar garantía extendida a " + product.getTitle() + "? (s/n): ")) {
                 extendedWarranty.add(product.getId());
             }
         }
@@ -296,7 +294,7 @@ public class ConsoleMenu {
     }
 
     private void showSaleDetail() {
-        String saleId = readText("Identificador de la venta (por ejemplo S0001): ");
+        String saleId = input.readText("Identificador de la venta (por ejemplo S0001): ");
         Sale sale = saleService.findById(saleId);
         if (sale == null) {
             System.out.println("No existe una venta con el identificador " + saleId + ".");
@@ -328,7 +326,7 @@ public class ConsoleMenu {
         System.out.println("5. Listar accesorios por tipo");
         System.out.println("6. Consultar accesorios compatibles con una consola");
         System.out.println("0. Volver");
-        int option = readInt("Seleccione una opción: ");
+        int option = input.readInt("Seleccione una opción: ");
         runSafely(() -> {
             switch (option) {
                 case 1 -> registerController();
@@ -337,7 +335,7 @@ public class ConsoleMenu {
                 case 4 -> listAccessories(accessoryService.listAllAccessories());
                 case 5 -> listAccessories(accessoryService.listAccessoriesByType(readAccessoryType()));
                 case 6 -> listAccessories(accessoryService.findAccessoriesCompatibleWith(
-                        readText("Identificador de la consola: ")));
+                        input.readText("Identificador de la consola: ")));
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
@@ -345,36 +343,36 @@ public class ConsoleMenu {
     }
 
     private void registerController() {
-        String id = readText("Identificador (por ejemplo A-04): ");
-        String title = readText("Título: ");
-        double price = readDouble("Precio: ");
-        int stock = readInt("Cantidad en inventario: ");
+        String id = input.readText("Identificador (por ejemplo A-04): ");
+        String title = input.readText("Título: ");
+        double price = input.readDouble("Precio: ");
+        int stock = input.readInt("Cantidad en inventario: ");
         List<String> consoles = readCompatibleConsoles();
-        String connection = readText("Tipo de conexión (Inalámbrico/Alámbrico): ");
+        String connection = input.readText("Tipo de conexión (Inalámbrico/Alámbrico): ");
         Accessory controller = accessoryService.registerController(id, title, price, stock, consoles, connection);
         System.out.println("Control registrado: " + controller.getDescription());
     }
 
     private void registerCable() {
-        String id = readText("Identificador (por ejemplo A-04): ");
-        String title = readText("Título: ");
-        double price = readDouble("Precio: ");
-        int stock = readInt("Cantidad en inventario: ");
+        String id = input.readText("Identificador (por ejemplo A-04): ");
+        String title = input.readText("Título: ");
+        double price = input.readDouble("Precio: ");
+        int stock = input.readInt("Cantidad en inventario: ");
         List<String> consoles = readCompatibleConsoles();
-        double length = readDouble("Longitud en metros: ");
-        String connector = readText("Tipo de conector (HDMI, USB, óptico...): ");
+        double length = input.readDouble("Longitud en metros: ");
+        String connector = input.readText("Tipo de conector (HDMI, USB, óptico...): ");
         Accessory cable = accessoryService.registerCable(id, title, price, stock, consoles, length, connector);
         System.out.println("Cable registrado: " + cable.getDescription());
     }
 
     private void registerMemory() {
-        String id = readText("Identificador (por ejemplo A-04): ");
-        String title = readText("Título: ");
-        double price = readDouble("Precio: ");
-        int stock = readInt("Cantidad en inventario: ");
+        String id = input.readText("Identificador (por ejemplo A-04): ");
+        String title = input.readText("Título: ");
+        double price = input.readDouble("Precio: ");
+        int stock = input.readInt("Cantidad en inventario: ");
         List<String> consoles = readCompatibleConsoles();
-        int capacity = readInt("Capacidad en GB: ");
-        String type = readText("Tipo de memoria (SD, microSD, tarjeta interna): ");
+        int capacity = input.readInt("Capacidad en GB: ");
+        String type = input.readText("Tipo de memoria (SD, microSD, tarjeta interna): ");
         Accessory memory = accessoryService.registerMemory(id, title, price, stock, consoles, capacity, type);
         System.out.println("Memoria registrada: " + memory.getDescription());
     }
@@ -386,7 +384,7 @@ public class ConsoleMenu {
                 System.out.println("  " + product.getId() + " - " + product.getTitle());
             }
         }
-        String value = readOptionalText("Consolas compatibles separadas por coma (Enter si ninguna): ");
+        String value = input.readOptionalText("Consolas compatibles separadas por coma (Enter si ninguna): ");
         List<String> ids = new ArrayList<>();
         for (String id : value.split(",")) {
             if (!id.isBlank()) {
@@ -398,7 +396,7 @@ public class ConsoleMenu {
 
     private String readAccessoryType() {
         System.out.println("1. Controles  2. Cables  3. Memorias");
-        return switch (readInt("Tipo: ")) {
+        return switch (input.readInt("Tipo: ")) {
             case 1 -> "CONTROLLER";
             case 2 -> "CABLE";
             case 3 -> "MEMORY";
@@ -427,7 +425,7 @@ public class ConsoleMenu {
         System.out.println("4. Listar todas las promociones");
         System.out.println("5. Listar promociones vigentes");
         System.out.println("0. Volver");
-        int option = readInt("Seleccione una opción: ");
+        int option = input.readInt("Seleccione una opción: ");
         runSafely(() -> {
             switch (option) {
                 case 1 -> registerPercentagePromotion();
@@ -442,23 +440,23 @@ public class ConsoleMenu {
     }
 
     private void registerPercentagePromotion() {
-        String id = readText("Identificador (por ejemplo P-04): ");
-        String name = readText("Nombre: ");
-        LocalDate start = readDate("Fecha de inicio (AAAA-MM-DD): ");
-        LocalDate end = readDate("Fecha de fin (AAAA-MM-DD): ");
-        double percentage = readDouble("Porcentaje de descuento: ");
+        String id = input.readText("Identificador (por ejemplo P-04): ");
+        String name = input.readText("Nombre: ");
+        LocalDate start = input.readDate("Fecha de inicio (AAAA-MM-DD): ");
+        LocalDate end = input.readDate("Fecha de fin (AAAA-MM-DD): ");
+        double percentage = input.readDouble("Porcentaje de descuento: ");
         Promotion promotion = promotionService.registerPercentageDiscount(id, name, start, end, percentage);
         System.out.println("Promoción registrada: " + promotion.getDescription());
     }
 
     private void registerCategoryPromotion() {
-        String id = readText("Identificador (por ejemplo P-04): ");
-        String name = readText("Nombre: ");
-        LocalDate start = readDate("Fecha de inicio (AAAA-MM-DD): ");
-        LocalDate end = readDate("Fecha de fin (AAAA-MM-DD): ");
-        double percentage = readDouble("Porcentaje de descuento: ");
+        String id = input.readText("Identificador (por ejemplo P-04): ");
+        String name = input.readText("Nombre: ");
+        LocalDate start = input.readDate("Fecha de inicio (AAAA-MM-DD): ");
+        LocalDate end = input.readDate("Fecha de fin (AAAA-MM-DD): ");
+        double percentage = input.readDouble("Porcentaje de descuento: ");
         System.out.println("1. Videojuegos  2. Consolas  3. Accesorios");
-        String category = switch (readInt("Categoría: ")) {
+        String category = switch (input.readInt("Categoría: ")) {
             case 1 -> "VIDEOGAME";
             case 2 -> "CONSOLE";
             case 3 -> "ACCESSORY";
@@ -469,12 +467,12 @@ public class ConsoleMenu {
     }
 
     private void registerBulkPromotion() {
-        String id = readText("Identificador (por ejemplo P-04): ");
-        String name = readText("Nombre: ");
-        LocalDate start = readDate("Fecha de inicio (AAAA-MM-DD): ");
-        LocalDate end = readDate("Fecha de fin (AAAA-MM-DD): ");
-        int minimum = readInt("Cantidad mínima de productos: ");
-        double percentage = readDouble("Porcentaje de descuento: ");
+        String id = input.readText("Identificador (por ejemplo P-04): ");
+        String name = input.readText("Nombre: ");
+        LocalDate start = input.readDate("Fecha de inicio (AAAA-MM-DD): ");
+        LocalDate end = input.readDate("Fecha de fin (AAAA-MM-DD): ");
+        int minimum = input.readInt("Cantidad mínima de productos: ");
+        double percentage = input.readDouble("Porcentaje de descuento: ");
         Promotion promotion = promotionService.registerBulkPurchaseDiscount(id, name, start, end, minimum, percentage);
         System.out.println("Promoción registrada: " + promotion.getDescription());
     }
@@ -499,14 +497,14 @@ public class ConsoleMenu {
         System.out.println("3. Listar garantías vigentes");
         System.out.println("4. Listar garantías próximas a vencer");
         System.out.println("0. Volver");
-        int option = readInt("Seleccione una opción: ");
+        int option = input.readInt("Seleccione una opción: ");
         runSafely(() -> {
             switch (option) {
                 case 1 -> showWarranty();
                 case 2 -> listWarranties(warrantyService.listAllWarranties());
                 case 3 -> listWarranties(warrantyService.listActiveWarranties());
                 case 4 -> listWarranties(warrantyService.listWarrantiesExpiringSoon(
-                        readInt("¿Cuántos días de anticipación? ")));
+                        input.readInt("¿Cuántos días de anticipación? ")));
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
             }
@@ -514,8 +512,8 @@ public class ConsoleMenu {
     }
 
     private void showWarranty() {
-        String saleId = readText("Identificador de la venta (por ejemplo S0001): ");
-        String productId = readText("Identificador del producto (por ejemplo C-01): ");
+        String saleId = input.readText("Identificador de la venta (por ejemplo S0001): ");
+        String productId = input.readText("Identificador del producto (por ejemplo C-01): ");
         Warranty warranty = warrantyService.findWarrantyByProduct(productId, saleId);
         if (warranty == null) {
             System.out.println("El producto " + productId + " no tiene garantía en la venta " + saleId + ".");
@@ -545,14 +543,14 @@ public class ConsoleMenu {
         System.out.println("4. Consultar devoluciones por venta");
         System.out.println("5. Consultar balance mensual");
         System.out.println("0. Volver");
-        int option = readInt("Seleccione una opción: ");
+        int option = input.readInt("Seleccione una opción: ");
         runSafely(() -> {
             switch (option) {
                 case 1 -> registerReturn();
                 case 2 -> listReturns(returnService.viewAllReturns());
-                case 3 -> listReturns(returnService.viewReturnsByCustomer(readText("Identificación del cliente: ")));
+                case 3 -> listReturns(returnService.viewReturnsByCustomer(input.readText("Identificación del cliente: ")));
                 case 4 -> listReturns(returnService.viewReturnsBySale(
-                        readText("Identificador de la venta (por ejemplo S0001): ")));
+                        input.readText("Identificador de la venta (por ejemplo S0001): ")));
                 case 5 -> showMonthlyBalance();
                 case 0 -> { }
                 default -> System.out.println("Opción no válida.");
@@ -561,7 +559,7 @@ public class ConsoleMenu {
     }
 
     private void registerReturn() {
-        String saleId = readText("Identificador de la venta (por ejemplo S0001): ");
+        String saleId = input.readText("Identificador de la venta (por ejemplo S0001): ");
         Sale sale = saleService.findById(saleId);
         if (sale == null) {
             System.out.println("No existe una venta con el identificador " + saleId + ".");
@@ -574,16 +572,16 @@ public class ConsoleMenu {
         }
         List<String> productIds = new ArrayList<>();
         while (true) {
-            String productId = readOptionalText("Identificador del producto a devolver (Enter para terminar): ");
+            String productId = input.readOptionalText("Identificador del producto a devolver (Enter para terminar): ");
             if (productId.isEmpty()) {
                 break;
             }
-            int quantity = readInt("Cantidad: ");
+            int quantity = input.readInt("Cantidad: ");
             for (int i = 0; i < quantity; i++) {
                 productIds.add(productId);
             }
         }
-        String reason = readText("Motivo de la devolución: ");
+        String reason = input.readText("Motivo de la devolución: ");
         Return productReturn = returnService.registerReturn(sale.getId(), productIds, reason);
         System.out.println("Devolución registrada con éxito.");
         System.out.println(ReturnReceiptFormatter.format(productReturn));
@@ -600,8 +598,8 @@ public class ConsoleMenu {
     }
 
     private void showMonthlyBalance() {
-        int month = readInt("Mes (1-12): ");
-        int year = readInt("Año (por ejemplo 2026): ");
+        int month = input.readInt("Mes (1-12): ");
+        int year = input.readInt("Año (por ejemplo 2026): ");
         if (month < 1 || month > 12) {
             System.out.println("El mes debe estar entre 1 y 12.");
             return;
@@ -613,86 +611,5 @@ public class ConsoleMenu {
         System.out.printf("  Total de ventas: $%,.2f%n", sales);
         System.out.printf("  Total de devoluciones: $%,.2f%n", returns);
         System.out.printf("  Balance neto: $%,.2f%n", balance);
-    }
-
-    // ---------------------------------------------------------------- input helpers
-
-    private String readText(String prompt) {
-        while (true) {
-            String value = readLine(prompt);
-            if (value == null) {
-                return "";
-            }
-            if (!value.isEmpty()) {
-                return value;
-            }
-            System.out.println("Este campo es obligatorio.");
-        }
-    }
-
-    private String readOptionalText(String prompt) {
-        String value = readLine(prompt);
-        return value == null ? "" : value;
-    }
-
-    private int readInt(String prompt) {
-        while (true) {
-            String value = readLine(prompt);
-            if (value == null) {
-                return 0;
-            }
-            try {
-                return Integer.parseInt(value);
-            } catch (NumberFormatException e) {
-                System.out.println("Debe ingresar un número entero.");
-            }
-        }
-    }
-
-    private double readDouble(String prompt) {
-        while (true) {
-            String value = readText(prompt);
-            if (value.isEmpty()) {
-                return 0;
-            }
-            try {
-                return Double.parseDouble(value.replace(",", "."));
-            } catch (NumberFormatException e) {
-                System.out.println("Debe ingresar un número válido.");
-            }
-        }
-    }
-
-    private boolean readYesNo(String prompt) {
-        String value = readOptionalText(prompt);
-        return value.equalsIgnoreCase("s") || value.equalsIgnoreCase("si") || value.equalsIgnoreCase("sí");
-    }
-
-    private LocalDate readDate(String prompt) {
-        while (true) {
-            String value = readText(prompt);
-            if (value.isEmpty()) {
-                return null;
-            }
-            try {
-                return LocalDate.parse(value);
-            } catch (DateTimeParseException e) {
-                System.out.println("La fecha debe tener el formato AAAA-MM-DD.");
-            }
-        }
-    }
-
-    /**
-     * Shows the prompt and reads one line.
-     *
-     * @param prompt text shown before reading
-     * @return the trimmed line, or {@code null} when there is no more input
-     */
-    private String readLine(String prompt) {
-        System.out.print(prompt);
-        if (!scanner.hasNextLine()) {
-            return null;
-        }
-        return scanner.nextLine().trim();
     }
 }
