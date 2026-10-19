@@ -1,9 +1,5 @@
-package com.gamezone.service;
+package com.gamezone.model;
 
-import com.gamezone.model.Accessory;
-import com.gamezone.model.Cable;
-import com.gamezone.model.Controller;
-import com.gamezone.model.Memory;
 
 import java.util.List;
 

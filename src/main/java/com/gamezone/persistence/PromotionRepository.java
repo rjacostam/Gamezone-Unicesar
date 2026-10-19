@@ -2,7 +2,7 @@ package com.gamezone.persistence;
 
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Promotion;
-import com.gamezone.service.PromotionFactory;
+import com.gamezone.model.PromotionFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;

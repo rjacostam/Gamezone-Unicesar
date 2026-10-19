@@ -1,9 +1,5 @@
-package com.gamezone.service;
+package com.gamezone.model;
 
-import com.gamezone.model.BulkPurchaseDiscount;
-import com.gamezone.model.CategoryDiscount;
-import com.gamezone.model.PercentageDiscount;
-import com.gamezone.model.Promotion;
 
 import java.time.LocalDate;
 import java.util.List;

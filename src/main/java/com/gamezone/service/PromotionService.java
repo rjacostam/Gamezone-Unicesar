@@ -7,6 +7,7 @@ import com.gamezone.model.BulkPurchaseDiscount;
 import com.gamezone.model.CategoryDiscount;
 import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Promotion;
+import com.gamezone.model.PromotionFactory;
 import com.gamezone.model.Sale;
 import com.gamezone.persistence.PromotionRepository;
 import com.gamezone.validation.PromotionValidator;

@@ -2,7 +2,7 @@ package com.gamezone.persistence;
 
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Accessory;
-import com.gamezone.service.AccessoryFactory;
+import com.gamezone.model.AccessoryFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
