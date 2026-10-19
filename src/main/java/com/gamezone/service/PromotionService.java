@@ -267,22 +267,6 @@ public class PromotionService {
     }
 
     /**
-     * Tells whether an identifier is already used by a registered promotion,
-     * ignoring letter case.
-     *
-     * @param id identifier to look for
-     * @return true when the identifier is already in use
-     */
-    private boolean isIdentifierInUse(String id) {
-        for (Promotion promotion : promotions) {
-            if (promotion.getId().equalsIgnoreCase(id)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * Adds a validated promotion and saves it. The saving happens after the
      * promotion is added, so the file always reflects the content of the
      * service.
