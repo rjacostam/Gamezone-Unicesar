@@ -54,18 +54,18 @@ Five findings: V-01 to V-05, plus five problems reported for the consolidation.
 
 **Verdict: violation.**
 
-### V-01 — Classes other than the owner answer questions about sales, returns and warranties
+### V-01 — Three helpers answer questions about the products of a sale instead of `Sale` itself
 
 | Field | Content |
 |---|---|
 | ID | V-01 |
 | Pattern | Information Expert |
-| Module | Returns (R3) and Warranties (R4) |
-| Evidence | `ReturnService.countUnits(Sale sale, String productId)` (lines 247-259) walks `sale.getProducts()` and counts how many units of a product the sale contains. `ReturnService.findProduct(Sale sale, String productId)` (lines 347-359) answers which product of the sale carries an identifier. `ReturnService.isReturnOf(Sale sale, Return registeredReturn)` (lines 335-338) and `isReturnOfSaleId` (lines 447-452) decide whether a return comes from a sale. `ReturnRepository.findProduct(Sale sale, String productId)` (lines 295-304) repeats the same search inside the persistence layer. `WarrantyService.covers(Warranty warranty, String productId, String saleId)` (lines 248-256) decides whether a warranty covers a product in a sale. |
-| Explanation | Every one of these questions is asked of the class that owns the answer, but it is answered outside of it. How many units of a product a sale contains is knowledge of `Sale`; which product of a sale carries an identifier is knowledge of `Sale`; whether a return comes from a sale is knowledge of `Return`, which already stores the sale and already publishes it through `getSale()`; whether a warranty covers a product in a sale is knowledge of `Warranty`, which stores both links. The six methods walk `getProducts()`, `getId()` and `getSale()` of objects that could answer themselves, so the knowledge of the domain is spread across the services and the repositories instead of living in the domain. |
-| Consequence | If `Sale` ever stops storing one entry per unit and starts summarising quantities, `countUnits` silently returns a wrong count and the partial return rule accepts more units than the customer bought. If `Return` or `Warranty` changes how it links to its sale, the matching logic has to be found in three different classes. The same question is answered twice, once in `ReturnService` and once in `ReturnRepository`, and the two copies have no way of being kept in step. |
-| Proposed solution | Add the answers to the classes that own the data: `countUnitsOf(String productId)` and `findProductById(String productId)` on `Sale`, and `comesFromSale(String saleId)` on `Return` and on `Warranty`. The six helpers then become one-line calls and the knowledge has a single place. The behaviour does not change, only where it lives. |
-| Other member's code | Yes, partially. The methods `countUnits`, `findProduct` and `isReturnOf` would move onto `Sale` and `Return`, which belong to the Technical Leader (Requirement 3), so those corrections must be agreed with him. `Warranty.covers` would move onto `Warranty`, which belongs to Developer 1. |
+| Module | Returns (R3) |
+| Evidence | `ReturnService.countUnits(Sale sale, String productId)` (lines 247-259) walks `sale.getProducts()` and counts how many units of a product the sale contains. `ReturnService.findProduct(Sale sale, String productId)` (lines 347-359) answers which product of the sale carries an identifier. `ReturnRepository.findProduct(Sale sale, String productId)` (lines 295-304) repeats the same search inside the persistence layer. |
+| Explanation | Both questions are knowledge of `Sale`, which owns the product list and already publishes it through `getProducts()`. How many units of a product a sale contains is knowledge of `Sale`; which product of a sale carries an identifier is knowledge of `Sale`. The three helpers walk that list from outside, so the knowledge of the domain is spread across a service and a repository instead of living in the class that owns the data. |
+| Consequence | If `Sale` ever stops storing one entry per unit and starts summarising quantities, `countUnits` silently returns a wrong count and the partial return rule accepts more units than the customer bought. The same question is also answered twice, once in `ReturnService` and once in `ReturnRepository`, and the two copies have no way of being kept in step. |
+| Proposed solution | Add the answers to `Sale`, the class that owns the data: `countUnitsOf(String productId)` and `findProductById(String productId)`. The three helpers then become one-line calls and the knowledge has a single place. The behaviour does not change, only where it lives. |
+| Other member's code | Yes. `Sale` belongs to the Technical Leader (Requirement 3), so this correction has to be agreed with him before Phase 2 starts. |
 
 **Correct applications:**
 
@@ -310,7 +310,7 @@ the consolidated audit.
 | # | Reported to | What was found | Why it is not mine |
 |---|---|---|---|
 | R-01 | Technical Leader (Rafael) | `ReturnService.countUnits` and `findProduct` answer questions about `Sale`; the answers would belong in `Sale` (see V-01). `Sale` is his class. | The audit of `Sale` is his. |
-| R-02 | Technical Leader (Rafael) | `ReturnService.isReturnOf` and `ReturnRepository.findProduct` walk `Return.getSale()` and `Sale.getProducts()`; a `comesFromSale` and a `findProductById` would belong in the domain (see V-01). | Same as R-01. |
-| R-03 | Developer 1 (Andrés) | `WarrantyService.covers` (lines 248-256) asks whether a warranty covers a product in a sale; the warranty already stores both links (see V-01). | `Warranty` is Developer 1's class. |
+| R-02 | Developer 1 (Andrés) | `ReturnService.isReturnOf` (lines 335-338) and `isReturnOfSaleId` (lines 447-452) walk `Return.getSale()` to decide whether a registered return comes from a sale; a `comesFromSale(String saleId)` would belong in `Return`. The helpers are mine but the class that would receive the answer is not. | `Return` is Developer 1's class. |
+| R-03 | Developer 1 (Andrés) | `WarrantyService.covers` (lines 248-256) asks whether a warranty covers a product in a sale; the warranty already stores both links. The helper is mine but the class that would receive the answer is not. | `Warranty` is Developer 1's class. |
 | R-04 | Developer 1 (Andrés) | `Product` has no way to say that it is a console or that its stock must be restored somewhere else, which forces the `instanceof` tests of V-03. | `Product` is Developer 1's class. |
 | R-05 | Developer 1 (Andrés) | `Accessory`, `Promotion` and `Warranty` do not publish the type marker used in the first column of their files, which forces the `instanceof` chains of V-04. | Those classes are Developer 1's. |
