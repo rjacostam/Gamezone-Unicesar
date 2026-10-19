@@ -61,9 +61,7 @@ public class ProductService {
     public VideoGame registerVideoGame(String id, String title, double price, int stock,
                                        String platform, String genre, String ageRating) {
         validateProductData(id, title, price, stock);
-        if (findById(id) != null) {
-            ProductValidator.validateUniqueProduct(findById(id), id);
-        }
+        ProductValidator.validateUniqueProduct(findById(id), id);
         VideoGame game = new VideoGame(id, title, price, stock, platform, genre, ageRating);
         products.add(game);
         saveCatalogue();
@@ -91,9 +89,7 @@ public class ProductService {
     public Console registerConsole(String id, String title, double price, int stock,
                                    String brand, String model, String generation) {
         validateProductData(id, title, price, stock);
-        if (findById(id) != null) {
-            ProductValidator.validateUniqueProduct(findById(id), id);
-        }
+        ProductValidator.validateUniqueProduct(findById(id), id);
         Console console = new Console(id, title, price, stock, brand, model, generation);
         products.add(console);
         saveCatalogue();

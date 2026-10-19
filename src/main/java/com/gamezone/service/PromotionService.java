@@ -227,9 +227,7 @@ public class PromotionService {
      */
     private void validateCommonData(String id, String name, LocalDate startDate, LocalDate endDate) {
         PromotionValidator.validatePromotionData(id, name, startDate, endDate);
-        if (isIdentifierInUse(id.trim())) {
-            PromotionValidator.validateUniquePromotion(findById(id.trim()), id.trim());
-        }
+        PromotionValidator.validateUniquePromotion(findById(id.trim()), id.trim());
     }
 
     /**
