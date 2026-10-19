@@ -23,7 +23,7 @@ import java.util.List;
  * Each line stores the sale id, its date, the ids of its customer and seller, the ids of
  * the products sold separated by commas, the applied promotion and discount, and the cost
  * of the extended warranties:
- * {@code S0001;2026-10-18;123;1098765432;VG-01,VG-01,C-01;Lleva 3 o mÃ¡s;300000.0;250000.0}.
+ * {@code S0001;2026-10-18;123;1098765432;VG-01,VG-01,C-01;Lleva 3 o más;300000.0;250000.0}.
  * Older lines without the last columns load without discount or warranty cost.
  * When loading, those ids are matched against the objects already loaded by the other
  * modules, so this repository only depends on the model layer.
@@ -49,7 +49,7 @@ public class SaleRepository {
      * created if it does not exist yet.
      *
      * @param sales sales to save
-     * @throws IOException if the file cannot be written
+     * @throws PersistenceException if the file cannot be written
      */
     public void saveAll(List<Sale> sales) {
         try {
@@ -76,7 +76,7 @@ public class SaleRepository {
      * @param customers customers already loaded
      * @param sellers   sellers already loaded
      * @return stored sales, or an empty list if the file does not exist
-     * @throws IOException if the file cannot be read
+     * @throws PersistenceException if the file cannot be read
      */
     public List<Sale> loadAll(List<Product> products, List<Customer> customers, List<Seller> sellers) {
         List<Sale> sales = new ArrayList<>();
@@ -164,6 +164,6 @@ public class SaleRepository {
      */
     private PersistenceException invalidFormat() {
         return new PersistenceException(
-                "El archivo " + filePath + " tiene un formato invÃ¡lido", null);
+                "El archivo " + filePath + " tiene un formato inválido", null);
     }
 }
