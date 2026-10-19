@@ -200,6 +200,22 @@ public class PersonRepository {
     }
 
     /**
+     * Reads every record of a file and turns a failure of the disk into the
+     * typed exception of the project, naming the file that could not be read.
+     *
+     * @param file file to read
+     * @return the records contained in the file
+     * @throws PersistenceException if the file cannot be read
+     */
+    private List<String> readQuietly(Path file) {
+        try {
+            return readRecords(file);
+        } catch (IOException e) {
+            throw new PersistenceException("Error de lectura en el archivo " + file, e);
+        }
+    }
+
+    /**
      * Reads every record of a file. An empty list is returned when the file
      * does not exist yet, so the first execution of the system works without
      * pre-existing data. Blank lines are ignored here, and the load methods
@@ -209,22 +225,6 @@ public class PersonRepository {
      * @return the records contained in the file
      * @throws IOException if the file cannot be read
      */
-    /**
-     * Reads every record of a file and turns a failure of the disk into the
-     * typed exception of the project, naming the file that could not be read.
-     *
-     * @param file file to read
-     * @return the records contained in the file
-     * @throws PersistenceException if the file cannot be read
- */
-    private List<String> readQuietly(Path file) {
-        try {
-            return readRecords(file);
-        } catch (IOException e) {
-            throw new PersistenceException("Error de lectura en el archivo " + file, e);
-        }
-    }
-
     private List<String> readRecords(Path file) throws IOException {
         List<String> records = new ArrayList<>();
         if (!Files.exists(file)) {

@@ -125,20 +125,21 @@ public class SaleService {
         checkStock(unitsByProduct);
         List<String> extendedRequests = validateExtendedRequests(soldProducts, productIdsWithExtendedWarranty);
 
-        // 3. Create the sale, which computes its subtotal.
+        // 5. Create the sale, which computes its subtotal.
         Sale sale = new Sale(nextSaleId(), LocalDate.now(), customer, seller, soldProducts);
 
-        // 4. Apply the best active promotion; its discount is computed only on the subtotal.
+        // 6. Apply the best active promotion; its discount is computed only on the subtotal.
         applyBestPromotion(sale);
 
-        // 5. Assign the basic warranty of every console and the requested extended warranties.
-        // 6. The sale adds each extended warranty cost: total = subtotal - discount + warranties.
+        // 7. Assign the basic warranty of every console and the requested extended warranties.
         assignWarranties(sale, extendedRequests);
+        // 8. Inside that call, the sale adds each extended warranty cost:
+        //    total = subtotal - discount + warranties.
 
-        // 7. Update the inventory through the service that owns each item.
+        // 9. Update the inventory through the service that owns each item.
         updateInventory(unitsByProduct);
 
-        // 8. Save the sale (WarrantyService already saved each warranty when it was assigned).
+        // 10. Save the sale (WarrantyService already saved each warranty when it was assigned).
         sales.add(sale);
         saveSales();
         return sale;
