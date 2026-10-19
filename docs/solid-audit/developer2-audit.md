@@ -36,12 +36,14 @@ once.
 | Principle | Violation | Correct | Not applicable |
 |---|---|---|---|
 | Single Responsibility | 1 | 5 | 0 |
-| Open/Closed | 2 | 3 | 0 |
-| Liskov Substitution | 1 | 3 | 0 |
+| Open/Closed | 2 | 2 | 0 |
+| Liskov Substitution | 1 | 0 | 0 |
 | Interface Segregation | 1 | 2 | 0 |
 | Dependency Inversion | 2 | 3 | 0 |
 
-Seven findings: V-01 to V-07, plus the problems reported for the consolidation.---
+Seven findings: V-01 to V-07, plus the problems reported for the consolidation.
+
+---
 
 ## Single Responsibility Principle
 
