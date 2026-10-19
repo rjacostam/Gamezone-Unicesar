@@ -3,6 +3,7 @@ package com.gamezone.persistence;
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Console;
 import com.gamezone.model.Product;
+import com.gamezone.model.ProductCatalogRow;
 import com.gamezone.model.VideoGame;
 
 import java.io.IOException;
@@ -53,7 +54,12 @@ public class ProductRepository {
                     .append(";").append(product.getTitle())
                     .append(";").append(product.getPrice())
                     .append(";").append(product.getStock());
-            for (String extraField : product.getExtraFields()) {
+            // Every product of this catalogue is a ProductCatalogRow, which is the
+            // contract of products.csv only. Accessory and Promotion declare their
+            // own contracts for their own files, so this repository can no longer
+            // be pointed at them by accident.
+            ProductCatalogRow row = (ProductCatalogRow) product;
+            for (String extraField : row.getExtraFields()) {
                 content.append(";").append(extraField);
             }
             content.append("\n");

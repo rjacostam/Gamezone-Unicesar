@@ -9,7 +9,7 @@ import java.util.List;
  * Game console sold by the store. On top of the data inherited from Product it
  * keeps its brand, its model name and the generation it belongs to.
  */
-public class Console extends Product {
+public class Console extends Product implements ProductCatalogRow {
     private String brand;
     private String model;
     private String generation;

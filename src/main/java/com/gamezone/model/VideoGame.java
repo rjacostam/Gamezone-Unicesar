@@ -9,7 +9,7 @@ import java.util.List;
  * Video game sold by the store. On top of the data inherited from Product it
  * keeps the platform it runs on, its genre and its recommended age rating.
  */
-public class VideoGame extends Product {
+public class VideoGame extends Product implements ProductCatalogRow {
     private String platform;
     private String genre;
     private String ageRating;

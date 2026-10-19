@@ -12,7 +12,7 @@ import java.util.List;
  * it works with, and declares the type discriminator that each concrete
  * accessory type must provide.
  */
-public abstract class Accessory extends Product {
+public abstract class Accessory extends Product implements AccessoryCatalogRow {
     private List<String> compatibleConsoleIds;
 
     /**

@@ -1,6 +1,5 @@
 package com.gamezone.model;
 
-import java.util.List;
 
 /**
  * Base class for every item the store sells. It holds the data and the inventory
@@ -41,17 +40,6 @@ public abstract class Product {
      * @return VIDEOGAME, CONSOLE or ACCESSORY
      */
     public abstract String getCategory();
-
-    /**
-     * Returns the three columns that only this kind of product has, in the order
-     * the catalogue file expects them, so the repository writes them without
-     * having to ask which kind of product it is holding. The columns after the
-     * category are the ones that differ: a video game carries its platform,
-     * genre and age rating, and a console carries its brand, model and
-     * generation.
-     * @return the three extra columns of this product, in file order
-     */
-    public abstract List<String> getExtraFields();
 
     /**
      * Tells whether this product is a console. A product answers no, and only
