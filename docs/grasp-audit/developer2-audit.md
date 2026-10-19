@@ -1,10 +1,6 @@
 # Developer 2 GRASP Audit — GameZone Unicesar
 
-Auditor: José David Cervantes Solano (Developer 2 — People, Accessories, Promotions,
-Warranties and Returns, plus the repositories and the exception and validation layer).
-
-Branch: `feature/grasp-audit`. The evidence refers to the state of `develop` at the
-moment of this audit.
+Author: José David Cervantes Solano (Developer 2). Audited code: `develop` at commit `6c10ce2`.
 
 Every verdict below is about the code that is my responsibility. Problems that were found
 in code owned by another member are listed in
