@@ -3,10 +3,8 @@ package com.gamezone.service;
 import com.gamezone.exceptions.BusinessRuleException;
 import com.gamezone.exceptions.InvalidDataException;
 import com.gamezone.exceptions.PersistenceException;
-import com.gamezone.model.BulkPurchaseDiscount;
-import com.gamezone.model.CategoryDiscount;
-import com.gamezone.model.PercentageDiscount;
 import com.gamezone.model.Promotion;
+import com.gamezone.model.PromotionFactory;
 import com.gamezone.model.Sale;
 import com.gamezone.persistence.PromotionRepository;
 import com.gamezone.validation.PromotionValidator;
@@ -29,7 +27,7 @@ import java.util.List;
  * {@link BusinessRuleException} when a rule of the store is broken, with a
  * message in Spanish, because the console menu shows it directly to the user.
  */
-public class PromotionService {
+public class PromotionService implements PromotionChooser {
 
     private PromotionRepository repository;
     private List<Promotion> promotions;
@@ -46,83 +44,71 @@ public class PromotionService {
     }
 
     /**
-     * Registers a new promotion that applies a percentage to the whole total.
+     * Registers a promotion of any kind, once it has been built by
+     * {@link PromotionFactory}.
      *
-     * @param id        promotion identifier
-     * @param name      name of the promotion
-     * @param startDate first day the promotion is valid
-     * @param endDate   last day the promotion is valid
-     * @param percentage discount percentage, greater than zero and at most 100
+     * <p>This is the single entry point of the correction of violation V-06:
+     * the service no longer needs one method per kind, because it no longer
+     * decides which kind is being registered. The three methods that exist for
+     * each kind stay until the menus are moved to this one.
+     *
+     * @param promotion promotion to register
      * @return the registered promotion
      * @throws InvalidDataException  if the data is invalid
      * @throws BusinessRuleException if the identifier is already registered
      * @throws PersistenceException  if the promotions file cannot be written
      */
-    public PercentageDiscount registerPercentageDiscount(String id, String name,
-                                                          LocalDate startDate, LocalDate endDate,
-                                                          double percentage) {
-        validateCommonData(id, name, startDate, endDate);
-        validatePercentage(percentage);
-        PercentageDiscount promotion = new PercentageDiscount(id.trim(), name.trim(),
-                startDate, endDate, percentage);
+    public Promotion register(Promotion promotion) {
+        validateCommonData(promotion.getId(), promotion.getName(),
+                promotion.getStartDate(), promotion.getEndDate());
+        validateExtraData(promotion);
         addPromotion(promotion);
         return promotion;
     }
 
     /**
-     * Registers a new promotion that applies a percentage only to the products
-     * of one category.
+     * Validates the columns the kind of promotion adds, using only what the
+     * promotion itself publishes: its {@code getTypeCode} says which kind it is
+     * and its {@code getExtraFields} carries the values, so no test on the
+     * concrete class is needed and a new kind only changes the factory.
+     * <p>
+     * The order of the checks is the one each of the three
+     * {@code register...} methods had: a bulk purchase discount rejects its
+     * minimum quantity before its percentage, and the other two reject the
+     * percentage first. A registration that fails shows the same message it
+     * showed before.
      *
-     * @param id             promotion identifier
-     * @param name           name of the promotion
-     * @param startDate      first day the promotion is valid
-     * @param endDate        last day the promotion is valid
-     * @param percentage     discount percentage, greater than zero and at most 100
-     * @param targetCategory category the discount applies to, {@code VIDEOGAME},
-     *                       {@code CONSOLE} or {@code ACCESSORY}
-     * @return the registered promotion
-     * @throws InvalidDataException  if the data is invalid or the category is
-     *                               not accepted
-     * @throws BusinessRuleException if the identifier is already registered
-     * @throws PersistenceException  if the promotions file cannot be written
+     * @param promotion promotion to validate
+     * @throws InvalidDataException  if one of the values of the kind is not valid
+     * @throws BusinessRuleException if the percentage or the minimum quantity is
+     *                              not allowed
      */
-    public CategoryDiscount registerCategoryDiscount(String id, String name,
-                                                     LocalDate startDate, LocalDate endDate,
-                                                     double percentage, String targetCategory) {
-        validateCommonData(id, name, startDate, endDate);
-        validatePercentage(percentage);
-        validateTargetCategory(targetCategory);
-        CategoryDiscount promotion = new CategoryDiscount(id.trim(), name.trim(),
-                startDate, endDate, percentage, targetCategory.trim());
-        addPromotion(promotion);
-        return promotion;
+    private void validateExtraData(Promotion promotion) {
+        List<String> extras = promotion.getExtraFields();
+        String typeCode = promotion.getTypeCode();
+        if (PromotionFactory.TYPE_BULK.equals(typeCode)) {
+            validateMinimumQuantity(Integer.parseInt(valueAt(extras, 1)));
+        }
+        validatePercentage(Double.parseDouble(valueAt(extras, 0)));
+        if (PromotionFactory.TYPE_CATEGORY.equals(typeCode)) {
+            validateTargetCategory(valueAt(extras, 1));
+        }
     }
 
     /**
-     * Registers a new promotion that applies a percentage when the sale includes
-     * a minimum number of units.
+     * Returns one of the published columns, or an empty string when the promotion
+     * does not publish that position, so a value that was never set is validated
+     * as empty instead of failing to be read.
      *
-     * @param id              promotion identifier
-     * @param name            name of the promotion
-     * @param startDate       first day the promotion is valid
-     * @param endDate         last day the promotion is valid
-     * @param minimumQuantity units the sale must include, greater than zero
-     * @param percentage      discount percentage, greater than zero and at most 100
-     * @return the registered promotion
-     * @throws InvalidDataException  if the data is invalid
-     * @throws BusinessRuleException if the identifier is already registered
-     * @throws PersistenceException  if the promotions file cannot be written
+     * @param extras columns published by the promotion
+     * @param index  position of the wanted column
+     * @return the value, or an empty string
      */
-    public BulkPurchaseDiscount registerBulkPurchaseDiscount(String id, String name,
-                                                             LocalDate startDate, LocalDate endDate,
-                                                             int minimumQuantity, double percentage) {
-        validateCommonData(id, name, startDate, endDate);
-        validateMinimumQuantity(minimumQuantity);
-        validatePercentage(percentage);
-        BulkPurchaseDiscount promotion = new BulkPurchaseDiscount(id.trim(), name.trim(),
-                startDate, endDate, minimumQuantity, percentage);
-        addPromotion(promotion);
-        return promotion;
+    private String valueAt(List<String> extras, int index) {
+        if (extras == null || index >= extras.size()) {
+            return "";
+        }
+        return extras.get(index);
     }
 
     /**
@@ -197,6 +183,7 @@ public class PromotionService {
  * @return the promotion with the greatest discount, or null when no active
  *         promotion gives a discount greater than zero
  */
+    @Override
     public Promotion findBestPromotionFor(Sale sale) {
         if (sale == null || sale.getDate() == null) {
             return null;

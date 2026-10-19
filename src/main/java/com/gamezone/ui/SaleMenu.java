@@ -2,8 +2,9 @@ package com.gamezone.ui;
 
 import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
-import com.gamezone.service.ProductService;
+import com.gamezone.service.ItemFinder;
 import com.gamezone.service.SaleService;
+import com.gamezone.service.StoreCatalog;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -16,23 +17,26 @@ import java.util.List;
 public class SaleMenu extends Submenu {
 
     private final SaleService saleService;
-    private final ProductService productService;
-    private final PersonMenu personMenu;
+    private final StoreCatalog catalog;
+    private final ItemFinder productFinder;
+    private final SellerLister sellerLister;
 
     /**
      * Creates the submenu.
      *
      * @param input          reader of the console
      * @param saleService    service for sales
-     * @param productService service for products, used to offer the extended warranty
-     * @param personMenu     people submenu, used to list the sellers
+     * @param catalog        catalogue of everything the store sells
+     * @param productFinder  search of the product catalogue, used to offer the extended warranty
+     * @param sellerLister   prints the sellers before asking for one
      */
-    public SaleMenu(ConsoleInput input, SaleService saleService, ProductService productService,
-                    PersonMenu personMenu) {
+    public SaleMenu(ConsoleInput input, SaleService saleService, StoreCatalog catalog, ItemFinder productFinder,
+                    SellerLister sellerLister) {
         super(input);
         this.saleService = saleService;
-        this.productService = productService;
-        this.personMenu = personMenu;
+        this.catalog = catalog;
+        this.productFinder = productFinder;
+        this.sellerLister = sellerLister;
     }
 
     @Override
@@ -61,7 +65,7 @@ public class SaleMenu extends Submenu {
 
     private void registerSale() {
         String customerId = input.readText("Identificación del cliente: ");
-        personMenu.listSellers();
+        sellerLister.listSellers();
         String sellerId = input.readText("Identificación o código del vendedor: ");
         listCatalog();
         List<String> productIds = new ArrayList<>();
@@ -77,7 +81,7 @@ public class SaleMenu extends Submenu {
         }
         List<String> extendedWarranty = new ArrayList<>();
         for (String productId : new LinkedHashSet<>(productIds)) {
-            Product product = productService.findById(productId);
+            Product product = productFinder.findById(productId);
             if (product != null && product.isConsole()
                     && input.readYesNo("¿Desea agregar garantía extendida a " + product.getTitle() + "? (s/n): ")) {
                 extendedWarranty.add(product.getId());
@@ -89,12 +93,12 @@ public class SaleMenu extends Submenu {
     }
 
     private void listCatalog() {
-        List<Product> catalog = saleService.getCatalog();
-        if (catalog.isEmpty()) {
+        List<Product> items = catalog.listAll();
+        if (items.isEmpty()) {
             System.out.println("No hay productos ni accesorios registrados.");
             return;
         }
-        for (Product item : catalog) {
+        for (Product item : items) {
             System.out.println(item.getDescription());
         }
     }

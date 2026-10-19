@@ -8,7 +8,7 @@ import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
-import com.gamezone.persistence.ReturnRepository;
+import com.gamezone.persistence.ReturnStore;
 import com.gamezone.validation.ReturnValidator;
 import com.gamezone.validation.SaleValidator;
 
@@ -50,15 +50,13 @@ public class ReturnService {
     /** Number of digits of a return identifier after the prefix. */
     private static final int ID_DIGITS = 4;
 
-    private ReturnRepository repository;
-    private SaleService saleService;
-    private ProductService productService;
-    private AccessoryService accessoryService;
-    private WarrantyService warrantyService;
+    private ReturnStore repository;
+    private SaleFinder saleService;
+    private WarrantyCanceller warrantyService;
     private List<Return> returns;
 
     /** Catalogues that own the stock of the items of a return, in search order. */
-    private final List<InventoryCatalog> inventoryCatalogs;
+    private final List<StockRestorer> inventoryCatalogs;
 
     /**
      * Builds the service and loads the returns, linking each one to the sales
@@ -67,23 +65,19 @@ public class ReturnService {
      * @param repository     repository used to read and write the returns
      * @param saleService    service of the sales, needed because a return always
      *                       comes from a sale
-     * @param productService service of the catalogue, needed to restore the stock
-     *                       of the returned video games and consoles
-     * @param accessoryService service of the accessories, needed to restore the
-     *                         stock of the returned accessories
+     * @param stockRestorers catalogues that can give the stock back, the product
+     *                        catalogue first and the accessory catalogue after, so
+     *                        the first one is the answer when none holds the item
      * @param warrantyService service of the warranties, needed to cancel the
      *                        warranties of the returned consoles
      * @throws PersistenceException if the returns file cannot be read
      */
-    public ReturnService(ReturnRepository repository, SaleService saleService,
-                         ProductService productService, AccessoryService accessoryService,
-                         WarrantyService warrantyService) {
+    public ReturnService(ReturnStore repository, SaleFinder saleService,
+            List<StockRestorer> stockRestorers, WarrantyCanceller warrantyService) {
         this.repository = repository;
         this.saleService = saleService;
-        this.productService = productService;
-        this.accessoryService = accessoryService;
         this.warrantyService = warrantyService;
-        this.inventoryCatalogs = List.of(productService, accessoryService);
+        this.inventoryCatalogs = List.copyOf(stockRestorers);
         this.returns = new ArrayList<>(repository.loadAll(saleService.listAllSales()));
     }
 
@@ -311,13 +305,13 @@ public class ReturnService {
      * @param productId identifier of the returned unit
      * @return the catalogue that holds that item; the product catalogue if none does
      */
-    private InventoryCatalog catalogOf(String productId) {
-        for (InventoryCatalog catalog : inventoryCatalogs) {
+    private StockRestorer catalogOf(String productId) {
+        for (StockRestorer catalog : inventoryCatalogs) {
             if (catalog.findById(productId) != null) {
                 return catalog;
             }
         }
-        return productService;
+        return inventoryCatalogs.get(0);
     }
 
     /**
@@ -426,99 +420,6 @@ public class ReturnService {
     private boolean isReturnOfSaleId(Return registeredReturn, String saleId) {
         Sale sale = registeredReturn.getSale();
         return sale != null && sale.getId().equalsIgnoreCase(saleId);
-    }
-
-    /**
-     * Sums the total of every sale of a month, that is the final amount of the
-     * sale with its discount and its warranties already applied.
-     * <p>
-     * Each sale is grouped by its own date, so a sale made in September and
-     * returned in October counts as income in September only.
-     *
-     * @param month number of the month, from 1 to 12
-     * @param year  number of the year
-     * @return total of the sales of that month
-     * @throws InvalidDataException if the month is not between 1 and 12
-     */
-    public double calculateMonthlySales(int month, int year) {
-        validateMonth(month);
-        double total = 0;
-        for (Sale sale : saleService.listAllSales()) {
-            if (isInMonth(sale.getDate(), month, year)) {
-                total += sale.getTotal();
-            }
-        }
-        return total;
-    }
-
-    /**
-     * Sums the refunded amount of every return of a month, that is the money the
-     * store gave back.
-     * <p>
-     * Each return is grouped by its own date, so the refund of a sale made in a
-     * previous month counts in the month the customer handed the product back.
-     *
-     * @param month number of the month, from 1 to 12
-     * @param year  number of the year
-     * @return total of the refunds of that month
-     * @throws InvalidDataException if the month is not between 1 and 12
-     */
-    public double calculateMonthlyReturns(int month, int year) {
-        validateMonth(month);
-        double total = 0;
-        for (Return registeredReturn : returns) {
-            if (isInMonth(registeredReturn.getDate(), month, year)) {
-                total += registeredReturn.getRefundAmount();
-            }
-        }
-        return total;
-    }
-
-    /**
-     * Checks that a month number is one of the twelve months of a year. The rule
-     * and its message are written only once and shared by the three reports of the
-     * month.
-     *
-     * @param month number of the month
-     * @throws InvalidDataException if the month is not between 1 and 12
-     */
-    private void validateMonth(int month) {
-        ReturnValidator.validateMonth(month);
-    }
-
-    /**
- * Builds the balance of a month: the money the store took in that month minus
-     * the money it gave back in that month.
-     * <p>
-     * The result is {@link #calculateMonthlySales(int, int)} minus
-     * {@link #calculateMonthlyReturns(int, int)}, so the net figure and the two
-     * figures the report shows next to it can never disagree: all three come from
-     * the same two methods.
-     * <p>
-     * The method reads data of two modules, the sales and the returns, which is
-     * why it lives in this service: it is the place that already knows both. It
-     * delegates the lookup of the sales to {@code SaleService} and never reads a
-     * repository of another module.
-     *
-     * @param month number of the month, from 1 to 12
-     * @param year  number of the year
-     * @return the income of the month minus the refunds of the month
-     * @throws InvalidDataException if the month is not between 1 and 12
-     */
-    public double generateMonthlyBalance(int month, int year) {
-        return calculateMonthlySales(month, year) - calculateMonthlyReturns(month, year);
-    }
-
-    /**
-     * Tells whether a date falls on a given month and year.
-     *
-     * @param date  date to check
-     * @param month number of the month
-     * @param year  number of the year
-     * @return true when the date is on that month of that year
-     */
-    private boolean isInMonth(LocalDate date, int month, int year) {
-        return date != null && date.getMonthValue() == month && date.getYear() == year;
     }
 
     /**

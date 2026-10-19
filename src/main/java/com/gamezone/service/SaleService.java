@@ -10,7 +10,7 @@ import com.gamezone.model.Promotion;
 import com.gamezone.model.Sale;
 import com.gamezone.model.Seller;
 import com.gamezone.model.Warranty;
-import com.gamezone.persistence.SaleRepository;
+import com.gamezone.persistence.SaleStore;
 import com.gamezone.validation.PersonValidator;
 import com.gamezone.validation.ProductValidator;
 import com.gamezone.validation.SaleValidator;
@@ -39,42 +39,40 @@ import java.util.Map;
  * store is broken, always with a message in Spanish that the menu can show to
  * the user.
  */
-public class SaleService {
+public class SaleService implements SaleFinder {
 
-    private final SaleRepository repository;
-    private final ProductService productService;
-    private final PersonService personService;
-    private final AccessoryService accessoryService;
-    private final PromotionService promotionService;
-    private final WarrantyService warrantyService;
+    private final SaleStore repository;
+    private final StoreCatalog catalog;
+    private final PersonFinder people;
+    private final PromotionChooser promotions;
+    private final WarrantyAssigner warranties;
     private final List<Sale> sales;
     /** Catalogues that own the stock of the items of a sale, in search order. */
-    private final List<InventoryCatalog> inventoryCatalogs;
+    private final List<StockUpdater> stockUpdaters;
 
     /**
      * Creates the service and loads the stored sales, linking them to the products,
      * accessories and people already loaded by the other services.
      *
-     * @param repository       repository used to persist sales
-     * @param productService   service that manages video games and consoles
-     * @param personService    service that manages customers and sellers
-     * @param accessoryService service that manages accessories
-     * @param promotionService service that chooses the promotion of each sale
-     * @param warrantyService  service that creates the warranties of the consoles sold
+     * @param repository       storage of the sales
+     * @param catalog          catalogue of everything the store sells
+     * @param stockUpdaters    catalogues that update the stock of what is sold, products first
+     * @param people           finder of the customers and sellers
+     * @param promotions       chooser of the best promotion of each sale
+     * @param warranties       assigner of the warranties of the consoles sold
      * @throws PersistenceException if the sales file cannot be read
      */
-    public SaleService(SaleRepository repository, ProductService productService, PersonService personService,
-                       AccessoryService accessoryService, PromotionService promotionService,
-                       WarrantyService warrantyService) {
+    public SaleService(SaleStore repository, StoreCatalog catalog, List<StockUpdater> stockUpdaters,
+                       PersonFinder people, PromotionChooser promotions,
+                       WarrantyAssigner warranties) {
         this.repository = repository;
-        this.productService = productService;
-        this.personService = personService;
-        this.accessoryService = accessoryService;
-        this.inventoryCatalogs = List.of(productService, accessoryService);
-        this.promotionService = promotionService;
-        this.warrantyService = warrantyService;
-        this.sales = repository.loadAll(getCatalog(),
-                personService.listCustomers(), personService.listSellers());
+        this.catalog = catalog;
+        this.stockUpdaters = List.copyOf(stockUpdaters);
+        this.people = people;
+        this.promotions = promotions;
+        this.warranties = warranties;
+        this.sales = repository.loadAll(catalog.listAll(),
+                people.listCustomers(), people.listSellers());
     }
 
     /**
@@ -151,6 +149,7 @@ public class SaleService {
      *
      * @return copy of the sale list
      */
+    @Override
     public List<Sale> listAllSales() {
         return new ArrayList<>(sales);
     }
@@ -161,6 +160,7 @@ public class SaleService {
      * @param saleId sale identifier
      * @return the sale, or {@code null} if it does not exist
      */
+    @Override
     public Sale findById(String saleId) {
         for (Sale sale : sales) {
             if (sale.getId().equalsIgnoreCase(saleId)) {
@@ -193,7 +193,7 @@ public class SaleService {
      * @return sales registered by that seller, empty if the seller does not exist
      */
     public List<Sale> findSalesBySeller(String sellerId) {
-        Seller seller = personService.findSellerById(sellerId);
+        Seller seller = people.findSellerById(sellerId);
         List<Sale> result = new ArrayList<>();
         if (seller == null) {
             return result;
@@ -207,17 +207,6 @@ public class SaleService {
     }
 
     /**
-     * Returns every item that can be sold: video games, consoles and accessories.
-     *
-     * @return products followed by accessories
-     */
-    public List<Product> getCatalog() {
-        List<Product> catalog = new ArrayList<>(productService.listAllProducts());
-        catalog.addAll(accessoryService.listAllAccessories());
-        return catalog;
-    }
-
-    /**
      * Looks for the customer of the sale and makes sure it exists.
      *
      * @param customerId customer identification
@@ -225,7 +214,7 @@ public class SaleService {
      * @throws ResourceNotFoundException if no customer uses that identification
      */
     private Customer requireCustomer(String customerId) {
-        Customer customer = personService.findCustomerById(customerId);
+        Customer customer = people.findCustomerById(customerId);
         PersonValidator.validatePersonExists(customer, customerId);
         return customer;
     }
@@ -238,7 +227,7 @@ public class SaleService {
      * @throws ResourceNotFoundException if no seller uses that identification
      */
     private Seller requireSeller(String sellerId) {
-        Seller seller = personService.findSellerById(sellerId);
+        Seller seller = people.findSellerById(sellerId);
         PersonValidator.validatePersonExists(seller, sellerId);
         return seller;
     }
@@ -255,7 +244,7 @@ public class SaleService {
     private List<Product> resolveItems(List<String> productIds) {
         List<Product> items = new ArrayList<>();
         for (String productId : productIds) {
-            Product product = findItem(productId);
+            Product product = catalog.findById(productId);
             ProductValidator.validateProductExists(product, productId);
             items.add(product);
         }
@@ -301,7 +290,7 @@ public class SaleService {
     }
 
     private void applyBestPromotion(Sale sale) {
-        Promotion promotion = promotionService.findBestPromotionFor(sale);
+        Promotion promotion = promotions.findBestPromotionFor(sale);
         if (promotion != null) {
             sale.applyDiscount(promotion.getName(), promotion.calculateDiscount(sale));
         }
@@ -310,9 +299,9 @@ public class SaleService {
     private void assignWarranties(Sale sale, List<String> extendedRequests) {
         for (Product product : sale.getProducts()) {
             if (product.isConsole()) {
-                warrantyService.assignBasicWarranty(product, sale, sale.getDate());
+                warranties.assignBasicWarranty(product, sale, sale.getDate());
                 if (containsIgnoreCase(extendedRequests, product.getId())) {
-                    Warranty extended = warrantyService.assignExtendedWarranty(product, sale, sale.getDate());
+                    Warranty extended = warranties.assignExtendedWarranty(product, sale, sale.getDate());
                     sale.addExtendedWarrantyCost(extended.getAdditionalCost());
                 }
             }
@@ -330,15 +319,15 @@ public class SaleService {
      * testing the concrete type of the item.
      *
      * @param item product or accessory of the sale
-     * @return the catalogue that holds that same item; the product catalogue if none does
+     * @return the catalogue that holds that same item; the first catalogue (products) if none does
      */
-    private InventoryCatalog catalogOf(Product item) {
-        for (InventoryCatalog catalog : inventoryCatalogs) {
+    private StockUpdater catalogOf(Product item) {
+        for (StockUpdater catalog : stockUpdaters) {
             if (catalog.findById(item.getId()) == item) {
                 return catalog;
             }
         }
-        return productService;
+        return stockUpdaters.get(0);
     }
 
     private boolean containsIgnoreCase(List<String> values, String value) {
@@ -348,14 +337,6 @@ public class SaleService {
             }
         }
         return false;
-    }
-
-    private Product findItem(String id) {
-        Product product = productService.findById(id);
-        if (product == null) {
-            product = accessoryService.findById(id);
-        }
-        return product;
     }
 
     /**

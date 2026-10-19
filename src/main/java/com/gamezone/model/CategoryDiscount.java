@@ -1,8 +1,9 @@
 package com.gamezone.model;
 
+import com.gamezone.format.AmountFormat;
+
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Promotion that applies a percentage only to the products of one category. The
@@ -70,7 +71,7 @@ public class CategoryDiscount extends Promotion {
     public String getDescription() {
         return "[" + getId() + "] " + getName()
                 + " | " + getStartDate() + " a " + getEndDate()
-                + " | " + String.format(Locale.US, "%.2f%%", percentage) + " solo en " + targetCategory;
+                + " | " + AmountFormat.percent(percentage) + " solo en " + targetCategory;
     }
 
     /**

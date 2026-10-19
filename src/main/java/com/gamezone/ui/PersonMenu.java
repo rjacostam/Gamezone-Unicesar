@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Submenu of the people of the store: registers customers and lists customers and sellers.
  */
-public class PersonMenu extends Submenu {
+public class PersonMenu extends Submenu implements SellerLister {
 
     private final PersonService personService;
 
@@ -68,7 +68,8 @@ public class PersonMenu extends Submenu {
      * Prints the sellers of the store. The sale submenu also uses it, so the seller can be
      * chosen from the list.
      */
-    void listSellers() {
+    @Override
+    public void listSellers() {
         List<Seller> sellers = personService.listSellers();
         if (sellers.isEmpty()) {
             System.out.println("No hay vendedores registrados.");

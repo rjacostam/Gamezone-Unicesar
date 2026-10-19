@@ -27,6 +27,7 @@ connects the layers. The design is documented in `docs/`:
 - `docs/integration-analysis.md`, `docs/integrated-class-diagram.md` — integration of the four modules (Requirement 5)
 - `docs/exception-analysis.md`, `docs/exception-class-diagram.md` — exceptions and validators (Requirement 6)
 - `docs/grasp-audit/`, `docs/grasp-analysis.md`, `docs/grasp-class-diagram.md`, `docs/grasp-refactor-log.md`, `docs/regression/` — GRASP audit and correction (Requirement 7)
+- `docs/solid-audit/`, `docs/solid-analysis.md`, `docs/solid-class-diagram.md`, `docs/solid-refactor-log.md` — SOLID audit and correction (Requirement 8)
 
 ## Requirements
 
@@ -234,6 +235,48 @@ recorded in `docs/grasp-refactor-log.md`.
 One functional defect found in the audit was left out of scope on purpose (OOS-01: a damaged
 line in `data/sales.csv` stops the program at startup), because correcting it would change
 what the user sees.
+
+## SOLID audit and correction (Requirement 8)
+
+The requirement did not add any operation to the menu. It was done in two phases on the code
+already corrected in Requirement 7.
+
+**Phase 1, audit.** Each member audited the code he wrote, including the classes he created in
+Requirement 7, against the five SOLID principles (`docs/solid-audit/leader-audit.md`,
+`developer1-audit.md`, `developer2-audit.md`). The Technical Leader merged the three reports
+into `docs/solid-audit/consolidated-audit.md`, audited on `develop` at `675e61c`: the 61 classes
+were audited once each, the 17 violations of the reports became 13, and each one got its
+responsible members. One new functional defect was left out of scope (OOS-02: the sale receipt
+depends on the language of the computer). The answers to the five guiding questions are in
+`docs/solid-analysis.md`.
+
+**Phase 2, correction.** The thirteen violations were corrected without changing what the user
+sees:
+
+| Violation | Principle | Design change |
+|---|---|---|
+| V-01 | Single Responsibility | `StoreCatalog` lists and searches what the store sells; `SaleService` no longer builds the catalogue |
+| V-02 | Single Responsibility | `AmountFormat` owns the money and percentage formats, keeping the current output of every place |
+| V-03 | Single Responsibility | `MonthlyBalanceService` builds the monthly balance; `ReturnService` only manages returns |
+| V-04 | Open/Closed | `Submenu.runSafely` also catches any other `GameZoneException`, so a new kind of error needs no edit |
+| V-05 | Open/Closed | `Console` answers "is a console" and its category from one constant |
+| V-06 | Open/Closed | `AccessoryFactory`, `PromotionFactory` and a single `register` per service replace one method per kind |
+| V-07 | Liskov Substitution | Both catalogues follow the same `findById` contract |
+| V-08 | Interface Segregation | One row contract per data file (`ProductCatalogRow`, `AccessoryCatalogRow`, `PromotionCatalogRow`) |
+| V-09 | Interface Segregation | `InventoryCatalog` split into `ItemFinder`, `StockUpdater` and `StockRestorer`, then deleted |
+| V-10 | Interface Segregation | `SaleMenu` depends on `ItemFinder` and `SellerLister` |
+| V-11 | Dependency Inversion | `SaleService` and `ReturnService` depend on small contracts (`SaleStore`, `ReturnStore`, `SaleFinder`, `PersonFinder`, `PromotionChooser`, `WarrantyAssigner`, `WarrantyCanceller`) |
+| V-12 | Dependency Inversion | `AccessoryService` depends on `ItemFinder` instead of `ProductService` |
+| V-13 | Dependency Inversion | `Main` builds the submenus and `ConsoleMenu` receives them as `Submenu` |
+
+The layer order is kept: the new contracts that the services use for the storage live in
+`persistence`, the factories in `model`, and `AmountFormat` in its own `format` package, which
+the model can use. The before and after diagrams are in `docs/solid-class-diagram.md`.
+
+**No regression.** The two input scripts of `docs/regression/` were run on `develop` before the
+first correction and on the final `develop`, on the same day: the screen output and the eight
+data files are identical. Each correction, its commit and its check are recorded in
+`docs/solid-refactor-log.md`.
 
 ## Team
 

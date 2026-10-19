@@ -37,7 +37,7 @@ import java.util.Locale;
  * already turns them into a {@link PersistenceException}, because a failure of
  * the disk is a failure of the application and not a mistake of the user.
  */
-public class WarrantyService {
+public class WarrantyService implements WarrantyAssigner, WarrantyCanceller {
 
     /** Type marker of a basic warranty, as stored in the file. */
     private static final String TYPE_BASIC = "BASIC";
@@ -177,6 +177,7 @@ public class WarrantyService {
      *                              missing
      * @throws PersistenceException if the warranties file cannot be written
      */
+    @Override
     public BasicWarranty assignBasicWarranty(Product product, Sale sale, LocalDate startDate) {
         validateAssignment(product, sale, startDate);
         BasicWarranty warranty = new BasicWarranty(nextWarrantyId(), product, sale, startDate);
@@ -197,6 +198,7 @@ public class WarrantyService {
      *                              missing
      * @throws PersistenceException if the warranties file cannot be written
      */
+    @Override
     public ExtendedWarranty assignExtendedWarranty(Product product, Sale sale, LocalDate startDate) {
         validateAssignment(product, sale, startDate);
         ExtendedWarranty warranty =
@@ -309,6 +311,7 @@ public class WarrantyService {
      *         was none
      * @throws PersistenceException if the warranties file cannot be written
      */
+    @Override
     public double cancelWarranties(String productId, String saleId) {
         if (productId == null || productId.isBlank()
                 || saleId == null || saleId.isBlank()) {

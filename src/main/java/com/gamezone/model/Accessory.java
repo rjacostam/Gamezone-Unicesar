@@ -1,8 +1,9 @@
 package com.gamezone.model;
 
+import com.gamezone.format.AmountFormat;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Base class for the accessories sold by the store. An accessory is a product,
@@ -11,7 +12,7 @@ import java.util.Locale;
  * it works with, and declares the type discriminator that each concrete
  * accessory type must provide.
  */
-public abstract class Accessory extends Product {
+public abstract class Accessory extends Product implements AccessoryCatalogRow {
     private List<String> compatibleConsoleIds;
 
     /**
@@ -64,7 +65,7 @@ public abstract class Accessory extends Product {
     @Override
     public String getDescription() {
         return "Accesorio [" + getId() + "] " + getTitle()
-                + " | Precio: " + String.format(Locale.US, "$%,.2f", getPrice())
+                + " | Precio: " + AmountFormat.money(getPrice())
                 + " | Stock: " + getStock()
                 + " | Compatible con: " + compatibleConsoleIds;
     }

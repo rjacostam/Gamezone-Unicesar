@@ -1,8 +1,9 @@
 package com.gamezone.model;
 
+import com.gamezone.format.AmountFormat;
+
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Promotion that applies a percentage to the whole sale only when the sale
@@ -58,7 +59,7 @@ public class BulkPurchaseDiscount extends Promotion {
     public String getDescription() {
         return "[" + getId() + "] " + getName()
                 + " | " + getStartDate() + " a " + getEndDate()
-                + " | " + String.format(Locale.US, "%.2f%%", percentage)
+                + " | " + AmountFormat.percent(percentage)
                 + " al comprar " + minimumQuantity + " o mas";
     }
 
