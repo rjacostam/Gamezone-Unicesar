@@ -8,6 +8,7 @@ import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
+import com.gamezone.persistence.ReturnStore;
 import com.gamezone.validation.ReturnValidator;
 import com.gamezone.validation.SaleValidator;
 

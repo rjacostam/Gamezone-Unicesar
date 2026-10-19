@@ -1,4 +1,4 @@
-package com.gamezone.service;
+package com.gamezone.persistence;
 
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
