@@ -281,3 +281,62 @@ Correct applications:
   whether it is basic or extended, it only reads its duration and its cost.
 - The `validation` package is indirection between the interface and the model: `ConsoleMenu`
   obtains a checked object instead of repeating the format rules in each of its submenus.
+## Protected Variations
+
+**Verdict: violation** (three points: V-05, and the consequences already registered as V-02
+and V-04).
+
+Correct applications:
+
+- The services work with the base type `Product` and call `hasStock` (line 49) and
+  `decreaseStock` (line 61), so a change in the rule of the stock stays inside `Product` and
+  does not reach `ProductService`.
+- `Return.calculateRefundAmount` (line 71) sums the refunds of the returned products without
+  asking for their type, so a new product type is returned like the existing ones and `Return`
+  does not change.
+- A new kind of failure is added as a new subclass of `GameZoneException`, and the handlers keep
+  catching the base type, so a new failure does not change the code that catches them.
+- The sale applies a promotion and stores a warranty through their base types, so a new promotion
+  or a new warranty does not change `Sale`.
+
+Violation V-05:
+
+| Field | Content |
+|---|---|
+| ID | V-05 |
+| Pattern | Protected Variations |
+| Module | Validation (Requirement 6) |
+| Evidence | The category that identifies a console is written as a text in the validation layer: `AccessoryValidator.validateCompatibleConsole` (line 62: `if (!product.getCategory().equalsIgnoreCase("CONSOLE"))`) and `SaleValidator.validateExtendedWarrantyRequest` (line 74: `if (product.getCategory().equalsIgnoreCase("CONSOLE"))`). |
+| Explanation | Deciding whether something is a console by comparing a string means the answer depends on a value that lives in the product, and two validators repeat the comparison. The variation "how a console is identified" reaches the validation layer, whose only job should be to receive the answer and act on it. |
+| Consequence | The same category is compared in four places in the system: these two validators, plus `ConsoleMenu.registerSale` (line 277) and `SaleService.assignWarranties` (line 311), both audited by the Technical Leader. Changing how a console is identified, or adding a portable console, means editing the menu, the service and the two validators; forgetting one makes the system answer differently depending on the path by which the sale is registered. |
+| Proposed solution | Ask the product instead of comparing its text: a behaviour on `Product` such as `isConsole()`, or a small fabricated class in `model` that decides which products accept an extended warranty, so `ConsoleMenu`, `SaleService`, `SaleValidator` and `AccessoryValidator` delegate to one answer. The leader already proposed this in his V-02; this finding adds `AccessoryValidator`, which was not in his evidence. |
+| Other member's code | Partly. `SaleValidator` and `AccessoryValidator` are mine, but the rule is also in `ConsoleMenu` and in `SaleService`, which belong to the Technical Leader. It is reported because his V-02 did not include `AccessoryValidator`, and the consolidation should merge both into a single decision. |
+
+The variations of V-02 and of V-04 are not registered again here. Adding a product type
+already forces an edit of `ProductRepository`, and adding a warranty type already forces an
+edit of `Warranty.coverageDescription`; both are already described and corrected in their own
+finding.
+
+## Findings reported for the consolidation
+
+These are not new defects. They are findings of this audit that touch code of another member
+and that the Technical Leader must consolidate with his own:
+
+- **V-03 and the leader's V-03 describe the same defect.** The model classes build the Spanish
+  text of the documents: `Sale.generateReceipt` on his side, and
+  `Return.generateReturnReceipt`, `Warranty.generateWarrantyCertificate`, `getDescription` and
+  `getDescription` of `Accessory` on mine. The correction is the same one, a formatter per
+  document in the presentation layer, so both findings should become one.
+- **V-05 and the leader's V-02 describe the same rule.** "Only consoles accept an extended
+  warranty" is spread over four classes. He already merged his own three occurrences into one
+  finding; mine adds `AccessoryValidator` (line 62) as a fourth occurrence.
+- **V-02 also appears in `AccessoryRepository`**, which belongs to Developer 2, with the same
+  branches on the accessory types. The leader decides whether both repositories are corrected
+  in the same refactoring.
+- **V-01 depends on an answer from the leader.** The correction reads `Sale.getSubtotal()`,
+  which belongs to him. The audit needs him to confirm that `getSubtotal()` returns the sum
+  before discounts, so that a promotion still never sees a discount already applied. If he
+  prefers another public method on `Sale`, the correction stays inside my three promotion
+  classes.
+- **V-03 is a boundary correction.** Moving the wording out of the model touches the console
+  that prints the documents, so `ConsoleMenu` is affected even though it was not audited here.
