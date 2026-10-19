@@ -29,7 +29,7 @@ import java.util.List;
  * {@link BusinessRuleException} when a rule of the store is broken, with a
  * message in Spanish, because the console menu shows it directly to the user.
  */
-public class PromotionService {
+public class PromotionService implements PromotionChooser {
 
     private PromotionRepository repository;
     private List<Promotion> promotions;
@@ -219,6 +219,7 @@ public class PromotionService {
  * @return the promotion with the greatest discount, or null when no active
  *         promotion gives a discount greater than zero
  */
+    @Override
     public Promotion findBestPromotionFor(Sale sale) {
         if (sale == null || sale.getDate() == null) {
             return null;

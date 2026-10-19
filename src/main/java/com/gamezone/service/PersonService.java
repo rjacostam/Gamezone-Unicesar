@@ -43,7 +43,7 @@ import java.util.List;
  * @author Jose Cervantes
  * @since 1.0.0
  */
-public class PersonService {
+public class PersonService implements PersonFinder {
 
         /** Repository used to persist and recover the people. */
     private final PersonRepository repository;
@@ -134,6 +134,7 @@ public class PersonService {
      *
      * @return a copy of the list of registered customers
      */
+    @Override
     public List<Customer> listCustomers() {
         return new ArrayList<>(customers);
     }
@@ -154,6 +155,7 @@ public class PersonService {
      * @return the customer found, or null when no customer uses that
      *         identification
      */
+    @Override
     public Customer findCustomerById(String id) {
         if (id == null || id.isBlank()) {
             return null;
@@ -178,6 +180,7 @@ public class PersonService {
      * @param idOrEmployeeCode identification or employee code to search
      * @return the seller found, or null when no seller matches
      */
+    @Override
     public Seller findSellerById(String idOrEmployeeCode) {
         if (idOrEmployeeCode == null || idOrEmployeeCode.isBlank()) {
             return null;

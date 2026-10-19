@@ -2,6 +2,7 @@ package com.gamezone.persistence;
 
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Product;
+import com.gamezone.service.ReturnStore;
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
 
@@ -62,7 +63,7 @@ import java.util.List;
  * classes allowed to perform file access. It depends only on the model layer,
  * never on the services nor on the user interface.
  */
-public class ReturnRepository {
+public class ReturnRepository implements ReturnStore {
 
     /** Character used to separate the columns of a record. */
     private static final String DELIMITER = ";";
@@ -95,6 +96,7 @@ public class ReturnRepository {
      * @param returns returns to persist
      * @throws PersistenceException if the file cannot be written
      */
+    @Override
     public void saveAll(List<Return> returns) {
         List<String> lines = new ArrayList<>();
         lines.add(String.join(DELIMITER, "id", "date", "saleId", "productIds", "reason",
@@ -127,6 +129,7 @@ public class ReturnRepository {
      *         not exist
      * @throws PersistenceException if the file cannot be read
      */
+    @Override
     public List<Return> loadAll(List<Sale> sales) {
         List<Return> returns = new ArrayList<>();
         try {

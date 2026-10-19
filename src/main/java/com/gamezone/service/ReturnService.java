@@ -8,7 +8,6 @@ import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
-import com.gamezone.persistence.ReturnRepository;
 import com.gamezone.validation.ReturnValidator;
 import com.gamezone.validation.SaleValidator;
 
@@ -50,11 +49,11 @@ public class ReturnService {
     /** Number of digits of a return identifier after the prefix. */
     private static final int ID_DIGITS = 4;
 
-    private ReturnRepository repository;
+    private ReturnStore repository;
     private SaleService saleService;
     private ProductService productService;
     private AccessoryService accessoryService;
-    private WarrantyService warrantyService;
+    private WarrantyCanceller warrantyService;
     private List<Return> returns;
 
     /** Catalogues that own the stock of the items of a return, in search order. */
@@ -75,9 +74,9 @@ public class ReturnService {
      *                        warranties of the returned consoles
      * @throws PersistenceException if the returns file cannot be read
      */
-    public ReturnService(ReturnRepository repository, SaleService saleService,
+    public ReturnService(ReturnStore repository, SaleService saleService,
                          ProductService productService, AccessoryService accessoryService,
-                         WarrantyService warrantyService) {
+                         WarrantyCanceller warrantyService) {
         this.repository = repository;
         this.saleService = saleService;
         this.productService = productService;
