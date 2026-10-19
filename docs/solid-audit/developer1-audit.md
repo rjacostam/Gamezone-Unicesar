@@ -17,8 +17,8 @@ of Requirement 8.
 | Accessories (R1, R7) | `Controller`, `Cable`, `Memory` | constructors, `getAccessoryType`, `getExtraFields` and `getDescription` of each one |
 | Promotions (R2, R7) | `Promotion` | `calculateDiscount`, `getDescription`, `getTypeCode`, `getExtraFields`, `isActive`, the getters and setters |
 | Promotions (R2, R7) | `PercentageDiscount`, `CategoryDiscount`, `BulkPurchaseDiscount` | constructors and the four methods each one answers |
-| Warranties (R4, R7, R9) | `Warranty` | constructor, the four abstract methods, `isActive`, `coverageDescription`, the getters |
-| Warranties (R4, R7, R9) | `BasicWarranty`, `ExtendedWarranty` | constructors and the four methods each one answers |
+| Warranties (R4, R7) | `Warranty` | constructor, the four abstract methods, `isActive`, `coverageDescription`, the getters |
+| Warranties (R4, R7) | `BasicWarranty`, `ExtendedWarranty` | constructors and the four methods each one answers |
 | Returns (R3) | `Return` | constructor, `calculateRefundAmount`, `discountRatio`, the getters |
 | Returns (R3) | `Sale` | `canBeReturned` only |
 | Exceptions (R6) | `GameZoneException` | the three protected constructors and `getErrorCode` |
