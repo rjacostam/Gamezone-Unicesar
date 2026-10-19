@@ -121,6 +121,11 @@ and #44) were merged, and compared with the reference run of the same day.
 Every operation of the menu behaves exactly as before the correction: same inputs, same results,
 same messages and same data files.
 
+After this run, Developer 2 completed V-11 in `ReturnService` (it now receives the
+`List<StockRestorer>` instead of the two concrete services, commit `2eabff1`). The check was run
+again on the final state of the branch, `feature/solid-refactor` at `13aeb01`, with the same
+result: both outputs and the eight data files **identical** to the reference.
+
 Result of the correction:
 
 - The thirteen violations of the consolidated audit (V-01 to V-13) appear in the table above, with
