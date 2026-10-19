@@ -64,8 +64,54 @@ public class PromotionService implements PromotionChooser {
     public Promotion register(Promotion promotion) {
         validateCommonData(promotion.getId(), promotion.getName(),
                 promotion.getStartDate(), promotion.getEndDate());
+        validateExtraData(promotion);
         addPromotion(promotion);
         return promotion;
+    }
+
+    /**
+     * Validates the columns the kind of promotion adds, using only what the
+     * promotion itself publishes: its {@code getTypeCode} says which kind it is
+     * and its {@code getExtraFields} carries the values, so no test on the
+     * concrete class is needed and a new kind only changes the factory.
+     * <p>
+     * The order of the checks is the one each of the three
+     * {@code register...} methods had: a bulk purchase discount rejects its
+     * minimum quantity before its percentage, and the other two reject the
+     * percentage first. A registration that fails shows the same message it
+     * showed before.
+     *
+     * @param promotion promotion to validate
+     * @throws InvalidDataException  if one of the values of the kind is not valid
+     * @throws BusinessRuleException if the percentage or the minimum quantity is
+     *                              not allowed
+     */
+    private void validateExtraData(Promotion promotion) {
+        List<String> extras = promotion.getExtraFields();
+        String typeCode = promotion.getTypeCode();
+        if (PromotionFactory.TYPE_BULK.equals(typeCode)) {
+            validateMinimumQuantity(Integer.parseInt(valueAt(extras, 1)));
+        }
+        validatePercentage(Double.parseDouble(valueAt(extras, 0)));
+        if (PromotionFactory.TYPE_CATEGORY.equals(typeCode)) {
+            validateTargetCategory(valueAt(extras, 1));
+        }
+    }
+
+    /**
+     * Returns one of the published columns, or an empty string when the promotion
+     * does not publish that position, so a value that was never set is validated
+     * as empty instead of failing to be read.
+     *
+     * @param extras columns published by the promotion
+     * @param index  position of the wanted column
+     * @return the value, or an empty string
+     */
+    private String valueAt(List<String> extras, int index) {
+        if (extras == null || index >= extras.size()) {
+            return "";
+        }
+        return extras.get(index);
     }
 
     /**
