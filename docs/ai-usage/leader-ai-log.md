@@ -103,3 +103,33 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | The tool did those changes one commit at a time and ran the two scripts after each one. Every check gave the same output and the same data files as the reference run on `develop`. It also proposed the names that the team used to coordinate (`increaseStock`, `isConsole`, `InventoryCatalog`, `getTypeCode`) and the order of the turns. |
 | Decision | Accepted. I gave the team the order of the turns, approved PRs #36 and #37 after the checks, and kept `getDescription` in the model as Developer 1 proposed, because moving it would create a new violation. |
 | Related commit | `c628d84` to `6e7a5ab` (my corrections and logs), `99840bd` (final verification), `b718b8b` (after diagram), `f340cde` (README) |
+
+---
+
+# Requirement 8 — Phase 1 (Audit)
+
+## Entry 8
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-19 |
+| Tool | Claude Code (Claude Opus 5.5) |
+| Phase and branch | Requirement 8, Phase 1 (Audit) — `feature/solid-audit` |
+| Goal | Audit my own classes against the five SOLID principles. |
+| Query | Asked the tool to show me fragments of my classes and ask me one question per principle, instead of giving me the findings. |
+| Answer | The tool asked twelve questions (S1, S2, O1, O2, L1, L2, I1, I2, D1, D2, E1, E2). I answered each one with my verdict and reasoning. The tool pointed out where an argument needed more evidence or was not exact: that the exceptions already extend `GameZoneException`, and that forcing `Locale.US` on the receipt would change the output on a computer in Spanish. |
+| Decision | The verdicts and the seven violations are my answers, corrected after the feedback. The tool translated them into English with the format of the statement, checked the line numbers against `develop` at `675e61c` and pushed the report. |
+| Related commit | `7b3df72` to `ff822a6` (leader SOLID audit) |
+
+## Entry 9
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-19 |
+| Tool | Claude Code (Claude Opus 5.5) |
+| Phase and branch | Requirement 8, Phase 1 (Audit) — reviews of PRs #40 and #41, consolidation |
+| Goal | Validate the developer reports and consolidate the three audits. |
+| Query | Asked the tool to check the developer reports against the code, to list the findings that overlapped, and to write the consolidated audit and my answers to questions 2 and 5 from my decisions. |
+| Answer | The tool found wrong class owners, a reference to the removed `Sale.generateReceipt`, a wrong claim about how the menu catches the exceptions and classes of other members listed as correct applications; it also found that a log entry attributed to me an AI authorisation I never gave. It listed the overlaps as decisions C1 to C7 for me to take. |
+| Decision | I returned each problem to its author before approving the PRs. I took the consolidation decisions (merging the overlaps into 13 violations, keeping the current output of every place in V-02 and registering OOS-02), and the tool wrote the consolidated audit and my answers to questions 2 and 5 in English from them. |
+| Related commit | PR #40, PR #41, `555d05d` to `573a18e` (consolidated audit), answers 2 and 5 |
