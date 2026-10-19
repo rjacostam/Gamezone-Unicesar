@@ -44,6 +44,7 @@ public class ConsoleMenu {
     private final WarrantyService warrantyService;
     private final ReturnService returnService;
     private final ConsoleInput input;
+    private final SaleMenu saleMenu;
     private final PersonMenu personMenu;
     private final ProductMenu productMenu;
 
@@ -71,6 +72,7 @@ public class ConsoleMenu {
         this.input = new ConsoleInput();
         this.productMenu = new ProductMenu(input, productService);
         this.personMenu = new PersonMenu(input, personService);
+        this.saleMenu = new SaleMenu(input, saleService, productService, personMenu);
     }
 
     /**
@@ -93,7 +95,7 @@ public class ConsoleMenu {
             switch (option) {
                 case 1 -> productMenu.show();
                 case 2 -> personMenu.show();
-                case 3 -> saleMenu();
+                case 3 -> saleMenu.show();
                 case 4 -> accessoryMenu();
                 case 5 -> promotionMenu();
                 case 6 -> warrantyMenu();
@@ -121,92 +123,6 @@ public class ConsoleMenu {
             System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
         } catch (PersistenceException e) {
             System.out.println("Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador.");
-        }
-    }
-
-    // ---------------------------------------------------------------- sales
-
-    private void saleMenu() {
-        System.out.println();
-        System.out.println("--- Gestión de ventas ---");
-        System.out.println("1. Registrar venta");
-        System.out.println("2. Historial de ventas");
-        System.out.println("3. Historial de compras de un cliente");
-        System.out.println("4. Ventas atendidas por un vendedor");
-        System.out.println("5. Ver detalle de una venta");
-        System.out.println("0. Volver");
-        int option = input.readInt("Seleccione una opción: ");
-        runSafely(() -> {
-            switch (option) {
-                case 1 -> registerSale();
-                case 2 -> printSales(saleService.listAllSales());
-                case 3 -> printSales(saleService.findSalesByCustomer(input.readText("Identificación del cliente: ")));
-                case 4 -> printSales(saleService.findSalesBySeller(input.readText("Identificación o código del vendedor: ")));
-                case 5 -> showSaleDetail();
-                case 0 -> { }
-                default -> System.out.println("Opción no válida.");
-            }
-        });
-    }
-
-    private void registerSale() {
-        String customerId = input.readText("Identificación del cliente: ");
-        personMenu.listSellers();
-        String sellerId = input.readText("Identificación o código del vendedor: ");
-        listCatalog();
-        List<String> productIds = new ArrayList<>();
-        while (true) {
-            String productId = input.readOptionalText("Identificador del producto o accesorio (Enter para terminar): ");
-            if (productId.isEmpty()) {
-                break;
-            }
-            int quantity = input.readInt("Cantidad: ");
-            for (int i = 0; i < quantity; i++) {
-                productIds.add(productId);
-            }
-        }
-        List<String> extendedWarranty = new ArrayList<>();
-        for (String productId : new LinkedHashSet<>(productIds)) {
-            Product product = productService.findById(productId);
-            if (product != null && product.isConsole()
-                    && input.readYesNo("¿Desea agregar garantía extendida a " + product.getTitle() + "? (s/n): ")) {
-                extendedWarranty.add(product.getId());
-            }
-        }
-        Sale sale = saleService.registerSale(customerId, sellerId, productIds, extendedWarranty);
-        System.out.println("Venta registrada con éxito.");
-        System.out.println(ReceiptGenerator.generate(sale));
-    }
-
-    private void listCatalog() {
-        List<Product> catalog = saleService.getCatalog();
-        if (catalog.isEmpty()) {
-            System.out.println("No hay productos ni accesorios registrados.");
-            return;
-        }
-        for (Product item : catalog) {
-            System.out.println(item.getDescription());
-        }
-    }
-
-    private void showSaleDetail() {
-        String saleId = input.readText("Identificador de la venta (por ejemplo S0001): ");
-        Sale sale = saleService.findById(saleId);
-        if (sale == null) {
-            System.out.println("No existe una venta con el identificador " + saleId + ".");
-            return;
-        }
-        System.out.println(ReceiptGenerator.generate(sale));
-    }
-
-    private void printSales(List<Sale> sales) {
-        if (sales.isEmpty()) {
-            System.out.println("No hay ventas para mostrar.");
-            return;
-        }
-        for (Sale sale : sales) {
-            System.out.println(ReceiptGenerator.generate(sale));
-            System.out.println();
         }
     }
 
