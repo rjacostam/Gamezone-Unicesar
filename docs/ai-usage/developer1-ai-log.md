@@ -656,8 +656,8 @@ it. The entries below record how the tool was used in each correction.
 
 ## Requirement 8 — Phase 1 (Audit)
 
-The Technical Leader authorised the use of AI to review code for this audit as well. The entries
-below record how the tool was used to write it and how the corrections of the review were applied.
+The entries below record how the AI tool was used to write this audit and how the corrections of
+the review were applied.
 
 ### Entry 47
 
