@@ -1,6 +1,7 @@
 package com.gamezone.ui;
 
 import com.gamezone.model.Promotion;
+import com.gamezone.model.PromotionFactory;
 import com.gamezone.service.PromotionService;
 
 import java.time.LocalDate;
@@ -55,7 +56,8 @@ public class PromotionMenu extends Submenu {
         LocalDate start = input.readDate("Fecha de inicio (AAAA-MM-DD): ");
         LocalDate end = input.readDate("Fecha de fin (AAAA-MM-DD): ");
         double percentage = input.readDouble("Porcentaje de descuento: ");
-        Promotion promotion = promotionService.registerPercentageDiscount(id, name, start, end, percentage);
+        Promotion promotion = promotionService.register(PromotionFactory.create(PromotionFactory.TYPE_PERCENTAGE,
+                id, name, start, end, List.of(String.valueOf(percentage), "")));
         System.out.println("Promoción registrada: " + promotion.getDescription());
     }
 
@@ -72,7 +74,8 @@ public class PromotionMenu extends Submenu {
             case 3 -> "ACCESSORY";
             default -> "";
         };
-        Promotion promotion = promotionService.registerCategoryDiscount(id, name, start, end, percentage, category);
+        Promotion promotion = promotionService.register(PromotionFactory.create(PromotionFactory.TYPE_CATEGORY,
+                id, name, start, end, List.of(String.valueOf(percentage), category)));
         System.out.println("Promoción registrada: " + promotion.getDescription());
     }
 
@@ -83,7 +86,8 @@ public class PromotionMenu extends Submenu {
         LocalDate end = input.readDate("Fecha de fin (AAAA-MM-DD): ");
         int minimum = input.readInt("Cantidad mínima de productos: ");
         double percentage = input.readDouble("Porcentaje de descuento: ");
-        Promotion promotion = promotionService.registerBulkPurchaseDiscount(id, name, start, end, minimum, percentage);
+        Promotion promotion = promotionService.register(PromotionFactory.create(PromotionFactory.TYPE_BULK,
+                id, name, start, end, List.of(String.valueOf(percentage), String.valueOf(minimum))));
         System.out.println("Promoción registrada: " + promotion.getDescription());
     }
 
