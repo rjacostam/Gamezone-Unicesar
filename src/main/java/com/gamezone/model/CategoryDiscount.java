@@ -1,6 +1,7 @@
 package com.gamezone.model;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -80,6 +81,18 @@ public class CategoryDiscount extends Promotion {
     @Override
     public String getTypeCode() {
         return "CATEGORY";
+    }
+
+    /**
+     * Returns the two columns that only this promotion writes after its
+     * percentage: the category the discount is aimed at. A null becomes an empty
+     * string, so the word {@code null} never reaches the file.
+     * @return a two element list with the percentage and the target category
+     */
+    @Override
+    public List<String> getExtraFields() {
+        return List.of(String.valueOf(percentage),
+                targetCategory == null ? "" : targetCategory);
     }
 
     /**

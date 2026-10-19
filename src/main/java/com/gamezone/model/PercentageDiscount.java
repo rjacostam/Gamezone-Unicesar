@@ -1,6 +1,7 @@
 package com.gamezone.model;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -60,6 +61,17 @@ public class PercentageDiscount extends Promotion {
     @Override
     public String getTypeCode() {
         return "PERCENTAGE";
+    }
+
+    /**
+     * Returns the two columns that only this promotion writes after its
+     * percentage. A percentage discount has no second value, so the second column
+     * is empty, exactly as the promotion file already stores it.
+     * @return a two element list with the percentage and an empty string
+     */
+    @Override
+    public List<String> getExtraFields() {
+        return List.of(String.valueOf(percentage), "");
     }
 
     /**
