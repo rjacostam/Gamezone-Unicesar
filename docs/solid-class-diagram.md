@@ -132,4 +132,190 @@ classDiagram
 
 ## After (end of Phase 2)
 
-To be drawn when every correction is merged.
+New: `StoreCatalog`, `MonthlyBalanceService`, `AmountFormat`, `AccessoryFactory`,
+`PromotionFactory`, the three catalogue row contracts and the small contracts `ItemFinder`,
+`StockUpdater`, `StockRestorer`, `SaleFinder`, `SaleStore`, `ReturnStore`, `PersonFinder`,
+`PromotionChooser`, `WarrantyAssigner`, `WarrantyCanceller` and `SellerLister`. Removed:
+`InventoryCatalog`, the per-type `register...` methods of the accessory and promotion services,
+`SaleService.getCatalog` and `findItem`, and the monthly balance of `ReturnService`.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class Product {
+        <<abstract>>
+        +getCategory() String
+        +isConsole() boolean
+    }
+    class Console {
+        +CATEGORY$ String
+    }
+    class ProductCatalogRow {
+        <<interface>>
+        +getExtraFields() List~String~
+    }
+    class AccessoryCatalogRow {
+        <<interface>>
+        +getExtraFields() List~String~
+    }
+    class PromotionCatalogRow {
+        <<interface>>
+        +getExtraFields() List~String~
+    }
+    class Accessory {
+        <<abstract>>
+    }
+    class Promotion {
+        <<abstract>>
+    }
+    class AccessoryFactory {
+        +create(...)$ Accessory
+    }
+    class PromotionFactory {
+        +create(...)$ Promotion
+    }
+    class AmountFormat {
+        +money(double)$ String
+        +percent(double)$ String
+        +moneyInComputerLocale(double)$ String
+    }
+    class ItemFinder {
+        <<interface>>
+        +findById(String id) Product
+    }
+    class StockUpdater {
+        <<interface>>
+        +updateStock(String id, int quantity) void
+    }
+    class StockRestorer {
+        <<interface>>
+        +restoreStock(String id, int quantity) void
+    }
+    class ProductService
+    class AccessoryService {
+        -ItemFinder productService
+        +register(Accessory a) Accessory
+    }
+    class PromotionService {
+        +register(Promotion p) Promotion
+    }
+    class StoreCatalog {
+        +listAll() List~Product~
+        +findById(String id) Product
+    }
+    class SaleFinder {
+        <<interface>>
+        +findById(String id) Sale
+        +listAllSales() List~Sale~
+    }
+    class SaleStore {
+        <<interface>>
+    }
+    class ReturnStore {
+        <<interface>>
+    }
+    class PersonFinder {
+        <<interface>>
+    }
+    class PromotionChooser {
+        <<interface>>
+    }
+    class WarrantyAssigner {
+        <<interface>>
+    }
+    class WarrantyCanceller {
+        <<interface>>
+    }
+    class SaleService {
+        -SaleStore repository
+        -StoreCatalog catalog
+        -List~StockUpdater~ stockUpdaters
+        -PersonFinder people
+        -PromotionChooser promotions
+        -WarrantyAssigner warranties
+    }
+    class ReturnService {
+        -ReturnStore repository
+        -SaleFinder saleService
+        -List~StockRestorer~ inventoryCatalogs
+        -WarrantyCanceller warrantyService
+    }
+    class MonthlyBalanceService {
+        +generateMonthlyBalance(int m, int y) double
+    }
+    class SaleRepository
+    class ReturnRepository
+    class Submenu {
+        <<abstract>>
+        #runSafely(Runnable action) void
+    }
+    class SaleMenu {
+        -ItemFinder productFinder
+        -SellerLister sellerLister
+    }
+    class SellerLister {
+        <<interface>>
+        +listSellers() void
+    }
+    class PersonMenu
+    class ConsoleMenu {
+        +ConsoleMenu(ConsoleInput, 7 Submenu)
+    }
+    class ReceiptGenerator
+
+    Product <|-- Console
+    Product <|-- Accessory
+    ProductCatalogRow <|.. Console
+    AccessoryCatalogRow <|.. Accessory
+    PromotionCatalogRow <|.. Promotion
+    ItemFinder <|-- StockUpdater
+    ItemFinder <|-- StockRestorer
+    StockUpdater <|.. ProductService
+    StockRestorer <|.. ProductService
+    StockUpdater <|.. AccessoryService
+    StockRestorer <|.. AccessoryService
+    ItemFinder <|.. StoreCatalog
+    SaleFinder <|.. SaleService
+    SaleStore <|.. SaleRepository
+    ReturnStore <|.. ReturnRepository
+    PromotionChooser <|.. PromotionService
+    SellerLister <|.. PersonMenu
+    Submenu <|-- SaleMenu
+    Submenu <|-- PersonMenu
+    SaleService --> StoreCatalog
+    SaleService --> StockUpdater
+    SaleService --> SaleStore
+    SaleService --> PersonFinder
+    SaleService --> PromotionChooser
+    SaleService --> WarrantyAssigner
+    ReturnService --> ReturnStore
+    ReturnService --> SaleFinder
+    ReturnService --> StockRestorer
+    ReturnService --> WarrantyCanceller
+    MonthlyBalanceService ..> SaleFinder
+    AccessoryService --> ItemFinder
+    SaleMenu --> ItemFinder
+    SaleMenu --> SellerLister
+    ConsoleMenu --> Submenu
+    ReceiptGenerator ..> AmountFormat
+    Accessory ..> AmountFormat
+    Promotion ..> AmountFormat
+
+    note for StoreCatalog "V-01 catalogue out of SaleService"
+    note for AmountFormat "V-02 one owner of the money and percentage formats"
+    note for MonthlyBalanceService "V-03 report out of ReturnService"
+    note for Submenu "V-04 final catch of GameZoneException"
+    note for Console "V-05 one constant answers both questions"
+    note for AccessoryFactory "V-06 one factory, single register"
+    note for PromotionFactory "V-06 one factory, single register"
+    note for ItemFinder "V-07 one findById contract; V-09 split"
+    note for ProductCatalogRow "V-08 one row contract per file"
+    note for StockUpdater "V-09 sale side"
+    note for StockRestorer "V-09 return side"
+    note for SaleMenu "V-10 small contracts"
+    note for SaleService "V-11 only small contracts"
+    note for ReturnService "V-11 only small contracts"
+    note for AccessoryService "V-12 ItemFinder instead of ProductService"
+    note for ConsoleMenu "V-13 receives the submenus from Main"
+```

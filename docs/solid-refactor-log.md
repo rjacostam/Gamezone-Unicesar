@@ -103,4 +103,42 @@ One row per change. Every violation of the consolidated audit must appear at lea
 
 ## Final verification
 
-To be filled in at the end of Phase 2, with the same two scripts on the final `develop`.
+Run with the same two scripts on `develop` after the pull requests of the two developers (#43
+and #44) were merged, and compared with the reference run of the same day.
+
+| Field | Value |
+|---|---|
+| Commit | `develop` at `0a4ce5d` (merge of pull request #44) |
+| Date | 2026-10-19, the same day as the reference run |
+| Compilation | No errors |
+| First run | 1,403 lines, **identical** to the reference |
+| Second run | 211 lines, **identical** to the reference |
+| Data files | The eight files of `run/data/` are **identical** to the reference |
+| Stack traces | None |
+| Key figures | Sale `S0001` total $3,040,000; sale `S0002` total $512,000; return `R0001` with warranty refund $250,000; October balance: sales $3,552,000, returns $2,500,000, net $1,052,000 |
+| `ReturnService`, `Main` | The two fields that named the concrete `ProductService` and `AccessoryService` are deleted. The constructor now receives `List<StockRestorer> stockRestorers` directly, products first and accessories after, copied with `List.copyOf` the same way `SaleService` copies its list of updaters, and `catalogOf` falls back to the first catalogue of the list instead of to a field. The service keeps exactly the three collaborators it uses, all of them contracts, and the composition of that list happens once in `Main`, which is where the objects are built. `Main` passes `List.of(productService, accessoryService)`, the order that decides the fallback. No line of the behaviour of a return changed. | V-11 | Dependency Inversion | `2eabff1` | Developer 2 |
+
+Every operation of the menu behaves exactly as before the correction: same inputs, same results,
+same messages and same data files.
+
+After this run, Developer 2 completed V-11 in `ReturnService` (it now receives the
+`List<StockRestorer>` instead of the two concrete services, commit `2eabff1`). The check was run
+again on the final state of the branch, `feature/solid-refactor` at `13aeb01`, with the same
+result: both outputs and the eight data files **identical** to the reference.
+
+Result of the correction:
+
+- The thirteen violations of the consolidated audit (V-01 to V-13) appear in the table above, with
+  their commits and their responsible members.
+- The system went from 61 to 79 classes: 19 were added (contracts such as `ItemFinder`,
+  `StockUpdater`, `StockRestorer`, `SaleFinder`, `SaleStore`, `ReturnStore`, `PersonFinder`,
+  `PromotionChooser`, `WarrantyAssigner`, `WarrantyCanceller`, `SellerLister` and the three
+  catalogue row contracts, and the classes `StoreCatalog`, `MonthlyBalanceService`,
+  `AccessoryFactory`, `PromotionFactory` and `AmountFormat`) and `InventoryCatalog` was deleted.
+- The layer order is kept: no class of `model`, `persistence` or `format` imports `service` or
+  `ui`, and there is still no `instanceof` in the source code.
+- `SaleService` and `ReturnService` depend only on small contracts; `ConsoleMenu` receives its
+  submenus from `Main`.
+- The out of scope defects were not touched. While correcting V-02, Developer 1 found that the
+  descriptions of `VideoGame` and `Console` also use the locale of the computer, like the receipt
+  of OOS-02; they were kept as they were, for the same reason.
