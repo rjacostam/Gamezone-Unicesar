@@ -221,3 +221,17 @@ Seven findings: V-01 to V-07, plus the problems reported for the consolidation.-
 
 ---
 
+## Findings reported for the consolidation
+
+These problems were found while auditing my own code, but the fix is not mine alone. They
+are not audited here; they are reported to the Technical Leader so that he can treat them in
+the consolidated audit.
+
+| # | Reported to | What was found | Why it is not mine |
+|---|---|---|---|
+| S-01 | Developer 1 (Andrés) | `ProductService.findById` (lines 128-135) trims nothing and guards nothing, while `AccessoryService.findById` (lines 209-220) does both, so the two do not honour the same contract of `InventoryCatalog.findById` (see V-04). | `ProductService` is Developer 1's class. |
+| S-02 | Developer 1 (Andrés) | `ProductService` is named as a concrete type by `AccessoryService` (lines 309 and 328) when both call sites are the operation `InventoryCatalog.findById` (see V-07). | The field type is Developer 1's class. |
+| S-03 | Developer 1 (Andrés) | `ProductService` has to be split with the other catalogue when `InventoryCatalog` is segregated per client, otherwise the two implementations honour different contracts again (see V-05). | `ProductService` is Developer 1's class. |
+| S-04 | Technical Leader (Rafael) | `SaleService` is named as a concrete type by `ReturnService` (line 54) and used only for `findById` and `listAllSales`, so it is a candidate for the `SaleFinder` abstraction (see V-06). | `SaleService` is the Technical Leader's class. |
+| S-05 | Technical Leader (Rafael) | `SaleService.updateInventory` is the only client of `InventoryCatalog.updateStock`, so it is the side that decides how the interface is segregated (see V-05). | `SaleService` is the Technical Leader's class. |
+| S-06 | Developer 1 (Andrés) | `Accessory`, `Controller`, `Cable`, `Memory` and the three promotions are the classes a factory would have to build in V-02 and V-03, so the creation cannot move into a factory without agreement on their constructors. | Those model classes are Developer 1's. |
