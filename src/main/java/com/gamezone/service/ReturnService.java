@@ -52,8 +52,6 @@ public class ReturnService {
 
     private ReturnStore repository;
     private SaleFinder saleService;
-    private ProductService productService;
-    private AccessoryService accessoryService;
     private WarrantyCanceller warrantyService;
     private List<Return> returns;
 
@@ -67,23 +65,19 @@ public class ReturnService {
      * @param repository     repository used to read and write the returns
      * @param saleService    service of the sales, needed because a return always
      *                       comes from a sale
-     * @param productService service of the catalogue, needed to restore the stock
-     *                       of the returned video games and consoles
-     * @param accessoryService service of the accessories, needed to restore the
-     *                         stock of the returned accessories
+     * @param stockRestorers catalogues that can give the stock back, the product
+     *                        catalogue first and the accessory catalogue after, so
+     *                        the first one is the answer when none holds the item
      * @param warrantyService service of the warranties, needed to cancel the
      *                        warranties of the returned consoles
      * @throws PersistenceException if the returns file cannot be read
      */
     public ReturnService(ReturnStore repository, SaleFinder saleService,
-                         ProductService productService, AccessoryService accessoryService,
-                         WarrantyCanceller warrantyService) {
+            List<StockRestorer> stockRestorers, WarrantyCanceller warrantyService) {
         this.repository = repository;
         this.saleService = saleService;
-        this.productService = productService;
-        this.accessoryService = accessoryService;
         this.warrantyService = warrantyService;
-        this.inventoryCatalogs = List.of(productService, accessoryService);
+        this.inventoryCatalogs = List.copyOf(stockRestorers);
         this.returns = new ArrayList<>(repository.loadAll(saleService.listAllSales()));
     }
 
@@ -317,7 +311,7 @@ public class ReturnService {
                 return catalog;
             }
         }
-        return productService;
+        return inventoryCatalogs.get(0);
     }
 
     /**

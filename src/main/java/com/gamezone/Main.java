@@ -71,8 +71,8 @@ public class Main {
                     List.of(productService, accessoryService), personService,
                     promotionService, warrantyService);
             warrantyService.loadWarranties(saleService.listAllSales());
-            ReturnService returnService = new ReturnService(returnRepository, saleService, productService,
-                    accessoryService, warrantyService);
+            ReturnService returnService = new ReturnService(returnRepository, saleService,
+                    List.of(productService, accessoryService), warrantyService);
 
             ConsoleInput input = new ConsoleInput();
             PersonMenu personMenu = new PersonMenu(input, personService);
