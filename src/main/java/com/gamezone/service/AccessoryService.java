@@ -32,7 +32,7 @@ import java.util.List;
  * {@link BusinessRuleException} when a rule of the store is broken, with a
  * message in Spanish, because the console menu shows it directly to the user.
  * <p>
- * The service needs {@code ProductService} for two reasons: to check that the
+ * The service needs the catalogue for two reasons: to check that the
  * identifier of a new accessory is not already used by a product, and to check
  * that every compatible console identifier belongs to a console of the
  * inventory.
@@ -40,7 +40,7 @@ import java.util.List;
 public class AccessoryService implements InventoryCatalog, StockUpdater, StockRestorer {
 
     private AccessoryRepository repository;
-    private ProductService productService;
+    private ItemFinder productService;
     private List<Accessory> accessories;
 
     /**
@@ -51,7 +51,7 @@ public class AccessoryService implements InventoryCatalog, StockUpdater, StockRe
      *                       identifiers and compatible consoles
      * @throws PersistenceException if the accessories file cannot be read
      */
-    public AccessoryService(AccessoryRepository repository, ProductService productService) {
+    public AccessoryService(AccessoryRepository repository, ItemFinder productService) {
         this.repository = repository;
         this.productService = productService;
         this.accessories = new ArrayList<>(repository.loadAll());
