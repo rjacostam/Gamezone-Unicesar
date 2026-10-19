@@ -39,7 +39,9 @@ public class ProductRepository {
     /**
      * Writes the complete catalogue to the file, replacing its previous
      * content. Rows are written using the VIDEOGAME or CONSOLE marker in the
-     * first column. Missing parent folders are created when needed.
+     * first column, which is the category the product itself publishes, and the
+     * three extra columns are the ones each kind of product publishes. Missing
+     * parent folders are created when needed.
      * @param products products to write
      * @throws PersistenceException when the file cannot be written
      */
@@ -47,27 +49,14 @@ public class ProductRepository {
         StringBuilder content = new StringBuilder();
         content.append("type;id;title;price;stock;extra1;extra2;extra3\n");
         for (Product product : products) {
-            if (product instanceof VideoGame) {
-                VideoGame game = (VideoGame) product;
-                content.append("VIDEOGAME").append(";").append(game.getId())
-                        .append(";").append(game.getTitle())
-                        .append(";").append(game.getPrice())
-                        .append(";").append(game.getStock())
-                        .append(";").append(game.getPlatform())
-                        .append(";").append(game.getGenre())
-                        .append(";").append(game.getAgeRating())
-                        .append("\n");
-            } else if (product instanceof Console) {
-                Console console = (Console) product;
-                content.append("CONSOLE").append(";").append(console.getId())
-                        .append(";").append(console.getTitle())
-                        .append(";").append(console.getPrice())
-                        .append(";").append(console.getStock())
-                        .append(";").append(console.getBrand())
-                        .append(";").append(console.getModel())
-                        .append(";").append(console.getGeneration())
-                        .append("\n");
+            content.append(product.getCategory()).append(";").append(product.getId())
+                    .append(";").append(product.getTitle())
+                    .append(";").append(product.getPrice())
+                    .append(";").append(product.getStock());
+            for (String extraField : product.getExtraFields()) {
+                content.append(";").append(extraField);
             }
+            content.append("\n");
         }
         try {
             Path parent = filePath.getParent();

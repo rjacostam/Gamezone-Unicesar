@@ -48,6 +48,19 @@ public abstract class Accessory extends Product {
     }
 
     /**
+     * Returns no extra column, because an accessory is not stored in the product
+     * catalogue: it has its own file, with its own columns, published by its own
+     * hierarchy and written by its own repository. This answer only says that an
+     * accessory adds nothing to a row of the product catalogue.
+     * @return an empty list, because the product catalogue stores no extra column
+     *         for an accessory
+     */
+    @Override
+    public List<String> getExtraFields() {
+        return List.of();
+    }
+
+    /**
      * Returns the type marker of this accessory, used to filter the catalogue
      * and to rebuild the correct class when the catalogue file is read.
      * @return CONTROLLER, CABLE or MEMORY
