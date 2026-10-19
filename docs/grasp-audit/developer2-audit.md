@@ -182,6 +182,50 @@ Correct applications:
 
 ---
 
+## Polymorphism
+
+**Verdict: violation.**
+
+### V-03 — `ReturnService` decides by type which service owns an item
+
+| Field | Content |
+|---|---|
+| ID | V-03 |
+| Pattern | Polymorphism |
+| Module | Returns (R3) |
+| Evidence | `cancelWarrantiesOfConsoles` (lines 176-186) skips every unit that is not a `Console`: `if (!(product instanceof Console)) { continue; }` (line 179). `restoreStock` (lines 310-323) splits the units with `product instanceof Accessory ? accessoryUnits : productUnits` (line 317) and then calls `accessoryService.restoreStock` or `productService.restoreStock` depending on the group (lines 320-323). |
+| Explanation | The same program says "accessories go to one place and everything else to another" in two different shapes, once with a `continue` and once with a ternary. The behaviour of an item should be decided by the item, not by the service that is holding it. |
+| Consequence | If a new kind of item appears, for example a subscription or a pre-order, both methods fall into the "everything else" branch and its stock is silently restored through the catalogue service. Nothing warns about it, and the bug only shows up as a wrong inventory number. |
+| Proposed solution | Let each item answer what it is, through a method on `Product` such as `restoreStock()` or through an interface each service implements, so that the branch disappears from `ReturnService`. V-02 proposes the same change, so both findings are corrected by one refactor. |
+| Other member's code | Yes. `Product` is Developer 1's, and `ProductService` would also have to accept the new collaborator. |
+
+### V-04 — The repositories derive the type marker of a record with `instanceof` chains
+
+| Field | Content |
+|---|---|
+| ID | V-04 |
+| Pattern | Polymorphism |
+| Module | Accessories (R1) and Promotions (R2) |
+| Evidence | `AccessoryRepository.serialize` (lines 139-152) writes the marker with `if (accessory instanceof Controller)`, `else if (accessory instanceof Cable)`, `else if (accessory instanceof Memory)`. `PromotionRepository.getTypeOf` (lines 220-229) does the same with `PercentageDiscount`, `CategoryDiscount` and `BulkPurchaseDiscount`. `PromotionRepository.serialize` (lines 141-152) repeats the chain to write the extra columns. `WarrantyRepository.getTypeOf` (lines 208-212) uses `warranty instanceof BasicWarranty`. |
+| Explanation | The marker written in the first column is a property of the object being written. All six branches restate the class hierarchy that the model already expresses with inheritance, so the hierarchy is duplicated as a chain of tests that has to be updated every time a type is added. |
+| Consequence | Adding a fourth accessory type means editing three repositories. If one of them is missed, the new type is saved with the marker of the previous branch and it comes back from the file as the wrong class, or is silently skipped. |
+| Proposed solution | Publish the marker from the object, with an abstract method such as `getAccessoryType()` and `getPromotionType()`, the way the accessory model already publishes `getCategory()`. The repositories then write `accessory.getTypeMarker()` and lose the chains. The file format does not change. |
+| Other member's code | Yes. The method has to be declared on `Accessory`, `Promotion` and `Warranty`, which belong to Developer 1. |
+
+**Correct applications:**
+
+- `Customer.getSummary` and `Seller.getSummary` give the same summary in two classes without
+  any test on the type: the menu calls `getSummary()` on a `Person` reference and the right
+  version runs.
+- `listAllAccessories` and `findBestPromotionFor` filter with `getAccessoryType()` and with
+  the result of `calculateDiscount`, so no type test is needed.
+- `findWarrantyByProduct` compares the end dates of two warranties instead of testing their
+  types, so the longest warranty wins whatever its type is.
+- The validators of R6 are chosen by the service, not by an `instanceof` chain, which is why
+  adding an accessory type does not add a branch to the validation.
+
+---
+
 ## Findings reported for the consolidation
 
 These problems were found while auditing my own code, but the fix is not mine alone. They
