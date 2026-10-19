@@ -117,4 +117,33 @@ Seven findings: V-01 to V-07, plus the problems reported for the consolidation.-
   branch to the writing side.
 - `Product.isConsole`, `Sale.countUnitsOf` and `Sale.findProductById`, added in R7, let
   their callers decide without being edited again when the catalogue grows a new kind of
-  item.
+  item.## Liskov Substitution Principle
+
+**Verdict: violation.**
+
+### V-04 — `findById` answers differently depending on which catalogue is asked
+
+| Field | Content |
+|---|---|
+| ID | V-04 |
+| Principle | Liskov Substitution |
+| Module | Correction of R7 (V-07) |
+| Evidence | The interface declares `Product findById(String id)` (`InventoryCatalog`, line 36). `ProductService.findById` (lines 128-135) compares `product.getId().equalsIgnoreCase(id)` directly and returns `null` when nothing matches, without trimming and without a null or blank guard. `AccessoryService.findById` (lines 209-220) returns `null` for a null or blank identifier and trims the one it receives first, `String searched = id.trim()` at line 213. |
+| Explanation | Both classes satisfy the signature, so the compiler is satisfied, but not the contract. The interface does not say whether the identifier is trimmed, and the two answers are different: a caller that asks both catalogues for `"A-01 "` gets the accessory from one of them and `null` from the other. A subtype that answers a question differently from its supertype cannot be substituted for it. |
+| Consequence | Today the defect is masked twice: `catalogOf` asks the catalogues in order and falls back to the product catalogue when none answers, and the direct callers trim the identifier at the call site. Any new caller that trusts the interface to answer uniformly, a search box that does not trim, or a service that reads an identifier from a file, gets the right answer from one catalogue and `null` from the other, and the difference only appears with an identifier that carries spaces. |
+| Proposed solution | Decide the contract once and make both obey it. The cheapest is the one already used by the accessory service: the identifier is trimmed and a null or blank answers `null`. The two lines of `ProductService.findById` change and nothing else does, because the trimmed form is what every caller already sends. |
+| Other member's code | Yes. `ProductService` is Developer 1's and `findById` is the method V-07 put in the interface, so the two implementations have to be corrected together or not at all. |
+
+**Correct applications:**
+
+- `Product.getExtraFields` is abstract (line 54) and `VideoGame` (line 65) and `Console`
+  (line 74) both answer a list of strings in the same column order the file expects, so
+  either one can replace `Product` wherever the list is used.
+- `Product.isConsole` answers `false` and only `Console` answers `true`. A caller that asks
+  the question works with any product, and the answer means the same thing in each class.
+- `Warranty.getTypeCode` is abstract and `BasicWarranty` and `ExtendedWarranty` answer the
+  markers of their own rows, so `WarrantyRepository.serialize` treats every warranty the
+  same way.
+
+---
+
