@@ -40,3 +40,17 @@ requests, three claims about code of other members were returned to their author
 Developer 2 had listed classes of Developer 1 and of the Technical Leader as correct
 applications, and Developer 1 had cited the removed `Sale.generateReceipt` and the owner of
 `ProductRepository` wrongly.
+
+## Team verdict per principle
+
+| Principle | Leader | Dev1 | Dev2 | Team verdict | Final violations |
+|---|---|---|---|---|---|
+| Single Responsibility | Violation | Violation | Violation | **Violation** | V-01, V-02, V-03 |
+| Open/Closed | Violation | Violation | Violation | **Violation** | V-04, V-05, V-06 |
+| Liskov Substitution | Correct | Violation (V-01, registered under ISP) | Violation | **Violation** | V-07 |
+| Interface Segregation | Violation | Violation | Violation | **Violation** | V-08, V-09, V-10 |
+| Dependency Inversion | Violation | Violation (V-01, registered under ISP) | Violation | **Violation** | V-11, V-12, V-13 |
+
+The 17 violations of the three reports become 13 after merging the ones that describe the same
+defect (C1 to C4 below). A violation that breaks more than one principle is registered once,
+under the principle that guides its correction, and the others are named inside it.
