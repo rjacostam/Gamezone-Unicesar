@@ -274,7 +274,7 @@ public class ConsoleMenu {
         List<String> extendedWarranty = new ArrayList<>();
         for (String productId : new LinkedHashSet<>(productIds)) {
             Product product = productService.findById(productId);
-            if (product instanceof Console
+            if (product != null && product.isConsole()
                     && readYesNo("¿Desea agregar garantía extendida a " + product.getTitle() + "? (s/n): ")) {
                 extendedWarranty.add(product.getId());
             }
