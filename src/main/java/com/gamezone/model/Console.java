@@ -54,6 +54,15 @@ public class Console extends Product {
     }
 
     /**
+     * Tells whether this product is a console.
+     * @return true, because this product is a console
+     */
+    @Override
+    public boolean isConsole() {
+        return true;
+    }
+
+    /**
      * Returns the brand that manufactures this console.
      * @return brand of the console
      */

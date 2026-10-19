@@ -41,6 +41,16 @@ public abstract class Product {
     public abstract String getCategory();
 
     /**
+     * Tells whether this product is a console. A product answers no, and only
+     * {@link Console} answers yes, so the callers do not have to compare the
+     * category as text to find out.
+     * @return false, because a product is not a console unless its own class says so
+     */
+    public boolean isConsole() {
+        return false;
+    }
+
+    /**
      * Tells whether the store has enough units to sell the requested quantity.
      * A negative quantity is never valid, so it is always rejected.
      * @param quantity units the store wants to sell
