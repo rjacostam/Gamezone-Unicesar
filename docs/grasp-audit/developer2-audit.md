@@ -274,6 +274,33 @@ Correct applications:
 
 ---
 
+## Protected Variations
+
+**Verdict: correct.**
+
+Correct applications:
+
+- The layout of `data/warranties.csv` is written in `WarrantyRepository` and read in
+  `toRecord`. Changing the number of columns or the delimiter touches those two methods and
+  nothing else; no service and no domain class reads a file.
+- The same holds for `customers.csv` and `sellers.csv` in `PersonRepository`,
+  `accessories.csv` in `AccessoryRepository`, `promotions.csv` in `PromotionRepository` and
+  `returns.csv` in `ReturnRepository`. Each format is protected by one class.
+- The lines saved before adjustment A7 are still read by `ReturnRepository.readWarrantyRefund`
+  (lines 231-244), which accepts five columns with a refund of zero as well as six. The change
+  of the format did not break the files that already existed.
+- The R6 validation layer protects the services from the change of the validation strategy: a
+  service calls `ProductValidator.validateProductData` and nothing else, so replacing the
+  internal implementation of the validators does not touch a single service.
+- The R6 exceptions protect the menu. `ConsoleMenu.runSafely` (lines 111-122) knows the four
+  types and nothing else, so a service can be migrated to the typed exceptions one at a time
+  without breaking the menu.
+- `PersonService.registerCustomer` writes the file before it adds the customer to the list
+  (lines 101-104), so the order in which the in-memory state and the file change is fixed in one
+  place and cannot drift.
+
+---
+
 ## Findings reported for the consolidation
 
 These problems were found while auditing my own code, but the fix is not mine alone. They
