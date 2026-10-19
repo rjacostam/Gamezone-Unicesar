@@ -97,8 +97,6 @@ Correct applications:
   so it never learns what kind of warranty it is holding.
 - A new accessory type is added by writing one class: `getAccessoryType` (line 55 in `Accessory`)
   is the only member that names the kind, and `ConsoleMenu` reads it without a case per subclass.
-- A new kind of failure is added as a new subclass of `GameZoneException` (line 10), and the
-  handler in `ConsoleMenu` keeps catching the base type, so no handler has to be edited.
 - A new validation rule is added as a new static method in the validator of its own module, and
   no service has to change to call it.
 
@@ -206,9 +204,10 @@ Correct applications:
 - The seven validators depend on `model` and on `exceptions` only. They never import
   `persistence`, `service` or `ui`, so replacing the way the store is saved, or writing a second
   interface, does not touch a single validation.
-- The exceptions of `com.gamezone.exceptions` depend on nothing inside the project, and the menu
-  catches `GameZoneException` (line 10), the abstract type, instead of one concrete failure. That
-  is the dependency pointing the right way: from the interface to the detail.
+- The exceptions of `com.gamezone.exceptions` depend on nothing inside the project, and
+  `GameZoneException` (line 10) is the abstract root that the whole hierarchy hangs from, so the
+  failure types are a policy that nothing underneath has to know about. The way they are caught is
+  reported in the Open/Closed section, because the handler is not mine.
 - `ReturnReceiptFormatter` and `WarrantyCertificateFormatter` depend on `Return`, `Warranty`,
   `Product` and `Sale`, all of which are domain policy, and on nothing else. They do not import a
   repository, a service or a file, so the documents can be printed without any storage being
@@ -247,6 +246,18 @@ and that the consolidation has to merge with the other reports instead of counti
   them belong to the Technical Leader (`SaleService` line 312 and the two menus), but the two
   literals that have to agree are both in `Product` and `Console`, so the edit is mine and the
   callers do not change.
+- **A fifth kind of failure would have to be written into a handler that is not mine.**
+  `Submenu.runSafely` catches the four concrete exceptions one after another: `catch
+  (ResourceNotFoundException e)` at line 43, `catch (BusinessRuleException e)` at line 45, `catch
+  (InvalidDataException e)` at line 47 and `catch (PersistenceException e)` at line 49. It never
+  catches the abstract `GameZoneException` (line 10 of that class), which is the root this
+  hierarchy was built for, and no type in the `ui` package imports it. So the pattern that was
+  supposed to make a new failure a new subclass is not the one in use: a fifth kind of exception
+  is added as a new class, and then someone has to remember to edit `Submenu`, or the failure
+  reaches the user as a stack trace. This is registered here rather than as a finding of my own
+  code because `Submenu` is in `com.gamezone.ui` and belongs to the Technical Leader. The half
+  that is mine is already in place: the four exceptions all hang from the same abstract root, so
+  nothing has to be changed on my side for that correction to be possible.
 - **The audited code includes work from Requirement 7, and one finding is a consequence of it.**
   `getExtraFields` was added during the GRASP correction, to remove the `instanceof` chains from
   the repositories. It did remove them, and it moved the column layout into the domain, which is
