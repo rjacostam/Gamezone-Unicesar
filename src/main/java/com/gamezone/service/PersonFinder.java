@@ -28,6 +28,19 @@ public interface PersonFinder {
      * @param idOrEmployeeCode identifier or employee code to look for
      * @return the seller found
      */
+    /**
+     * Returns every seller registered, in registration order.
+     *
+     * @return the sellers currently registered
+     */
+    List<Seller> listSellers();
+
+    /**
+     * Searches a seller by identifier or by employee code.
+     *
+     * @param idOrEmployeeCode identifier or employee code to look for
+     * @return the seller found
+     */
     Seller findSellerById(String idOrEmployeeCode);
 
     /**

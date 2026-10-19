@@ -144,6 +144,7 @@ public class PersonService implements PersonFinder {
      *
      * @return a copy of the list of registered sellers
      */
+    @Override
     public List<Seller> listSellers() {
         return new ArrayList<>(sellers);
     }
