@@ -314,3 +314,18 @@ Stating it is part of the answer, because a guarantee with a hole in it is not a
 - **The scripts are a sample, not the whole space.** They cover every operation of the menu with one input each, plus one error of each kind. They do not cover a boundary nobody thought of, and they do not cover a user who types a value the script never types.
 - **The comparison is byte for byte, so an intentional message change cannot be made.** That is the correct bias for a refactor and the wrong one for a feature, and it means a correction that legitimately changes a message has to be separated from the refactor instead of smuggled into it.
 - **The two scripts run the same day or not at all.** A comparison across days fails for a reason no correction caused, and the schedule has to keep them together.
+
+---
+
+## Question 5 — Order of the corrections
+
+*Answered by the Technical Leader.*
+
+The member who creates a new contract or class corrects first, and the members who use it
+correct after, as in Requirement 7, so the shared branch always compiles. For example, V-09 goes
+before V-10 and V-12, because those two use the finder contract that comes out of V-09. In the
+same way, V-07 (the two different `findById`) is corrected before or together with V-09, so the
+new finder interface is born with a single contract.
+
+On the shared branch each member runs `git pull` before starting, pushes after every commit, and
+changes only his own classes.
