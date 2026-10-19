@@ -1,14 +1,12 @@
 # Team
 
-> Draft prepared during repository setup. The team must review it, complete the student codes and adjust anything that does not match what was agreed.
-
 ## Members
 
 | Full name | Student code | Role | Module | Feature branch |
 |---|---|---|---|---|
-| Rafael Junior Acosta Mendoza | _pending_ | Technical Leader | Sales and integration | `feature/sale-module` |
-| Andrés Daniel Cuello Blanco | _pending_ | Developer 1 | Products | `feature/product-module` |
-| José David Cervantes Solano | _pending_ | Developer 2 | People | `feature/person-module` |
+| Rafael Junior Acosta Mendoza | 1005061643 | Technical Leader | Sales and integration | `feature/sale-module` |
+| Andrés Daniel Cuello Blanco | 1120243014 | Developer 1 | Products | `feature/product-module` |
+| José David Cervantes Solano | 1066872626 | Developer 2 | People | `feature/person-module` |
 
 ## Class distribution
 
