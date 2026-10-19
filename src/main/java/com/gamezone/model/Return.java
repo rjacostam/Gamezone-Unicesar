@@ -94,9 +94,14 @@ public class Return {
      * Returns the proportion of the original sale that was discounted, which is
      * its discount divided by its subtotal. The result is never negative and
      * never above one, so a refunded amount can never go below zero.
+     *
+     * <p>It is public because the return receipt needs the same proportion to
+     * print the discount of each returned unit, and the return is the class that
+     * owns it. The receipt formatter asks for it here instead of recalculating it
+     * from the sale.
      * @return discount ratio between zero and one
      */
-    private double discountRatio() {
+    public double discountRatio() {
         if (sale == null) {
             return 0;
         }
