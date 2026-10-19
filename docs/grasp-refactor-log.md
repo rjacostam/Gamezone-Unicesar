@@ -1,0 +1,163 @@
+# GRASP Refactor Log — GameZone Unicesar
+
+Requirement 7, Phase 2. This file records the no regression strategy, the reference run on
+`develop`, every correction of the consolidated audit (`docs/grasp-audit/consolidated-audit.md`)
+and the final verification.
+
+## No regression strategy
+
+The correction is a refactor: the same inputs must give the same screen output and the same
+data files. The team checks it with two fixed input scripts that drive the console menu:
+
+- `docs/regression/menu-script.txt`: one run that goes through **every operation of the seven
+  submenus**, including one error of each kind.
+- `docs/regression/restart-script.txt`: a second run on the data left by the first one, to show
+  that every change was saved and is loaded again.
+
+### How to run it
+
+From the root of the project, on a clean copy of the preloaded data:
+
+```bash
+mvn clean compile
+mkdir -p run && cp -r data run/
+cd run
+java -cp ../target/classes com.gamezone.Main < ../docs/regression/menu-script.txt > out-run1.txt
+java -cp ../target/classes com.gamezone.Main < ../docs/regression/restart-script.txt > out-run2.txt
+```
+
+The same steps are run on `develop` (reference) and on the branch with the correction. The
+result is accepted only if:
+
+1. `out-run1.txt` and `out-run2.txt` are **identical** in both runs;
+2. the eight files of `run/data/` are **identical** in both runs.
+
+Sales, returns and warranties use the date of the day, so the reference and the check are
+always run on the same day. The `run/` folder is only a working copy and is deleted after the
+check; it is never committed.
+
+### Operations covered
+
+| Submenu | Operation | Input of the script | Expected result |
+|---|---|---|---|
+| Products | Register video game | `VG-90`, price 150000, stock 5 | "Videojuego registrado" |
+| Products | Register console | `C-90`, price 1800000, stock 3 | "Consola registrada" |
+| Products | Duplicate id | `VG-90` again | Business rule message |
+| Products | Invalid price | `VG-91`, price 0 | Invalid data message |
+| Products | List inventory | — | Catalogue with `VG-90` and `C-90` |
+| People | Register customer | `123`, Ana Prueba | "Cliente registrado" |
+| People | Duplicate id | `123` again | Business rule message |
+| People | Invalid phone | `30011a` | Invalid data message |
+| People | Invalid e-mail | `caromail` | Invalid data message |
+| People | List customers and sellers | — | Ana Prueba; the three sellers |
+| Accessories | Register controller, cable and memory | `A-90`, `A-91`, `A-92` | One "registrado/registrada" message each |
+| Accessories | Compatible with a non console | `A-93` with `VG-01` | Business rule message |
+| Accessories | List all, by each of the three types, compatible with `C-01` and with `C-99` | — | Lists; empty list for `C-99` |
+| Promotions | Register percentage, category and bulk | `P-90`, `P-91`, `P-92` (expired in 2020) | One "Promoción registrada" each |
+| Promotions | Duplicate id | `P-01` | Business rule message |
+| Promotions | Invalid percentage | 150 | Invalid data message |
+| Promotions | List all and active | — | Seven promotions; the four active ones |
+| Sales | Register sale with extended warranty | `123`, `EMP-001`, `C-01`, `A-01`, `VG-01`, warranty "s" | Sale `S0001`: subtotal $3,100,000, discount "Lleva 3 o más" −$310,000, warranties $250,000, total **$3,040,000** |
+| Sales | Register second sale | `123`, `EMP-002`, 2 × `VG-02` | Sale `S0002`: discount "Videojuegos al 20%" −$128,000, total **$512,000** |
+| Sales | Missing customer, missing seller, missing product | `999`, `EMP-999`, `ZZ-99` | Resource not found message each |
+| Sales | Not enough stock | 50 × `VG-02` | Business rule message |
+| Sales | Sale without products | — | Business rule message |
+| Sales | History, by customer, by seller, detail, missing detail | `123`, `EMP-001`, `S0001`, `S9999` | Receipts of `S0001` and `S0002`; "No existe una venta" for `S9999` |
+| Warranties | Warranty of a product | `S0001`/`C-01`, `S0001`/`VG-01` | Certificate; "no tiene garantía" |
+| Warranties | List all, active, expiring in 30 days, expiring in 0 days | — | Lists; invalid data message for 0 |
+| Returns | Register return of a console | `S0001`, `C-01`, "No funciona" | Return `R0001` with warranty refund $250,000 |
+| Returns | Too many units | `S0002`, 5 × `VG-02` | Business rule message |
+| Returns | Missing sale | `S9999` | "No existe una venta" |
+| Returns | Unit already returned | `S0001`, `C-01` again | Business rule message |
+| Returns | All, by customer, by sale | `123`, `S0001` | `R0001` |
+| Returns | Monthly balance and invalid month | October 2026; month 13 | Sales $3,552,000, returns $2,500,000, net **$1,052,000**; "El mes debe estar entre 1 y 12" |
+| Restart | Products, customers, accessories, promotions, sales, warranties, returns, balance | `restart-script.txt` | The same data as at the end of the first run |
+
+## Reference run on `develop`
+
+| Field | Value |
+|---|---|
+| Commit | `develop` at `ae12127` (merge of the Phase 1 pull request #35) |
+| Date | 2026-10-18 |
+| Compilation | No errors |
+| First run | 1,403 lines of output, 111 menu prompts answered, no stack trace |
+| Second run | 211 lines of output, same totals as the first run |
+| Repeatability | Two runs on the same day gave identical outputs and identical data files |
+| `data/sales.csv` | `S0001` total $3,040,000 and `S0002` total $512,000 |
+| `data/returns.csv` | `R0001` for `C-01` of `S0001`, warranty refund $250,000 |
+| `data/warranties.csv` | Empty after the return: the two warranties of `C-01` were cancelled |
+
+## Correction log
+
+One row per change. Every violation of the consolidated audit must appear at least once.
+
+| Class | Change made | Violation ID | Pattern applied | Commit / PR | Responsible |
+|---|---|---|---|---|---|
+| `Sale` | Added `countUnitsOf(String productId)` and `findProductById(String productId)`, so the sale answers how many units of a product it has and which unit carries an identifier. Both compare ignoring case; `ReturnRepository.findProduct` compares with `equals`, but the stored ids are always written from `Product.getId()`, so the result is the same. No caller changed yet: Developer 2 moves `ReturnService` and `ReturnRepository` to these methods. No regression: both scripts identical. | V-03 | Information Expert | `b0fd770` | Technical Leader |
+| `Product` | Added `increaseStock(int quantity)`, the opposite of `decreaseStock(int)`: it rejects zero and negative quantities with the same rule `ProductService.restoreStock` applies today, and adds the units to the stock the product owns. Purely additive, no existing caller changed, so nothing the user sees changes yet. No caller changed yet: the Technical Leader makes `restoreStock` call it. No regression: both scripts identical. | V-01 | Information Expert | `85481b1` | Developer 1 |
+| `Product`, `Console` | Added `Product.isConsole()`, which answers false, and `Console.isConsole()`, which overrides it and answers true. Checked that the new method agrees with the text comparison it replaces on both products, so the rule "only consoles" gets the same answer with or without the change. Purely additive: `getCategory()` is untouched, so no comparison the user sees changed yet. No caller changed yet: Developer 1 moves `SaleValidator` and `AccessoryValidator`, and the others move `ConsoleMenu` and `SaleService`. No regression: both scripts identical. | V-04 | Polymorphism | `4d10125` | Developer 1 |
+| `Promotion`, `PercentageDiscount`, `CategoryDiscount`, `BulkPurchaseDiscount`, `Warranty`, `BasicWarranty`, `ExtendedWarranty` | Added `getTypeCode()` as an abstract method of `Promotion` and of `Warranty`, answered by each subclass with the exact text the repositories write today: `PERCENTAGE`, `CATEGORY`, `BULK`, `BASIC` and `EXTENDED`. Checked the five against the current repository logic and all five match, so no stored file changes. `Product` and `Accessory` already publish theirs (`getCategory()` and `getAccessoryType()`), so the four hierarchies are now complete. Purely additive: `getWarrantyType()`, the name the user reads, is untouched. No caller changed yet: Developer 1 corrects `ProductRepository` and Developer 2 the other three repositories. No regression: both scripts identical. | V-08 | Polymorphism | `1d1724d` | Developer 1 |
+| `InventoryCatalog` | New interface in `com.gamezone.service` with `findById(String id)`, `updateStock(String id, int quantity)` and `restoreStock(String id, int quantity)`, so a service can ask a catalogue to change its own stock instead of testing the concrete type of the item. `findById` returns `Product`, which both catalogues satisfy covariantly because `Accessory extends Product`. No existing caller changed and no body was modified, so nothing the user sees changes. No regression: compiled and both scripts identical, checked by the Technical Leader. | V-07 | Polymorphism, Low Coupling | `7ce95e4` | Developer 2 |
+| `AccessoryService` | Now `implements InventoryCatalog`, with `@Override` on `findById`, `updateStock` and `restoreStock`. `findById` keeps returning `Accessory`, which is a covariant return of the `Product` declared by the interface, so no import or signature change was needed. No line of logic was touched: the bodies, the validators and the exceptions are the same. `ReturnService` was not changed, it moves to the list of catalogues in turn 2. No regression: compiled and both scripts identical, checked by the Technical Leader. | V-07 | Polymorphism, Low Coupling | `5e9442e` | Developer 2 |
+| `ProductService` | `restoreStock` now calls `product.increaseStock(quantity)` instead of `setStock(getStock() + quantity)`. The quantity is still checked first by `ProductValidator.validateQuantity`, so the message on a wrong quantity is the same. No regression: both scripts identical. | V-01 | Information Expert | `f376cf7` | Technical Leader |
+| `SaleService` | `assignWarranties` asks `product.isConsole()` instead of `product instanceof Console`, and the unused import of `Console` was removed. No regression: both scripts identical. | V-04 | Polymorphism, Controller | `5fcc236` | Technical Leader |
+| `ConsoleMenu` | `registerSale` asks `product != null && product.isConsole()` before offering the extended warranty, instead of `product instanceof Console`. The `null` check keeps the old behaviour for accessories, which `ProductService.findById` does not find. No regression: both scripts identical. | V-04 | Polymorphism, Controller | `eb440e0` | Technical Leader |
+| `SaleValidator`, `AccessoryValidator` | `validateExtendedWarrantyRequest` and `validateCompatibleConsole` now ask `product.isConsole()` instead of comparing `getCategory()` with the text `CONSOLE`. Only the condition changed: the exception type, the error code and the message are the same strings, checked one by one against the previous version (a console passes, a video game still raises `BusinessRuleException` with "Solo las consolas admiten garantia extendida: VG-01." and "El producto VG-01 no es una consola.", and a missing identifier still raises `ResourceNotFoundException`). `getCategory()` was left in place because the category is still the target of the promotions. No regression: both scripts identical. | V-04 | Polymorphism | `441d970` | Developer 1 |
+| `ProductService` | Now `implements InventoryCatalog`, the same way `AccessoryService` does, with `@Override` on `findById`, `updateStock` and `restoreStock`. The diff is four lines in total: the declaration of the class and three annotations. No line of logic was touched, the bodies and the validators are the same, and `findById` already returned `Product`. Both catalogues of the store now answer the same contract, so the type tests of V-07 have a single place to go. `SaleService` and `ReturnService` move to the list of catalogues in turn 3. No regression: both scripts identical. | V-07 | Polymorphism, Low Coupling | `123bf47` | Developer 1 |
+| `ProductRepository`, `Product`, `VideoGame`, `Console`, `Accessory` | `saveAll` no longer branches on the concrete type: the marker of the row is `product.getCategory()`, which already answers `VIDEOGAME` or `CONSOLE`, and the three extra columns are `product.getExtraFields()`, a new abstract method of `Product` that `VideoGame` answers with platform, genre and age rating, and `Console` with brand, model and generation. `Accessory` answers with an empty list, because an accessory is not stored in the product catalogue and its own columns belong to its own file. Verified byte for byte: the file written before the change and the file written after are both 311 bytes with the same SHA-256, so no stored row changes. The two casts and the two imports are gone from `saveAll`; `loadAll` still builds each subclass on purpose, because reading a row into the right class is the constructor's work. No regression: both scripts identical. | V-08 | Polymorphism, Low Coupling | `35c1e07` | Developer 1 |
+| `PercentageDiscount`, `BulkPurchaseDiscount` | Both now read the base of the discount with `sale.getSubtotal()` instead of walking `sale.getProducts()` and adding every price, so the base is computed once in `Sale`, the class that owns it. The behaviour is the same because `Sale.calculateSubtotal` runs once in the constructor, before any discount, and `applyDiscount` never touches the subtotal: checked on a sale of $2,820,000, the subtotal equals the plain sum of the unit prices both before and after applying a discount, and the 10% and the 5% discounts return $282,000 and $141,000, the same figures as before. `CategoryDiscount` was left alone on purpose: its loop filters by category, so its base is not the subtotal and replacing it would change the promotion. No regression: both scripts identical. | V-02 | Information Expert | `e348f44` | Developer 1 |
+| `Warranty`, `BasicWarranty`, `ExtendedWarranty` | `coverageDescription` is no longer a private method of the base class that compared the name of the type. It is now an abstract method answered by each warranty: the basic one returns "defectos de fábrica" and the extended one "defectos de fábrica y daños accidentales", the same two texts the previous comparison produced. Checked both certificates in full: the header, the type, the dates (2027-04-18 and 2027-10-18), the costs ($0.00 and $250,000.00), the state and the coverage line are identical, so the user still reads exactly the same certificate. No caller changed, because the certificate keeps calling the same method. No regression: both scripts identical. | V-09 | Polymorphism | `5cfafaa` | Developer 1 |
+| `Controller`, `Cable`, `Memory`, `Accessory` | Each accessory now publishes the columns that `AccessoryRepository.serialize` writes today: `Controller` returns one column, its connection type, `Cable` returns two, its length and its connector type, and `Memory` returns two, its capacity and its memory type. A null becomes an empty string, exactly like the private `valueOf` helper the repository used, so the word `null` never reaches the file. Checked all three with a value, with a null and with a zero, and each answer is the column list the repository was writing. The empty answer that `Accessory` carried was removed, because all three of its subclasses now answer and `Accessory` is abstract. `AccessoryRepository` was not touched: it still writes the file with its own logic, and Developer 2 moves it to these methods. No regression: both scripts identical. | V-08 | Polymorphism, Low Coupling | `2bc0f81` | Developer 1 |
+| `Promotion`, `PercentageDiscount`, `CategoryDiscount`, `BulkPurchaseDiscount` | The same contract was added to the promotions: `getExtraFields()` is abstract in `Promotion` and each type answers with the two columns that `PromotionRepository.serialize` writes after its percentage. `PercentageDiscount` answers the percentage and an empty string, `CategoryDiscount` the percentage and the target category, and `BulkPurchaseDiscount` the percentage and the minimum quantity, with a null category written as an empty string. Checked the three with whole and decimal percentages, with a null category and with a minimum quantity of zero, and every answer returns exactly two columns with the values the repository was writing. `PromotionRepository` was not touched. No regression: both scripts identical. | V-08 | Polymorphism, Low Coupling | `280c2db` | Developer 1 |
+| `ReturnReceiptFormatter`, `WarrantyCertificateFormatter`, `Return` | Two new formatters in `com.gamezone.ui` build the text of the two documents, so the wording and the layout leave the domain. `ReturnReceiptFormatter.format(Return)` reproduces `Return.generateReturnReceipt` and `WarrantyCertificateFormatter.format(Warranty)` reproduces `Warranty.generateWarrantyCertificate`, character by character: both were compared against the method they replace on a discounted sale, on a sale with no customer, on a warranty that has expired and on warranties with no product and with no sale, and all five answers are identical strings. The model keeps building the same text for now: the Technical Leader moves the calls in `ConsoleMenu` and the two model methods are deleted afterwards. `Return.discountRatio()` became public because the receipt prints the discount of each returned unit and the return is the class that owns that proportion; the formatter asks for it instead of recalculating it from the sale. | V-05 | High Cohesion | `64af2e6` | Developer 1 |
+| `Product`, `Accessory`, `VideoGame`, `Console`, `Controller`, `Cable`, `Memory` | `getDescription()` is kept on purpose and is **not** part of the correction. It was checked whether removing it would be a violation of High Cohesion like the two documents were, and the answer is that removing it would create a new violation instead of solving one: `ConsoleMenu` prints a description in twelve places (lines 155, 167, 177, 294, 355, 367, 379, 415, 451, 468, 479 and 488) and today it does it through the abstract method of `Product` without a single type test. Without it, the menu would have to ask what kind of item it is with `instanceof` to decide what text to print, which is exactly the `instanceof` chain that V-08 is removing. The method is also already polymorphic end to end: `Product` declares it, each kind of product answers with its own text, and `Accessory.getDescription` composes the base description with the attributes of the accessory instead of testing its own subclasses. So it is left as it is, and the statement is satisfied by writing the justification here. | V-05 | High Cohesion | `64af2e6` | Developer 1 |
+| `Return`, `Warranty`, `ReturnReceiptFormatter`, `WarrantyCertificateFormatter` | `Return.generateReturnReceipt()` and `Warranty.generateWarrantyCertificate()` were removed once the menu stopped calling them, so the domain no longer builds documents. The two formatters are now the only place where that text is written. Their JavaDoc was updated to say that instead of promising a later deletion. The two now unused `import java.util.Locale` were removed from `Return` and `Warranty`, because after the deletion those classes no longer format money. The documents were rebuilt after the deletion and give exactly the same strings as before: 464 characters for the return receipt and 253, 283 and 256 for the basic, extended and expired certificates, the same figures the comparison against the removed methods gave. `Return.discountRatio()` **stays public**: it is not used only by the formatter, because `refundableAmount` still uses it to compute the refund of each unit, and the formatter needs the same proportion to print the discount of each line. No regression: both scripts identical. | V-05 | High Cohesion | `87f0abc` | Developer 1 |
+| `ReturnService`, `ReturnRepository` | Deleted `countUnits(Sale, String)` and `findProduct(Sale, String)`, which walked the product list of a sale from outside, and called `sale.countUnitsOf` and `sale.findProductById` instead. The three bodies were identical to the two new methods of `Sale`. `countReturnedUnits` was left alone because it walks the list of returns, not the sale. `ReturnRepository.findProduct` compared with `equals` and now uses `findProductById`, which ignores case; the result is the same because the stored identifiers always come from `Product.getId()`. No regression: pending, the Technical Leader compiles and runs the two scripts. | V-03 | Information Expert | `d493e2f` | Developer 2 |
+| `ReturnService` | `cancelWarrantiesOfConsoles` asks `product.isConsole()` instead of testing `instanceof Console`, and the import of `Console` was removed because the class is no longer named. `Product.isConsole()` answers false and only `Console` overrides it, so the two conditions are the same. No regression: pending, the Technical Leader compiles and runs the two scripts. | V-04 | Polymorphism | `a22dc9b` | Developer 2 |
+| `PromotionRepository`, `WarrantyRepository` | The private `getTypeOf` helpers were deleted and `serialize` now writes `promotion.getTypeCode()` and `warranty.getTypeCode()`, the marker published by each object. The markers are the ones the `instanceof` chains produced, `PERCENTAGE`, `CATEGORY`, `BULK`, `BASIC` and `EXTENDED`, so the files stay byte for byte the same. `TYPE_BASIC`, `TYPE_EXTENDED` and the import of `BasicWarranty` were deleted from `WarrantyRepository` because they existed only for the removed chain; the constants of `PromotionRepository` are still used to read the file. The chains that remain in these repositories write the extra columns of a record, not the marker, so they were left alone. `AccessoryRepository` needed no change, it already wrote `accessory.getAccessoryType()`. No regression: pending, the Technical Leader compiles and runs the two scripts. | V-08 | Polymorphism | `0100e83` | Developer 2 |
+| `SaleService` | `updateInventory` no longer tests `instanceof Accessory`. The service keeps the list of `InventoryCatalog` (`ProductService`, `AccessoryService`) and `catalogOf(item)` asks each catalogue whether it holds that same item, then calls its `updateStock`. If none holds it, the product catalogue is used, which was the old `else` branch. The unused import of `Accessory` was removed. No regression: both scripts identical. | V-07 | Polymorphism, Low Coupling | `c35bc9d` | Technical Leader |
+| `ReturnService` | `restoreStock` no longer tests `instanceof Accessory`: the service holds a `List<InventoryCatalog>` with `ProductService` and `AccessoryService`, and the new `catalogOf(String productId)` asks each catalogue whether it holds that identifier, so the one that does is the one that restores it. The two maps, one for products and one for accessories, became a single `unitsById`, and the import of `Accessory` is gone. The fallback is the product catalogue, the same as in `SaleService`. The two maps used to be written products first and then accessories; now one map is written in the order the units were requested. Each catalogue writes only its own file, so the result stored is the same. `ReturnService` has no `instanceof` left. No regression: pending, the Technical Leader compiles and runs the two scripts. | V-07 | Polymorphism, Low Coupling | `b2e6637` | Developer 2 |
+| `ReceiptGenerator` | New class in `com.gamezone.ui` that builds the sale receipt from the getters of `Sale`, with the same wording, currency format, order and line breaks that `Sale.generateReceipt` used. Not called yet when it was added. No regression: both scripts identical. | V-05 | Pure Fabrication, High Cohesion | `54d53ac` | Technical Leader |
+| `ConsoleMenu` | The four places that printed `sale.generateReceipt()` now call `ReceiptGenerator.generate(sale)`, and the menu prints the return receipt and the warranty certificate through `ReturnReceiptFormatter.format` and `WarrantyCertificateFormatter.format` (two places each), the formatters of Developer 1. This run is also the check that the three formatters reproduce the old texts character by character. No regression: both scripts identical. | V-05 | Pure Fabrication, High Cohesion | `d836fbd` | Technical Leader |
+| `Sale` | Removed `generateReceipt()`: nothing called it after the previous change, so `Sale` keeps only the data and the amounts of the sale. No regression: both scripts identical. | V-05 | High Cohesion | `99eeb23` | Technical Leader |
+| `AccessoryRepository` | `saveAll` no longer branches on the concrete type of the accessory: the extra columns are `accessory.getExtraFields()`, joined with `String.join(DELIMITER, ...)`, which the model publishes for a controller with its connection type, and for a cable and a memory with their two values. The prefix already ended with a delimiter, so joining adds the delimiter between the extra columns and none after the last one, which is exactly what the chain wrote. The `else` branch is gone because `Accessory` has only the three subclasses and each one publishes its own fields. The records are the same ones the chain produced: `append(double)` and `String.valueOf(double)` write the same text, and a null connection, connector or memory type was already written as an empty string. The imports of `Controller`, `Cable` and `Memory` stay because `deserialize` still builds each subclass on purpose. No regression: pending, the Technical Leader compiles and runs the two scripts. | V-08 | Polymorphism | `8adc168` | Developer 2 |
+| `PromotionRepository` | `saveAll` no longer branches on the concrete type of the promotion: the extra columns are `promotion.getExtraFields()`, joined with `String.join(DELIMITER, ...)`, which the model publishes as the percentage and the target category for a category discount, the percentage and the minimum quantity for a bulk purchase discount, and the percentage and an empty field for a percentage discount. The rows are the same ones the chain produced, because the prefix already ended with a delimiter and each model writes the same text the chain appended, including the empty second field of a percentage discount. The imports of the three promotions stay because `deserialize` still builds each subclass on purpose. No regression: pending, the Technical Leader compiles and runs the two scripts. | V-08 | Polymorphism | `833fa3e` | Developer 2 |
+| `ConsoleInput` | New class in `com.gamezone.ui` with the input helpers (`readText`, `readOptionalText`, `readInt`, `readDouble`, `readYesNo`, `readDate`) and the `Scanner`, moved out of `ConsoleMenu` without changing a message. One instance is shared by every submenu. No regression: both scripts identical. | V-06 | Pure Fabrication, High Cohesion | `f12e13f` | Technical Leader |
+| `Submenu`, `ProductMenu` | New abstract class `Submenu` with the shared `ConsoleInput` and `runSafely`, the four catch blocks of Requirement 6, so every submenu shows the same error messages. The product options moved to `ProductMenu`. No regression: both scripts identical. | V-06 | High Cohesion, Polymorphism | `54fe765` | Technical Leader |
+| `PersonMenu` | The people options moved to `PersonMenu`. `listSellers` stays package visible because the sale submenu prints the sellers before asking for one. No regression: both scripts identical. | V-06 | High Cohesion | `e284b21` | Technical Leader |
+| `SaleMenu` | The sale options moved to `SaleMenu`, which receives the sale and product services and the people submenu. No regression: both scripts identical. | V-06 | High Cohesion | `6e9014e` | Technical Leader |
+| `AccessoryMenu`, `PromotionMenu`, `WarrantyMenu`, `ReturnMenu` | The options of the other four modules moved to one submenu each, with only the services they use. No regression after each of the four commits: both scripts identical. | V-06 | High Cohesion, Low Coupling | `6548357`, `efa09ef`, `4f63673`, `2e21353` | Technical Leader |
+| `ConsoleMenu` | Now only the main menu: it builds the seven submenus with the same constructor that `Main` already calls and opens the one the user chooses. It went from 698 lines and seven services to 86 lines and no service field. No regression: both scripts identical. | V-06 | High Cohesion, Controller | `36cc7c0` | Technical Leader |
+| `AccessoryMenu` | `readCompatibleConsoles` asks `product.isConsole()` instead of `instanceof Console`. It is the same rule of V-04 in a sixth place that the audit did not list, so it is corrected here to leave no copy of the rule; after this commit no `instanceof` is left in the project. No regression: both scripts identical. | V-04 | Polymorphism | `6100b56` | Technical Leader |
+
+## Final verification
+
+Run with the same two scripts on `develop` after the pull requests of the two developers were
+merged, and compared with the reference run.
+
+| Field | Value |
+|---|---|
+| Commit | `develop` at `63604f3` (merge of pull request #37) |
+| Date | 2026-10-18, the same day as the reference run |
+| Compilation | No errors |
+| First run | 1,403 lines, **identical** to the reference |
+| Second run | 211 lines, **identical** to the reference |
+| Data files | The eight files of `run/data/` are **identical** to the reference |
+| Stack traces | None |
+| Key figures | Sale `S0001` total $3,040,000; sale `S0002` total $512,000; return `R0001` with warranty refund $250,000; October balance: sales $3,552,000, returns $2,500,000, net $1,052,000 |
+
+Every operation of the menu behaves exactly as before the correction: same inputs, same
+results, same messages and same data files.
+
+Result of the correction:
+
+- The nine violations of the consolidated audit (V-01 to V-09) appear in the table above, with
+  their commits and their responsible member.
+- No `instanceof` is left in the source code. The type of an object is now answered by the
+  object itself (`isConsole`, `getTypeCode`, `getExtraFields`, `coverageDescription`) or by
+  the catalogue that owns it (`InventoryCatalog`).
+- `ConsoleMenu` went from 698 lines to 86, and the presentation of the three documents left
+  the model.
+- The system went from 48 to 61 classes; the 13 new ones are listed in
+  `docs/grasp-class-diagram.md`.
+- The out of scope defect OOS-01 was not touched, as Requirement 7 requires.

@@ -1,6 +1,6 @@
 package com.gamezone.persistence;
 
-import com.gamezone.model.BasicWarranty;
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Warranty;
 
 import java.io.BufferedReader;
@@ -61,12 +61,6 @@ public class WarrantyRepository {
     /** Number of columns of a record, including the header layout. */
     private static final int COLUMN_COUNT = 5;
 
-    /** Type discriminator of a basic warranty record. */
-    private static final String TYPE_BASIC = "BASIC";
-
-    /** Type discriminator of an extended warranty record. */
-    private static final String TYPE_EXTENDED = "EXTENDED";
-
     /** Location of the file where the warranties are stored. */
     private final Path filePath;
 
@@ -84,19 +78,24 @@ public class WarrantyRepository {
      * header line is written first so the file keeps its documented layout.
      *
      * @param warranties warranties to persist
-     * @throws IOException if the file cannot be written
+     * @throws PersistenceException if the file cannot be written
      */
-    public void saveAll(List<Warranty> warranties) throws IOException {
+    public void saveAll(List<Warranty> warranties) {
         List<String> lines = new ArrayList<>();
         lines.add(String.join(DELIMITER, "type", "id", "productId", "saleId", "startDate"));
         for (Warranty warranty : warranties) {
             lines.add(serialize(warranty));
         }
         Path parent = filePath.getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
+        try {
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.write(filePath, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de escritura en el archivo " + filePath, e);
         }
-        Files.write(filePath, lines, StandardCharsets.UTF_8);
     }
 
     /**
@@ -112,15 +111,20 @@ public class WarrantyRepository {
      *
      * @return list of the records contained in the file, empty when the file does
      *         not exist
-     * @throws IOException if the file cannot be read
+     * @throws PersistenceException if the file cannot be read
      */
-    public List<WarrantyRecord> loadAll() throws IOException {
+    public List<WarrantyRecord> loadAll() {
         List<WarrantyRecord> records = new ArrayList<>();
-        for (String record : readRecords()) {
-            WarrantyRecord parsed = toRecord(record);
-            if (parsed != null) {
-                records.add(parsed);
+        try {
+            for (String record : readRecords()) {
+                WarrantyRecord parsed = toRecord(record);
+                if (parsed != null) {
+                    records.add(parsed);
+                }
             }
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de lectura en el archivo " + filePath, e);
         }
         return records;
     }
@@ -134,7 +138,7 @@ public class WarrantyRepository {
      */
     private String serialize(Warranty warranty) {
         return String.join(DELIMITER,
-                getTypeOf(warranty),
+                warranty.getTypeCode(),
                 warranty.getId(),
                 warranty.getProduct().getId(),
                 warranty.getSale().getId(),
@@ -184,22 +188,6 @@ public class WarrantyRepository {
         } catch (java.time.format.DateTimeParseException e) {
             return null;
         }
-    }
-
-    /**
-     * Returns the type marker stored in the first column of the file for a
-     * warranty. The marker is derived from the concrete class instead of using
-     * {@code getWarrantyType()}, because that method returns the name shown to
-     * the user, {@code "Garantía Básica"}, and not the marker of the file.
-     *
-     * @param warranty warranty to inspect
-     * @return the type marker of the warranty
-     */
-    private String getTypeOf(Warranty warranty) {
-        if (warranty instanceof BasicWarranty) {
-            return TYPE_BASIC;
-        }
-        return TYPE_EXTENDED;
     }
 
     /**

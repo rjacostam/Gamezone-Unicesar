@@ -1,7 +1,6 @@
 package com.gamezone.model;
 
 import java.time.LocalDate;
-import java.util.Locale;
 
 /**
  * Base class for the warranties granted by the store. A warranty links the
@@ -56,6 +55,15 @@ public abstract class Warranty {
      * @return additional cost in pesos
      */
     public abstract double getAdditionalCost();
+
+    /**
+     * Returns the marker of this warranty type, which is the text the warranty
+     * writes in the data file. Each warranty type declares its own marker, so the
+     * repository does not have to find out which type it is holding. It is not the
+     * name the user reads: {@link #getWarrantyType()} answers that one.
+     * @return type marker of this warranty
+     */
+    public abstract String getTypeCode();
 
     /**
      * Tells whether the warranty is in force on the given date, which happens
@@ -114,48 +122,10 @@ public abstract class Warranty {
     }
 
     /**
-     * Builds the certificate the customer receives, in Spanish. It shows the
-     * identifier and the type of the warranty, the product it covers, the sale
-     * it comes from with the customer who bought it, the period it is in force,
-     * what it covers and whether it is still active today.
-     * @return certificate ready to be shown to the user
-     */
-    public String generateWarrantyCertificate() {
-        boolean active = isActive(LocalDate.now());
-        StringBuilder certificate = new StringBuilder();
-        certificate.append("=== GameZone Unicesar - Certificado de garantia ===\n");
-        certificate.append("Garantia: ").append(id)
-                .append(" (").append(getWarrantyType()).append(")\n");
-        if (product != null) {
-            certificate.append("Producto: ").append(product.getId())
-                    .append(" - ").append(product.getTitle()).append("\n");
-        }
-        if (sale != null) {
-            certificate.append("Venta: ").append(sale.getId()).append("\n");
-            if (sale.getCustomer() != null) {
-                certificate.append("Cliente: ").append(sale.getCustomer().getName()).append("\n");
-            }
-        }
-        certificate.append("Inicio: ").append(startDate)
-                .append(" | Fin: ").append(endDate).append("\n");
-        certificate.append("Cobertura: ").append(coverageDescription()).append("\n");
-        certificate.append("Costo adicional: ")
-                .append(String.format(Locale.US, "$%,.2f", getAdditionalCost())).append("\n");
-        certificate.append("Estado: ")
-                .append(active ? "Vigente" : "No vigente").append("\n");
-        return certificate.toString();
-    }
-
-    /**
-     * Returns the text describing what this warranty covers. It is read from the
-     * type name, so it stays correct without adding another abstract method to
-     * the class diagram: only the extended warranty covers accidental damage.
+     * Returns the text describing what this warranty covers. Each warranty type
+     * answers with its own coverage, so the certificate never has to find out the
+     * type by comparing names.
      * @return coverage of this warranty, in Spanish
      */
-    private String coverageDescription() {
-        if ("Garantía Extendida".equals(getWarrantyType())) {
-            return "defectos de fábrica y daños accidentales";
-        }
-        return "defectos de fábrica";
-    }
+    public abstract String coverageDescription();
 }

@@ -37,6 +37,18 @@ public class Cable extends Accessory {
     }
 
     /**
+     * Returns the columns that only a cable has, in the order the accessory file
+     * expects them: how long it is and how it connects. A null is written as an
+     * empty string, so the word {@code null} never reaches the file.
+     * @return a two element list with the length and the connector type
+     */
+    @Override
+    public List<String> getExtraFields() {
+        return List.of(String.valueOf(lengthInMeters),
+                connectorType == null ? "" : connectorType);
+    }
+
+    /**
      * Builds the description of this cable by adding its length and its
      * connector to the description of the common accessory data.
      * @return description ready to be shown to the user

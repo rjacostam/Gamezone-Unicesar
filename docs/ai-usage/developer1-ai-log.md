@@ -383,3 +383,113 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
 |---|---|---|---|---|---|---|---|
 | 2026-10-18 | Space Bunny (OpenCode) | Requirement 5, phase 4 - `fix/return-discounted-refund` (A5) | Check the result against the example the leader gave | Does a console of 2500000 in a sale with 125000 of discount refund 2375000 and show the three figures per unit? | Yes. The receipt printed "- C-01 PlayStation 5 Slim &#124; Precio: $2,500,000.00 &#124; Descuento: -$125,000.00 &#124; Reembolso: $2,375,000.00", a sale without discount refunded the full 2500000, and a partial return of a video game in a sale with a 5 percent discount refunded 237500. | Accepted showing the discount with a minus sign, because the receipt must say how much is taken away from the list price. Prices keep Locale.US with two decimals, the same as the other modules. | fix: show list price proportional discount and refund per item |
+---
+
+## Requirement 6 - Exceptions and validation
+
+### Entry 29
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Decide whether the root exception should be checked or unchecked | Should GameZoneException extend Exception or RuntimeException? | Extending RuntimeException keeps the failure in the operation that caused it, so the services and the repositories do not have to declare it in every signature, and the menu can catch it in one place. | Accepted RuntimeException, with the code GAMEZONE_ERROR on the first constructor and one code per subclass. The class is abstract so nobody throws the root directly. | feat: add GameZoneException base class with error code |
+
+### Entry 30
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Decide how each exception builds its message | Should the messages be built by the caller or by the constructor? | The diagram shows each constructor receiving the pieces of the message, so the caller never concatenates text. | Accepted building the message inside the exception. For ResourceNotFoundException the caller passes the kind of resource already with its article, such as "el producto", so the sentence is correct for every resource instead of needing a second form for masculine and feminine. | feat: add ResourceNotFoundException with typed message |
+
+### Entry 31
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Decide why the validators are final with a private constructor | Why can a validator not be instantiated? | A validator only offers static methods and holds no state, so an instance would be useless and could keep data between calls. | Accepted final classes with a private constructor, which is the usual way to forbid instantiation from outside, and rejected a public constructor because it would invite using the class by object. | feat: add ProductValidator and PersonValidator |
+
+### Entry 32
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Check that every method throws the exception the table of the diagram asks for | Do the seven validators really throw the type and the error code that the table lists for each one? | Yes. I ran the forty-three cases of the table: a wrong format or range throws InvalidDataException with code INVALID_DATA, a lookup that returned null throws ResourceNotFoundException with code RESOURCE_NOT_FOUND, and a broken rule of the store throws BusinessRuleException with code BUSINESS_RULE. PersistenceException keeps the original cause and reports PERSISTENCE_ERROR, and the four exceptions are all GameZoneException. | Accepted the three exception types as they were and only adjusted the wording of the messages so the user reads a complete sentence, such as "El campo precio debe ser mayor que cero." | feat: add ReturnValidator with window and units checks |
+
+### Entry 33
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Decide how a validator checks that a console really is a console | Should validateCompatibleConsole use instanceof on Console? | The rule is about the category, and every product reports its category through getCategory(), which avoids importing the concrete classes. | Accepted comparing the category with CONSOLE, the same way CategoryDiscount does, and kept the two failures apart: null gives ResourceNotFoundException and a product that exists but is not a console gives BusinessRuleException. | feat: add AccessoryValidator and SaleValidator |
+### Entry 34
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Corregir una diferencia entre el validador y el servicio al rejecting la cantidad cero | validateQuantity solo rechazaba las cantidades negativas, pero restoreStock ya rechaza el cero. ¿Cual de las dos reglas es la correcta? | La regla del servicio es la correcta: una cantidad de cero unidades no es una operación, es un no-op que el usuario no debería poder ejecutar, y ademas el mensaje ya dice "debe ser mayor que cero". | Accepted cambiar la condición a quantity <= 0 y unificar el mensaje con el del servicio, de modo que el usuario lea lo mismo sin importar por donde entra la llamada. | fix: reject zero quantity in validateQuantity |
+
+### Entry 35
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 6 - `feature/exception-handling` | Quitar el aviso del compilador sobre las excepciones | ¿Por qué javac avisa que las clases serializables no declaran serialVersionUID? | RuntimeException implementa Serializable, así que las cinco clases heredan esa obligación y el compilador avisa con -Xlint:serial. Sin ese campo, un cambio en la estructura de la clase rompe la deserialización de excepciones antiguas. | Accepted declarar private static final long serialVersionUID = 1L en las cinco, con un comentario que explica que mantiene la misma versión al recompilar. Verifiqué que el aviso desaparece. | fix: declare serialVersionUID in the exception hierarchy |
+## Requirement 7 Phase 2 - GRASP refactor
+
+In this phase the Technical Leader authorised the use of AI to review code, not only to write
+it. The entries below record how the tool was used in each correction.
+
+### Entry 36
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Anotar que en esta fase la IA si esta autorizada para revisar codigo, y fijar desde el primer momento que la revision es sobre el estado real de la rama y no sobre lo que yo recordaba de la rama anterior | La rama cambio por completo respecto a la que tenia en la cabeza: ahora existe el log de correcciones, la consolidacion renumero los hallazgos y el repositorio se movio. Que hago antes de escribir la primera linea de codigo? | Verificar el estado real en vez de asumirlo: git fetch y git checkout de la rama indicada, lectura del pom, busqueda de los marcadores de tipo que hoy escriben los repositorios y lectura de la solucion acordada en la auditoria consolidada. | Accepted trabajar siempre sobre el codigo leido en ese momento, no sobre el que recuerda de otra rama. Ademas, mvn no estaba instalado en mi equipo,asi que instale Maven 3.9.9 de forma portable en C:\Temp\opencode\tools apuntando al JDK 25 ya instalado, para poder correr el mvn clean compile que pidio el lider sin instalar nada en el sistema. | refactor: add increaseStock to Product (V-01) |
+### Entry 37
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Escribir `Product.increaseStock` para la correccion de V-01 | increaseStock es el opuesto de decreaseStock, pero decreaseStock rechaza solo lo negativo y restoreStock rechaza el cero. Que regla y que excepcion uso? | La regla es la de restoreStock, que es la mas restrictiva y la que el usuario ya conoce: quantity <= 0. La excepcion no puede ser la misma, porque Product no puede llamar a ProductValidator sin crear un ciclo entre model y validation, ya que validation depende de model. La clase ya lanza IllegalArgumentException en hasStock y en decreaseStock. | Accepted usar `quantity <= 0` con IllegalArgumentException y el mensaje "La cantidad debe ser mayor que cero". Verifique que increaseStock(2) sobre stock 3 deja 5, que el 0 y el -5 se rechazan sin cambiar el stock y que decreaseStock sigue funcionando. | refactor: add increaseStock to Product (V-01) |
+
+### Entry 38
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Escribir `isConsole` en Product y Console para la correccion de V-04 | La regla "solo consolas" hoy se decide comparando `getCategory()` con el texto "CONSOLE" en varios lados. Con un metodo que responda eso, ¿el resultado es el mismo? | Si, siempre que la implementacion no cambie lo que las subclases ya contestan. Product responde false y Console sobrescribe con true, que es exactamente lo que.compareIgnoreCase decidia. El riesgo real no era el metodo, era tocar por accidente `getCategory()`, porque hay otros usos legitimos de la categoria, por ejemplo la promocion P-02 que apunta a VIDEOGAME. | Accepted agregar el metodo sin tocar `getCategory()`, y comprobar con los dos productos que el metodo nuevo y la comparacion por texto dan el mismo booleano antes de pushear. | refactor: let a product answer whether it is a console (V-04) |
+
+### Entry 39
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Publicar el marcador de tipo de promociones y garantias para V-08 | El lider pidio usar exactamente los textos que hoy escriben los repositorios. ¿Donde estan y hay riesgo de que no coincidan? | Los repositorios los tienen en constantes privadas: `TYPE_PERCENTAGE`, `TYPE_CATEGORY`, `TYPE_BULK` en `PromotionRepository` y `TYPE_BASIC`, `TYPE_EXTENDED` en `WarrantyRepository`. El riesgo no era de texto sino de confusion: `Warranty` ya tiene `getWarrantyType()`, que devuelve "Garantía Básica" y "Garantía Extendida", el nombre que lee el usuario, que es distinto del marcador del archivo. Confundir los dos habria cambiado el certificado de garantia que ve el usuario. | Accepted agregar `getTypeCode()` como metodo abstracto nuevo y separado de `getWarrantyType()`, documentando en el JavaDoc que no es el nombre que ve el usuario. Verifique los cinco marcadores contra la logica actual de los repositorios y los cinco coinciden. | refactor: publish the type code of promotions and warranties (V-08) |
+### Entry 40
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Quitar el instanceof de `saveAll` de products.csv sin que el archivo cambie | El lider pidio que el archivo quedara byte por byte igual, pero al probar el round-trip vi que `250000` se guardaba como `250000.0`. ¿Mi cambio es el culpable? | No. `append(double)` siempre escribio el decimal, asi que la diferencia con el archivo sembrado es anterior a mi cambio. Por eso comparar el round-trip contra el archivo original no servia como prueba: habria marcado como falla mia una diferencia que ya existia. | Accepted generar una referencia con el codigo de antes del cambio, aplicar el cambio, y comparar el nuevo round-trip contra esa referencia. Dieron 311 bytes y el mismo SHA-256 en los dos casos. Asi la prueba mide lo que si depende de mi cambio. | refactor: write the catalogue row from what each product publishes (V-08) |
+
+### Entry 41
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Decidir donde viven las columnas extra y como implementarlo en las cuatro jerarquias | El metodo nuevo es abstracto en `Product`, pero `Accessory` tambien hereda de `Product`. ¿Lo implemento en `Controller`, `Cable` y `Memory`? | Si los implemento, tengo que adivinar cuantas columnas usa `accessories.csv`, y ese archivo es de otro miembro. Adivinar el formato de otro es exactamente el tipo de decision que el patron protege. Ademas el archivo tiene dos columnas extra y `Controller` solo tiene un campo, o sea que mi lista no coincidiria y el guardado quedaria mal. | Accepted implementarlo en `VideoGame` y `Console`, que si viven en `products.csv`, y en `Accessory` responder una lista vacia documentando que un accesorio no se guarda en el catalogo de productos. Asi el repositorio de accesorios, que es de otro miembro, sigue usando su propia logica sin cambios. | refactor: write the catalogue row from what each product publishes (V-08) |
+
+### Entry 42
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionado |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Cambiar el `coverageDescription` privado por un metodo abstracto sin cambiar el certificado | El metodo viejo comparaba el nombre del tipo y devolvia dos textos fijos. ¿Como compruebo que el certificado no cambio sin tener la version anterior a mano? | La comparacion se puede hacer sin la version anterior, porque el metodo viejo solo tenia dos salidas posibles segun el nombre: "Garantía Extendida" daba el texto largo y cualquier otro daba el corto. Se comprobaron las dos combinations reales de la tienda, basica y extendida, y los dos certificados salieron con el mismo encabezado, fechas, costos, estado y linea de cobertura. | Accepted convertirlo en abstracto y responder en cada subclase con el mismo texto que ya producia. El certificado sigue llamando el mismo metodo, asi que no cambio ningun llamador. | refactor: let each warranty answer its own coverage (V-09) |
+### Entry 43
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionados |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Publicar en el modelo las columnas de accesorios y promociones sin cambiar los archivos | El repositorio convierte null con un helper privado `valueOf`, y en `List.of` un null lanza excepcion. ¿Como publico yo el mismo comportamiento? | El helper hace `valor == null ? "" : valor`. Con `List.of` no alcanza: un null no se puede ni construir la lista, porque el repositorio tambien usa `List.of` para las consolas compatibles y nunca ha luggage eso, o sea que un null ahi ya esta descartado por el propio diseno. Aun asi, para no depender de esa suposicion, se uso el mismo ternario del helper en vez de confiar en `List.of`. | Accepted convertir el null con el mismo ternario del repositorio y comprobar los tres accesorios con valor, con null y con cero, y las tres promociones con porcentaje entero, decimal, categoria null y minimo cero. Ademas se quito la lista vacia de `Accessory`, porque sus tres subclases ya responden y `Accessory` es abstracta. | refactor: let each accessory publish its own columns (V-08), refactor: let each promotion publish its own columns (V-08) |
+
+### Entry 44
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionados |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Escribir los dos formateadores del paquete ui y decidir si `getDescription` tambien se va | El comprobante imprime el descuento de cada unidad devuelta con `discountRatio()`, que es privado de `Return`. ¿Lo recalculo en la UI o cambio la visibilidad? Y si quito `getDescription`, ¿la UI se ve obligada a usar instanceof? | Recalcularlo en la UI duplicaria una regla del dominio, que es justo lo que se esta corrigiendo. La proporcion descontada la posee la devolucion, porque es la que sabe que unidades se devolvieron, asi que `Return` es el experto. Y sobre `getDescription`: `ConsoleMenu` lo imprime en doce lugares sin un solo instanceof; quitarlo obligaria al menu a preguntar el tipo de cada item para decidir que texto escribir, que es la misma cadena de instanceof que V-08 esta quitando. | Accepted hacer publico `discountRatio()` para que el formateador lo pida, y **dejar `getDescription`** con la justificacion escrita en el log, que es lo que pedia el enunciado. Los dos formateadores se compararon con los metodos del modelo en cinco escenarios, incluida una garantia vencida y dos casos con nulos, y las cinco cadenas salieron identicas. | refactor: build the return receipt and the certificate in the ui package (V-05) |
+### Entry 45
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionados |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Borrar los dos metodos del modelo y terminar V-05 | Al borrar los metodos, ¿que mas queda sin uso en las clases? | El `Locale` se usaba solo dentro de los dos metodos borrados: `Return` lo usaba en cinco llamadas a `String.format` y `Warranty` en una. Sin esos metodos el import queda sin uso, o sea que dejarlo seria dejar basura que el revisor tendria que notar. Ademas el JavaDoc de los formateadores decia que el metodo "todavia no se ha borrado", y si no se actualiza la documentacion queda mintiendo sobre el estado real del codigo. | Accepted borrar los dos metodos, quitar el `import java.util.Locale` de las dos clases y reescribir el JavaDoc de los formateadores para que describa la situacion actual. Se comprobo con una busqueda que no queda ninguna llamada a los dos metodos y que los dos formateadores siguen dando las mismas cadenas: 464, 253, 283 y 256 caracteres, los mismos conteos de la comparacion previa. | refactor: remove the document builders from the model (V-05) |
+
+### Entry 46
+
+| Fecha | Herramienta | Fase y rama | Objetivo | Consulta | Respuesta | Decision | Commit relacionados |
+|---|---|---|---|---|---|---|---|
+| 2026-10-18 | Space Bunny (OpenCode) | Requirement 7 Fase 2 - `feature/grasp-refactor` | Decidir si `discountRatio` sigue publico | El lider dijo que si solo lo usa el formateador se deje publico. ¿Lo usa alguien mas? | No solo el formateador: `refundableAmount`, que es privado de `Return` y calcula el reembolso de cada unidad devuelta, tambien lo llama. Ese metodo se queda porque es la regla del reembolso, que es dominio. O sea que el metodo tiene un uso interno y uno externo, y dejarlo publico es lo correcto. | Accepted dejarlo publico y anotar en el log que no lo usa solo el formateador, sino tambien `refundableAmount`, para que la justificacion no se base en una premisa equivocada. | refactor: remove the document builders from the model (V-05) |

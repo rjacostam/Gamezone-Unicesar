@@ -1,6 +1,6 @@
-﻿# AI Usage Log â€” Developer 2
+# AI Usage Log — Developer 2
 
-Owner: JosÃ© David Cervantes Solano
+Owner: José David Cervantes Solano
 
 Each interaction with an AI tool is recorded as one entry with the fields below.
 
@@ -19,7 +19,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 001 â€” Implementation of the people module
+## Entry 001 — Implementation of the people module
 
 | Field | Content |
 |---|---|
@@ -34,7 +34,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 002 â€” Improvements to the people module
+## Entry 002 — Improvements to the people module
 
 | Field | Content |
 |---|---|
@@ -49,13 +49,13 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 003 â€” Accessory module repository and service
+## Entry 003 — Accessory module repository and service
 
 | Field | Content |
 |---|---|
 | Date | 2026-10-18 |
 | Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
-| Phase and branch | Requerimiento 1 del Parcial Primer Corte (mÃ³dulo de accesorios). Branch `feature/accessory-module`, taken from the updated `develop` with the model classes of Developer 1 already merged. |
+| Phase and branch | Requerimiento 1 del Parcial Primer Corte (módulo de accesorios). Branch `feature/accessory-module`, taken from the updated `develop` with the model classes of Developer 1 already merged. |
 | Goal | Implement the two classes of the accessory module assigned to Developer 2 in `docs/accessory-class-diagram.md`: `AccessoryRepository` and `AccessoryService`, together with `data/accessories.csv`, following the specification of the Technical Leader exactly. |
 | Query | "Create `data/accessories.csv` with the header and the three preloaded accessories." / "Implement `AccessoryRepository` with `saveAll` and `loadAll` that declare `throws IOException`, rebuild the right subclass from the first column, return an empty list when the file is missing, skip the header and ignore damaged lines." / "Implement `AccessoryService` with the constructor loading the accessories and turning an `IOException` into an `IllegalStateException` like `ProductService` does." / "Add the three register methods, the four queries and `updateStock`, saving after every change." / "Reject invalid data with `IllegalArgumentException` and a Spanish message." |
 | Answer | The model read the accessory class diagram and the model classes of Developer 1 to use their exact API, read `ProductService` to copy the `IllegalStateException` pattern, and implemented the two classes and the data file with one commit per logical unit, six commits in total, each pushed right after it was created. Because the machine has no Java 17 and no Maven, the code could not be compiled, so it was verified statically: brace and parenthesis balance on every file, detection of unused imports, and confirmation of the twelve signatures and three attributes against the class diagram. The preload file was also checked to have eight columns per line and to be saved in UTF-8. |
@@ -166,3 +166,120 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Answer | The model added the attribute and the receipt line to `Return`, added `cancelWarranties` to `WarrantyService`, wired the service, the persistence and `Main`, and delivered six commits, each pushed right after it was created. Because the machine has no Java 17 and no Maven, the code could not be compiled, so it was verified statically: brace and parenthesis balance on every file, detection of unused imports, confirmation that the declaration order in `Main` is still correct, that the encoding of the file is still UTF-8 after writing the Spanish text, and a simulation of the reading of the file that checked a new line, a legacy line and the header. |
 | Decision | **Accepted:** the cancellation is done **once per unit** and not once per product, because two units of the same console carry their own pair of warranties and both pairs have to be cancelled. Only consoles are considered, because video games and accessories are not covered. The cost given back is the one of the cancelled warranty, so the basic warranty contributes zero and the extended one contributes its percentage of the product price. The line about the warranty refund is printed in every receipt, even when it is zero, so the customer always sees that the concept was taken into account. The old records are read with a warranty refund of zero, and an unreadable value is also read as zero instead of skipping the line, because a line saved before the adjustment must not stop the system from loading. **Modified:** the file layout of `ReturnRepository` grew from five to six columns and the header line was updated with it. **Discarded:** returning a data object with both parts of the refund, because the instruction fixed the signatures of the service and the model. |
 | Related commit | `427291d` (`Return` with `warrantyRefund`), `a3b2952` (`WarrantyService.cancelWarranties`), `7d455c9` (`ReturnService` cancelling per console unit), `da56d60` (`ReturnRepository` new column and legacy lines), `5ed5158` (`Main`), plus the commit that carries this log |
+
+---
+
+## Entry 011 — R6: typed exceptions and the validation layer
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requerimiento 6 (excepciones tipadas y capa de validacion), parte final. Branch `feature/exception-handling`. |
+| Goal | Make the seven services use the validators of Developer 1 instead of their own `IllegalArgumentException`, remove the `catch (IOException)` wrappers, make the seven repositories throw `PersistenceException` with the name of the file, fix the order of the save in `PersonService`, and remove the temporary catch blocks of `ConsoleMenu` and `Main`. |
+| Query | "Replace every `throw new IllegalArgumentException` for the matching validator." / "Remove the `catch (IOException)` wrappers from the services." / "Remove `throws IOException` from the repositories and throw `PersistenceException` naming the file." / "In `SaleRepository` the unknown references become `PersistenceException` with an invalid format message." / "In `PersonService` save before adding to the list." / "Remove the temporary catch in `runSafely`, the method `registerCustomerOrFail` and the catch in `Main`." |
+| Answer | The model rewrote the seven services and the seven repositories, plus the two cleanups, and delivered thirteen commits, each pushed right after it was created. Because the machine has no Java 17 and no Maven, the code could not be compiled, so it was verified statically: brace and parenthesis balance on every file, detection of unused and duplicated imports, UTF-8 without byte order mark, a sweep confirming that no service keeps `IllegalArgumentException`, `IOException` or `IllegalStateException`, and a sweep confirming that `IllegalArgumentException` only survives in the two model classes the diagram keeps. |
+| Decision | **Accepted:** the repositories keep `IOException` only in their private helpers, and only the public methods wrap it, which is what makes the exception carry the name of the file without duplicating the wrapping logic. The unknown references of `SaleRepository` were moved to a single private method so the three lookups report the same malformed file message. `PersonService` now builds the list that goes to the file including the new customer and writes it before adding it to memory, so a failed write leaves the customer registered nowhere. **Modified:** the temporary catch blocks were removed only at the end, after the last service was migrated, because until then they were the only thing catching the exceptions of the services that still threw plain `IllegalArgumentException`; removing them earlier would have let those exceptions escape and crash the menu. **Discarded:** three manual checks in `ReturnService` had no matching validator, a blank sale identifier, a blank product identifier inside the request, and a product that does not belong to the sale; they were kept and now throw `InvalidDataException` or `BusinessRuleException`. The category validation of promotions was widened, because `PromotionValidator` also accepts `ACCESSORY`. |
+| Related commit | `2e51acd`, `f9c81a0`, `2dbba58`, `0f2dc94`, `00eac1f`, `47f6cf4`, `5ed2fa9`, `200ae70`, `c0cd7aa`, `81b6044`, `cbd74ab`, `580c11a`, plus the commit that carries this log |
+
+---
+
+## Entry 012 — R7 Fase 1: GRASP audit of my modules
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requerimiento 7 (auditoria GRASP), Fase 1. Branch `feature/grasp-audit`. |
+| Goal | Audit my code against the nine GRASP patterns and write `docs/grasp-audit/developer2-audit.md` in English, with a verdict per pattern, the correct applications named, and a table for every violation. Problems that belong to another member had to be reported for the consolidation instead of being audited. |
+| Query | "Audit `Person`, `Customer`, `Seller`, `PersonRepository`, `PersonService`, `AccessoryRepository`, `AccessoryService`, `PromotionRepository`, `PromotionService`, `ReturnRepository`, `ReturnService` with the monthly balance, `WarrantyRepository` and `WarrantyService`, plus the exception and validator usage of R6." / "One section per pattern with the verdict violation, correct or not applicable." / "For every violation, a table with ID, Pattern, Module, Evidence with the exact lines, Explanation, Consequence, Proposed solution and Other member code." / "Do not audit the code of another member, report it." |
+| Answer | The model read the audit already written by Developer 1 to match its format, then searched my own code for evidence instead of writing from memory: every `instanceof`, every private helper that inspects an object of another class, the collaborator fields of every service and the public API of `Sale` and `Return`. It verified the cited line numbers one by one against the files and corrected four that had drifted. It produced five violations and five problems reported for the consolidation. |
+| Decision | **Accepted:** every verdict is backed by a real line of the current code, and the "correct" verdicts name the class and the method instead of asserting the pattern is followed. The High Cohesion verdict of `ReturnService` is recorded as correct even though the class carries two responsibilities, because Requirement 3 asks for one report over two modules and the reasoning is written down instead of being hidden. **Modified:** four line references were corrected after checking them against the files, and the summary table was fixed because it said ten findings when there were five. **Discarded:** auditing the `Sale` methods or the `Warranty` links that the `V-01` correction would touch, because they belong to the Technical Leader and to Developer 1; they are reported in the last section with the reason, as the statement requires. `docs/grasp-analysis.md` was not written in the first pass because the answer to question 4 had to be agreed first; it was written afterwards on the user's instruction to finish the task. **Corrected after the fact:** the branch was rebased onto two commits that Developer 1 pushed to the same branch while the first pull request was being reviewed, so the hashes below are the ones after the rebase. The first version of this entry cited the hashes from before it, which no longer exist on the branch. |
+| Related commit | Scope and summary `d17e375`, structure `504055d`, then one commit per GRASP pattern: Information Expert `cb896e8`, Creator `0a9405d`, Controller `b0cf019`, Low Coupling `ae8bc53`, High Cohesion `c23ff40`, Polymorphism `8f514ad`, Pure Fabrication `93a4161`, Indirection `63d67c5`, Protected Variations `de018f9`. Log `051932e` and question 4 `7c0cb75`. Pull request #34 into `develop`. |
+
+---
+
+## Entry 013 — R7 Fase 1: corrections requested in the review of the GRASP audit
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requerimiento 7 (auditoria GRASP), Fase 1. Branch `feature/grasp-audit`, pull request #34. |
+| Goal | Apply the eight corrections the Technical Leader asked for before approving the audit, one `docs:` commit each, and replace the description of the pull request with the one he dictated. |
+| Query | "V-01 and R-02: `Return` is Andres's, not mine. Mine is only `Sale`." / "Scope, Controller and Protected Variations: remove `Main.main` and `ConsoleMenu.runSafely`. They are mine and would end up audited twice." / "Pure Fabrication: remove the opinion about the seven validators." / "V-05: if the solution is to keep `WarrantyRecord` then it is not a violation, because every violation is corrected in Phase 2. Change it to correct." / "V-02 and V-03: lines 179 and 317 are in both. Leave them in V-03 and put 'see V-03' in the other." / "Header: put the audited commit, `develop` at `6c10ce2`, as in the other reports." / "grasp-analysis.md: put who answers each question and remove 'Order of the corrections'." / "Polymorphism: `getSummary()` is called on `Customer` and `Seller` (ConsoleMenu lines 208, 218 and 229), not on `Person`." |
+| Answer | The model checked the facts before editing instead of taking the corrections on faith. It read the header of `developer1-audit.md` and `leader-audit.md` to copy the exact `Author:` line format, confirmed that the Technical Leader already lists `ConsoleMenu` and `Main` in his own scope table, and verified that `ConsoleMenu` lines 208, 218 and 229 call `getSummary()` on a `Customer` and on a `Seller`. It also checked the line evidence still matched the source, which it did. |
+| Decision | **Accepted:** all eight corrections. `V-01` was rewritten around `Sale` only, and `R-02` was reassigned from the Technical Leader to Developer 1 because `Return` is his class, so it is reported and not audited. **Modified:** three changes the review did not ask for but that the file required to stay true. The summary table was corrected in the same commits as the content it counts, otherwise the counts would have contradicted the sections. The stale `(see V-01)` inside `R-03` was dropped, because `V-01` no longer covers the warranty question that `R-03` reports. And `grasp-analysis.md` said "five violations" after `V-05` was reclassified, so it was corrected to four. **Discarded:** adding a new Controller example to replace the two removed ones. `PersonService.registerCustomer` was the candidate, but it repeats a bullet already in Protected Variations, so the section was left with its two real applications and the summary was lowered to match. **Kept and flagged:** the leader asked to remove the opinion about the seven validators but not the one about `GameZoneException` and its four subclasses, which are also his classes, and the "correct applications" of Information Expert still praise `Return.calculateRefundAmount` and `Warranty.generateWarrantyCertificate`, which are Andres's. Those three were left as they are and are reported for him to decide. |
+| Related commit | `8226935`, `f19a9a0`, `f755c23`, `302377f`, `37f14f0`, `e178f28`, `a3a6246`, `6731f87`, and the log entry itself. Pull request #34. |
+
+---
+
+# Requirement 7 — Phase 2 (Correction)
+
+In this phase the Technical Leader authorised the use of AI to review code, not only to
+write it. Each entry below records what the AI checked and what it decided, as in Phase 1.
+
+## Entry 014 - R7 Phase 2, turn 1: V-07, the InventoryCatalog interface
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requirement 7 (GRASP), Phase 2, correction. Branch `feature/grasp-refactor`. |
+| Goal | Turn 1 of violation V-07: create the common inventory interface in the `service` package, make `AccessoryService` implement it without changing its logic, and log the change. `ReturnService` was not to be touched, and `ProductService` belongs to Developer 1. |
+| Query | "Create `InventoryCatalog` with these methods, with JavaDoc in English." / "Make `AccessoryService` implement it and add `@Override` on those 3 methods. Do not change its logic." / "Add its row in `docs/grasp-refactor-log.md`." / "Do not touch `ReturnService` yet." |
+| Answer | The list of methods was missing from the message, so the model read the source instead of guessing. It found that the instruction to annotate three methods matched exactly three public methods that `ProductService` and `AccessoryService` already share with the same shape: `findById`, `updateStock` and `restoreStock`. It then checked the hierarchy and found `Accessory extends Product`, so the interface was typed `Product findById(String)` and both services satisfy it by covariant return, which is what allows the three implementations to stay untouched. It also read the consolidated audit (`V-07`), the before class diagram and the two JavaDoc blocks to confirm the contract written in the interface is the one both implementations already honour. |
+| Decision | **Accepted:** the interface carries `findById`, `updateStock` and `restoreStock`, typed with `Product` rather than `Object`, because `Accessory extends Product` makes the covariant return legal and keeps the callers typed. The return type is the only detail the model inferred; if the leader meant a different method list or a different return type, only this one file changes. **Modified:** two rows were added to `docs/grasp-refactor-log.md` instead of one, because the table says one row per change and there were two changes, the interface and `AccessoryService`. The rows say `No regression: pending` instead of repeating the `both scripts identical` of the other rows, because this environment has no JDK and the model did not compile or run the two scripts. Claiming the scripts were identical would have been a statement nobody verified. **Discarded:** moving `ReturnService` to a list of catalogues. The leader reserved that for turn 2, and doing it now would break the compilation while `ProductService` does not implement the interface yet. **Handled:** the branch is shared and Developer 1 pushed twice while this turn was in progress, so the two rebases kept his `V-01` and `V-04` rows, and the conflict on `grasp-refactor-log.md` was resolved by keeping all five rows of the table. |
+| Related commit | `7ce95e4` (interface), `5e9442e` (`AccessoryService`), `499a135` (log). |
+
+## Entry 015 - R7 Phase 2, turn 2: V-03, V-04 and V-08
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requirement 7 (GRASP), Phase 2, correction. Branch `feature/grasp-refactor`. |
+| Goal | Turn 2. Three corrections and one row of the refactor log each: V-03, let `ReturnService` and `ReturnRepository` ask the sale instead of walking its product list; V-04, ask the product whether it is a console instead of testing `instanceof`; V-08, write the type marker published by the model instead of deriving it with `instanceof`. The csv files had to stay byte for byte identical, and the `ReturnService` part of V-07 had to be left for later. |
+| Query | "V-03: change `countUnits(sale, id)` and `findProduct(sale, id)` so they call `sale.countUnitsOf(id)` and `sale.findProductById(id)`, or remove them and use those methods directly. Do the same with `ReturnRepository.findProduct`." / "V-04: change `!(product instanceof Console)` for `!product.isConsole()`." / "V-08: remove the `instanceof` chains of the type marker in `AccessoryRepository`, `PromotionRepository` and `WarrantyRepository`. The csv files must stay byte for byte identical." |
+| Answer | Before editing, the model compared what each chain wrote against what the published methods return. `TYPE_PERCENTAGE`, `TYPE_CATEGORY`, `TYPE_BULK`, `TYPE_BASIC` and `TYPE_EXTENDED` are literally `"PERCENTAGE"`, `"CATEGORY"`, `"BULK"`, `"BASIC"` and `"EXTENDED"`, the same strings the five `getTypeCode` implementations return, which is what makes the files byte for byte identical. It also confirmed that `Product.isConsole()` answers false and only `Console` overrides it, so `!product.isConsole()` is the same condition as `!(product instanceof Console)`, and it checked that the three bodies removed in V-03 were identical to the two methods of `Sale` that replace them. |
+| Decision | **Accepted:** the three corrections, one commit each. For V-03 the two helpers of `ReturnService` and the one of `ReturnRepository` were deleted instead of being kept as delegations, because each had a single caller and `Sale` already answers both questions. **Modified:** three pieces of dead code were removed because only the deleted chains had used them, the import of `Console` in `ReturnService`, and `TYPE_BASIC`, `TYPE_EXTENDED` and the import of `BasicWarranty` in `WarrantyRepository`. The constants of `PromotionRepository` were kept because reading the file still compares against them, and the reading side of `WarrantyRepository` stores the marker as it reads it without comparing. **Discarded:** converting the chains that write the extra columns of a record in `AccessoryRepository` and `PromotionRepository`. They are not the type marker, they exist because the columns differ per subclass, and changing them would need new model methods that no one has written yet. `AccessoryRepository` needed no change at all, it already wrote `accessory.getAccessoryType()`, and the log row says so. **Left alone:** `countReturnedUnits` in `ReturnService`, because it walks the list of returns and not the sale, and the `ReturnService` part of V-07, because the Technical Leader reserved it for after Developer 1 finished `ProductService`. **Kept and flagged:** the three log rows say `No regression: pending`, because this environment has no JDK and the two scripts were not run here. |
+| Related commit | `d493e2f` (V-03), `a22dc9b` (V-04), `0100e83` (V-08), `a114c60` (log). |
+
+## Entry 016 - R7 Phase 2, turn 3: V-07 in ReturnService, and V-08 still waiting
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requirement 7 (GRASP), Phase 2, correction. Branch `feature/grasp-refactor`. |
+| Goal | Turn 3. Two corrections: remove the `instanceof Accessory` of `ReturnService.restoreStock` with a list of catalogues, the way the Technical Leader did it in `SaleService.catalogOf`, and remove the `instanceof` chains of the extra columns of `AccessoryRepository.serialize` and `PromotionRepository.serialize` once Developer 1 published the `getExtraFields` of accessories and promotions. One commit and one log row each. |
+| Query | "V-07, you can do it now: `ProductService` already implements `InventoryCatalog`. In `ReturnService.restoreStock` remove the `instanceof Accessory`. Use a list of catalogues and ask each one whether it has that same item, as I did in `SaleService`, method `catalogOf`, commit `c35bc9d`." / "V-08: when Developer 1 pushes the `getExtraFields` of accessories and promotions, remove the `instanceof` chains of `AccessoryRepository.serialize` and `PromotionRepository.serialize`, joining those fields. The csv files must stay byte for byte identical." |
+| Answer | The model read the reference commit `c35bc9d` before writing anything and copied its shape: a `List<InventoryCatalog>` field built with `List.of(productService, accessoryService)`, and a `catalogOf` that returns the first catalogue that holds the item and falls back to the product catalogue. It checked that both services really declare the interface with the three methods, so the list compiles. It then checked the state of the `getExtraFields` of the model and found that Developer 1 had published the accessory side only. |
+| Decision | **Accepted:** V-07. `restoreStock` groups the units in one `LinkedHashMap` instead of two and asks `catalogOf` who owns each identifier, and the import of `Accessory` is gone, so the file has no `instanceof` left. **Modified:** `catalogOf` takes the identifier instead of the `Product`, because `restoreStock` works with a map keyed by identifier and keeping the object alive would have needed a second map only to hold the reference. The question asked of each catalogue is the same one, "do you have this item", and it does not depend on the catalogues and the sale holding the same instances. **Left for later:** V-08. `Controller`, `Cable` and `Memory` publish `getExtraFields`, but `Promotion`, `PercentageDiscount`, `CategoryDiscount` and `BulkPurchaseDiscount` do not, so the condition the Technical Leader set is only half met. Doing the accessory half alone would have split one violation into two commits and two rows, against what he asked, so nothing was changed in either repository. **Checked and reported:** joining the fields with `String.join(DELIMITER, ...)` would be byte for byte identical, because the prefix of `serialize` already ends with a delimiter and the published lists hold one value for a controller and two for a cable and a memory, with the same empty string for a null. That is ready to apply the moment the promotions publish their own. **Kept and flagged:** the log row says `No regression: pending`, because this environment has no JDK and the two scripts were not run here. |
+| Related commit | `b2e6637` (V-07), `768f00e` (log). |
+
+## Entry 017 - R7 Phase 2, turn 4: V-08 in the accessory and promotion repositories
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requirement 7 (GRASP), Phase 2, correction. Branch `feature/grasp-refactor`. |
+| Goal | Turn 4. Finish V-08: remove the `instanceof` chains that wrote the extra columns of `AccessoryRepository.serialize` and `PromotionRepository.serialize`, joining the values the model publishes, with the csv files staying byte for byte identical. One commit and one log row per repository. |
+| Query | "In `AccessoryRepository.serialize` lines 141 to 152, remove the `instanceof` chain of `Controller`, `Cable` and `Memory` and write `String.join(DELIMITER, accessory.getExtraFields())`." / "In `PromotionRepository.serialize` lines 141 to 152, do the same with `promotion.getExtraFields()`." / "Delete the imports that end up unused." / "The csv files must stay byte for byte identical. One commit per repository and its row in the log." |
+| Answer | The model compared each branch of both chains against the published lists before editing, one field at a time. A controller published `List.of(connectionType)` with the same empty string for a null that `valueOf` wrote; a cable published `String.valueOf(lengthInMeters)` and the connector, a memory the capacity and the type, with the same two fields and the same empty string; a category discount published the percentage and the target category, a bulk purchase discount the percentage and the minimum quantity, and a percentage discount the percentage and an empty field, exactly like the chain appended. In both files the prefix of `serialize` already ended with a delimiter, so `String.join(DELIMITER, ...)` puts the delimiter between the extra values and none after the last one, which is what the chain did. |
+| Decision | **Accepted:** both corrections, one commit each, and `String.join(DELIMITER, ...)` exactly as asked. **Modified:** nothing beyond the two chains. The `else` branch of the accessory chain, which wrote two empty columns, disappeared because `Accessory` has only three subclasses and each one now publishes its own fields, so the branch was unreachable. **Discarded:** the instruction to delete the unused imports. None of them became unused: `deserialize` still builds `Controller`, `Cable` and `Memory` from the marker of the first column, and `PercentageDiscount`, `CategoryDiscount` and `BulkPurchaseDiscount` from theirs, on purpose, because choosing the class of a row being read is the job of the constructor. The private `valueOf` also stayed, because both files still call it when they read. Removing those imports would have broken the compilation for no gain. **Kept and flagged:** the two log rows say `No regression: pending`, because this environment has no JDK and the two scripts were not run here. |
+| Related commit | `8adc168` (accessories), `833fa3e` (promotions), `1f3799d` (log). |
+
+## Entry 018 - R7 Phase 2: closing entry for Developer 2
+
+| Field | Content |
+|---|---|
+| Date | 2026-10-18 |
+| Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
+| Phase and branch | Requirement 7 (GRASP), Phase 2, correction, closing entry. Branch `feature/grasp-refactor`. |
+| Goal | Close my part of the phase by recording which violations I corrected, how the AI was used on each one, and the result of the no regression check. |
+| Query | "Add the closing entry to the Developer 2 log, in the Phase 2 section: what you corrected (V-03, V-04, V-07 and V-08), how you used the AI, and that the no regression test came out identical." |
+| Answer | The AI wrote and reviewed the four corrections, one commit per change, and checked each one against the source instead of trusting the instruction. For V-03 it confirmed the three removed bodies were identical to `Sale.countUnitsOf` and `Sale.findProductById` before deleting them. For V-04 it confirmed that only `Console` extends `Product` and overrides `isConsole`, so the condition was unchanged. For V-07 it read the reference commit `c35bc9d` of the Technical Leader and copied the shape of `SaleService.catalogOf`. For V-08 it compared every branch of the four `instanceof` chains with the values the model publishes, field by field, which is what showed that the csv files stay byte for byte identical. It also refused three instructions and said why: the method list of `InventoryCatalog` was missing from the first message and was inferred from the two services, V-08 was left untouched until Developer 1 published the promotions, and the imports the Technical Leader asked to delete were still used by `deserialize` and could not be removed without breaking the compilation. |
+| Decision | **Corrected:** V-03, `ReturnService` and `ReturnRepository` now ask `Sale` for its own units and the helpers that walked the product list from outside were deleted. V-04, `ReturnService` asks `product.isConsole()`, the import of `Console` is gone and the file has no `instanceof` left. V-07, the `InventoryCatalog` interface exists, `AccessoryService` and `ProductService` implement it, and `ReturnService.restoreStock` asks a list of catalogues who owns an item. V-08, `PromotionRepository` and `WarrantyRepository` write the type code published by the model, and `AccessoryRepository` and `PromotionRepository` join the extra columns published by the model. **How the AI was used:** it was allowed to review the code in this phase, so it worked as a reviewer and not only as an author. Before every change it read the real method, checked the type of every value that reaches a file and the semantics of every predicate it replaced, and after every change it looked for the imports and private helpers the change left unused. Three times it disagreed with the instruction and wrote the reason in this log instead of applying the change. **No regression:** the Technical Leader compiled the branch and ran the two scripts of `docs/regression`, and the result was identical output and identical data files compared with the reference run on `develop`, so the corrections of V-03, V-04, V-07 and V-08 are proven not to change what the user sees. That check was run by the Technical Leader and not by the AI, because this environment has no JDK. The rows of `docs/grasp-refactor-log.md` that I wrote say `pending` and were the honest state of each turn; the closing verdict is his. **Merged:** all eleven of my commits were merged into `develop` with pull request #36, because the Technical Leader opened that pull request from the shared branch `feature/grasp-refactor`, so this pull request only carries this closing entry. |
+| Related commit | `7ce95e4`, `5e9442e` and `b2e6637` (V-07); `d493e2f` (V-03); `a22dc9b` (V-04); `0100e83`, `8adc168` and `833fa3e` (V-08); `499a135`, `a114c60`, `768f00e` and `1f3799d` (rows of the refactor log). |

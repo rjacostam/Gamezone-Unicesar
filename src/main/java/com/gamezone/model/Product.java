@@ -1,5 +1,7 @@
 package com.gamezone.model;
 
+import java.util.List;
+
 /**
  * Base class for every item the store sells. It holds the data and the inventory
  * behaviour shared by all product types, and declares the description method
@@ -41,6 +43,27 @@ public abstract class Product {
     public abstract String getCategory();
 
     /**
+     * Returns the three columns that only this kind of product has, in the order
+     * the catalogue file expects them, so the repository writes them without
+     * having to ask which kind of product it is holding. The columns after the
+     * category are the ones that differ: a video game carries its platform,
+     * genre and age rating, and a console carries its brand, model and
+     * generation.
+     * @return the three extra columns of this product, in file order
+     */
+    public abstract List<String> getExtraFields();
+
+    /**
+     * Tells whether this product is a console. A product answers no, and only
+     * {@link Console} answers yes, so the callers do not have to compare the
+     * category as text to find out.
+     * @return false, because a product is not a console unless its own class says so
+     */
+    public boolean isConsole() {
+        return false;
+    }
+
+    /**
      * Tells whether the store has enough units to sell the requested quantity.
      * A negative quantity is never valid, so it is always rejected.
      * @param quantity units the store wants to sell
@@ -66,6 +89,22 @@ public abstract class Product {
             throw new IllegalArgumentException("No hay stock suficiente para el producto " + id);
         }
         this.stock -= quantity;
+    }
+
+    /**
+     * Adds returned units to the available stock, the opposite operation of
+     * {@link #decreaseStock(int)}. The movement is rejected when the quantity is
+     * zero or negative, because returning no units is not a change of the
+     * inventory. This is the same rule {@code ProductService.restoreStock}
+     * applies today.
+     * @param quantity units being returned to the store
+     * @throws IllegalArgumentException if the quantity is not greater than zero
+     */
+    public void increaseStock(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("La cantidad debe ser mayor que cero");
+        }
+        this.stock += quantity;
     }
 
     /**

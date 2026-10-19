@@ -34,6 +34,17 @@ public class Controller extends Accessory {
     }
 
     /**
+     * Returns the columns that only a controller has, in the order the accessory
+     * file expects them. A controller has one: how it connects. A null is written
+     * as an empty string, so the word {@code null} never reaches the file.
+     * @return a one element list with the connection type
+     */
+    @Override
+    public List<String> getExtraFields() {
+        return List.of(connectionType == null ? "" : connectionType);
+    }
+
+    /**
      * Builds the description of this controller by adding the connection type to
      * the description of the common accessory data.
      * @return description ready to be shown to the user

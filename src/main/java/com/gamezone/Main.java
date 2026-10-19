@@ -1,5 +1,6 @@
 package com.gamezone;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.persistence.AccessoryRepository;
 import com.gamezone.persistence.PersonRepository;
 import com.gamezone.persistence.ProductRepository;
@@ -16,7 +17,6 @@ import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
 import com.gamezone.ui.ConsoleMenu;
 
-import java.io.IOException;
 
 /**
  * Entry point of the GameZone Unicesar application.
@@ -61,8 +61,8 @@ public class Main {
             ConsoleMenu menu = new ConsoleMenu(productService, personService, saleService, accessoryService,
                     promotionService, warrantyService, returnService);
             menu.start();
-        } catch (IOException | IllegalStateException e) {
-            System.out.println("No fue posible cargar los datos del sistema: " + e.getMessage());
+        } catch (PersistenceException e) {
+            System.out.println("No fue posible cargar los datos del sistema. Contacte al administrador.");
         }
     }
 }

@@ -37,6 +37,19 @@ public class Memory extends Accessory {
     }
 
     /**
+     * Returns the columns that only a memory card has, in the order the accessory
+     * file expects them: how much it holds and of what kind it is. A null is
+     * written as an empty string, so the word {@code null} never reaches the
+     * file.
+     * @return a two element list with the capacity and the memory type
+     */
+    @Override
+    public List<String> getExtraFields() {
+        return List.of(String.valueOf(capacityInGb),
+                memoryType == null ? "" : memoryType);
+    }
+
+    /**
      * Builds the description of this memory by adding its capacity and its type
      * to the description of the common accessory data.
      * @return description ready to be shown to the user

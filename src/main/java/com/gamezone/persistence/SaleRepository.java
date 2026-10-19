@@ -1,5 +1,6 @@
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Sale;
@@ -48,17 +49,23 @@ public class SaleRepository {
      * created if it does not exist yet.
      *
      * @param sales sales to save
-     * @throws IOException if the file cannot be written
+     * @throws PersistenceException if the file cannot be written
      */
-    public void saveAll(List<Sale> sales) throws IOException {
-        if (filePath.getParent() != null) {
-            Files.createDirectories(filePath.getParent());
-        }
-        try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)) {
-            for (Sale sale : sales) {
-                writer.write(toLine(sale));
-                writer.newLine();
+    public void saveAll(List<Sale> sales) {
+        try {
+            if (filePath.getParent() != null) {
+                Files.createDirectories(filePath.getParent());
             }
+            try (BufferedWriter writer =
+                         Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)) {
+                for (Sale sale : sales) {
+                    writer.write(toLine(sale));
+                    writer.newLine();
+                }
+            }
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de escritura en el archivo " + filePath, e);
         }
     }
 
@@ -69,10 +76,9 @@ public class SaleRepository {
      * @param customers customers already loaded
      * @param sellers   sellers already loaded
      * @return stored sales, or an empty list if the file does not exist
-     * @throws IOException if the file cannot be read
+     * @throws PersistenceException if the file cannot be read
      */
-    public List<Sale> loadAll(List<Product> products, List<Customer> customers, List<Seller> sellers)
-            throws IOException {
+    public List<Sale> loadAll(List<Product> products, List<Customer> customers, List<Seller> sellers) {
         List<Sale> sales = new ArrayList<>();
         if (!Files.exists(filePath)) {
             return sales;
@@ -84,6 +90,9 @@ public class SaleRepository {
                     sales.add(fromLine(line, products, customers, sellers));
                 }
             }
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de lectura en el archivo " + filePath, e);
         }
         return sales;
     }
@@ -125,7 +134,7 @@ public class SaleRepository {
                 return customer;
             }
         }
-        throw new IllegalStateException("La venta hace referencia a un cliente que no existe: " + id);
+        throw invalidFormat();
     }
 
     private Seller findSeller(List<Seller> sellers, String id) {
@@ -134,7 +143,7 @@ public class SaleRepository {
                 return seller;
             }
         }
-        throw new IllegalStateException("La venta hace referencia a un vendedor que no existe: " + id);
+        throw invalidFormat();
     }
 
     private Product findProduct(List<Product> products, String id) {
@@ -143,6 +152,18 @@ public class SaleRepository {
                 return product;
             }
         }
-        throw new IllegalStateException("La venta hace referencia a un producto que no existe: " + id);
+        throw invalidFormat();
+    }
+
+    /**
+     * Builds the failure used when a stored sale points to a customer, a seller
+     * or a product that no longer exists. The line cannot be interpreted, so the
+     * file is reported as malformed rather than as a missing object.
+     *
+     * @return the exception to throw
+     */
+    private PersistenceException invalidFormat() {
+        return new PersistenceException(
+                "El archivo " + filePath + " tiene un formato inválido", null);
     }
 }

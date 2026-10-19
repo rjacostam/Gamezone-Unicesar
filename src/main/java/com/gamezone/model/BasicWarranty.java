@@ -47,4 +47,24 @@ public class BasicWarranty extends Warranty {
     public double getAdditionalCost() {
         return 0.0;
     }
+
+    /**
+     * Returns the marker of this warranty type, the one already written in the
+     * warranty file.
+     * @return BASIC
+     */
+    @Override
+    public String getTypeCode() {
+        return "BASIC";
+    }
+
+    /**
+     * Returns the text describing what this warranty covers. A basic warranty
+     * only covers the defects the product arrived with.
+     * @return coverage of this basic warranty, in Spanish
+     */
+    @Override
+    public String coverageDescription() {
+        return "defectos de fábrica";
+    }
 }

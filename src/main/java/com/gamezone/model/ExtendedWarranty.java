@@ -51,4 +51,24 @@ public class ExtendedWarranty extends Warranty {
         }
         return covered.getPrice() * 0.10;
     }
+
+    /**
+     * Returns the marker of this warranty type, the one already written in the
+     * warranty file.
+     * @return EXTENDED
+     */
+    @Override
+    public String getTypeCode() {
+        return "EXTENDED";
+    }
+
+    /**
+     * Returns the text describing what this warranty covers. The extended
+     * warranty adds the accidental damage to the defects of the product.
+     * @return coverage of this extended warranty, in Spanish
+     */
+    @Override
+    public String coverageDescription() {
+        return "defectos de fábrica y daños accidentales";
+    }
 }

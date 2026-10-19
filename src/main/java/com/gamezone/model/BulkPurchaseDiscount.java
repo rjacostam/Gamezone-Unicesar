@@ -1,6 +1,7 @@
 package com.gamezone.model;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -44,10 +45,7 @@ public class BulkPurchaseDiscount extends Promotion {
         if (sale.getProducts().size() < minimumQuantity) {
             return 0;
         }
-        double base = 0;
-        for (Product product : sale.getProducts()) {
-            base += product.getPrice();
-        }
+        double base = sale.getSubtotal();
         return base * percentage / 100.0;
     }
 
@@ -62,6 +60,26 @@ public class BulkPurchaseDiscount extends Promotion {
                 + " | " + getStartDate() + " a " + getEndDate()
                 + " | " + String.format(Locale.US, "%.2f%%", percentage)
                 + " al comprar " + minimumQuantity + " o mas";
+    }
+
+    /**
+     * Returns the marker of this promotion type, the one already written in the
+     * promotion file.
+     * @return BULK
+     */
+    @Override
+    public String getTypeCode() {
+        return "BULK";
+    }
+
+    /**
+     * Returns the two columns that only this promotion writes after its
+     * percentage: how many units have to be bought to get the discount.
+     * @return a two element list with the percentage and the minimum quantity
+     */
+    @Override
+    public List<String> getExtraFields() {
+        return List.of(String.valueOf(percentage), String.valueOf(minimumQuantity));
     }
 
     /**
