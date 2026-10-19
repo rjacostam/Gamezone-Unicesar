@@ -72,3 +72,18 @@ rule by the type of an object, and no unrelated class has to be edited.
 | Consequence | If a fifth exception is created and nobody edits `Submenu`, the error is not turned into a message and the user sees a stack trace. |
 | Proposed solution | Keep the four catch blocks and add at the end `catch (GameZoneException e)` with a general message. The four current messages do not change, and a new exception is handled without editing `Submenu`. |
 | Other member's code | No. Reported also by Developer 1 for the consolidation. |
+
+## Liskov Substitution Principle
+
+**Verdict: correct.**
+
+- My only hierarchy is `Submenu` (line 15) and its seven submenus (`ProductMenu`, `PersonMenu`,
+  `SaleMenu`, `AccessoryMenu`, `PromotionMenu`, `WarrantyMenu`, `ReturnMenu`). All of them
+  implement `show()` and `ConsoleMenu` calls them the same way, without a special case for any
+  of them. Any submenu can replace the base type.
+- `PersonMenu.listSellers()` is an extra method. It extends what `PersonMenu` can do but does
+  not stop it from working as a `Submenu`, so it does not break substitution. That `SaleMenu`
+  depends directly on `PersonMenu` to call it is a dependency problem, recorded in the Interface
+  Segregation section (V-05).
+- The verdict is *correct* and not *not applicable*, because the hierarchy exists and was
+  checked.
