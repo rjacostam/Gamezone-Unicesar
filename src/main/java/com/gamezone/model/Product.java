@@ -69,6 +69,22 @@ public abstract class Product {
     }
 
     /**
+     * Adds returned units to the available stock, the opposite operation of
+     * {@link #decreaseStock(int)}. The movement is rejected when the quantity is
+     * zero or negative, because returning no units is not a change of the
+     * inventory. This is the same rule {@code ProductService.restoreStock}
+     * applies today.
+     * @param quantity units being returned to the store
+     * @throws IllegalArgumentException if the quantity is not greater than zero
+     */
+    public void increaseStock(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("La cantidad debe ser mayor que cero");
+        }
+        this.stock += quantity;
+    }
+
+    /**
      * Returns the identifier of this product.
      * @return product identifier
      */
