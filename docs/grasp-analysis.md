@@ -15,6 +15,25 @@
 
 ---
 
+## Question 2 — Boundary findings
+
+*Answered by the Technical Leader.*
+
+The team identified six violations on the boundary between the code of several members:
+V-01, V-03, V-04, V-05, V-07 and V-08. During the consolidation each of them was registered
+only once, even when it appeared in two or three individual reports. The correction was split
+by the classes that belong to each member, so that each person changes only their own part of
+the code.
+
+A concrete case is V-04, the rule that only consoles can have an extended warranty. It
+appeared in my report, in Andrés's report and in José's report, but in the consolidation it
+was registered as a single finding. Andrés is in charge of adding the behaviour to `Product`
+and correcting his validators; I am in charge of correcting `ConsoleMenu` and `SaleService`;
+and José is in charge of adjusting `ReturnService`. This way the responsibility is shared
+without duplicating the violation.
+
+---
+
 ## Question 4 — Preserving the external behaviour of the system
 
 The audit found four violations in the code of Developer 2 and five more problems that
