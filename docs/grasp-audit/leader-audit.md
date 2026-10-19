@@ -123,3 +123,37 @@ repeated in every operation of the menu.
 | Consequence | Every new module or operation makes the class bigger and harder to understand, and changes of different modules happen in the same file. |
 | Proposed solution | Split it into `ProductMenu`, `PersonMenu`, `SaleMenu`, `AccessoryMenu`, `PromotionMenu`, `WarrantyMenu` and `ReturnMenu`, and leave `ConsoleMenu` as the main menu that gives access to them. The input helpers that every submenu uses go to their own class. Patterns applied: High Cohesion and Pure Fabrication. |
 | Other member's code | No. |
+
+## Polymorphism
+
+**Verdict: violation** (one point).
+
+Correct application: `Promotion.calculateDiscount(sale)` is called in
+`SaleService.applyBestPromotion` (line 305) without asking which subclass of `Promotion` it
+is. Each subclass computes the discount with its own rules.
+
+The `instanceof Console` checks of the warranty rule are part of V-02 and are not repeated
+here.
+
+| Field | Content |
+|---|---|
+| ID | V-05 |
+| Pattern | Polymorphism |
+| Module | Accessories integration in sales (Requirement 1) |
+| Evidence | `SaleService.updateInventory` (lines 321–329): `if (entry.getKey() instanceof Accessory) { accessoryService.updateStock(...); } else { productService.updateStock(...); }` |
+| Explanation | The service asks for the concrete type of the item to decide which service updates its inventory. |
+| Consequence | A new kind of product with its own inventory would require another case in `updateInventory`, and `SaleService` has to know every concrete type. |
+| Proposed solution | Update the inventory through a common abstraction, so `SaleService` does not need to know whether the item is an `Accessory` or another type. The exact design, and whether it needs changes in classes of other members, is agreed in the consolidation. |
+| Other member's code | To be confirmed in the consolidation. |
+
+## Pure Fabrication
+
+**Verdict: correct.**
+
+- `Main` is a class that does not represent anything of the business. It exists to create
+  the repositories, the services and the menu and to connect them (lines 41–60) before
+  the program starts (line 63). Some part of the program has to know how the components
+  are built, and keeping it in `Main` takes that technical responsibility away from the
+  domain classes.
+- The corrections of V-03 and V-04 also apply this pattern (`ReceiptGenerator` and the
+  input helper class).
