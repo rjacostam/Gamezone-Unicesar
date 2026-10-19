@@ -93,6 +93,7 @@ One row per change. Every violation of the consolidated audit must appear at lea
 
 | Class | Change made | Violation ID | Pattern applied | Commit / PR | Responsible |
 |---|---|---|---|---|---|
+| `Sale` | Added `countUnitsOf(String productId)` and `findProductById(String productId)`, so the sale answers how many units of a product it has and which unit carries an identifier. Both compare ignoring case; `ReturnRepository.findProduct` compares with `equals`, but the stored ids are always written from `Product.getId()`, so the result is the same. No caller changed yet: Developer 2 moves `ReturnService` and `ReturnRepository` to these methods. No regression: both scripts identical. | V-03 | Information Expert | `b0fd770` | Technical Leader |
 
 ## Final verification
 
