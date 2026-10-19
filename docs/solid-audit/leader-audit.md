@@ -113,3 +113,46 @@ rule by the type of an object, and no unrelated class has to be edited.
 | Consequence | A change in any method of `ProductService` or `PersonMenu` is a reason to review `SaleMenu`, even when the two operations it uses did not change. |
 | Proposed solution | Let `SaleMenu` depend on small contracts with only the operations it uses, for example a product finder with `findById` and a seller lister with `listSellers`. |
 | Other member's code | Yes, Developer 1: `ProductService` is his and would implement the small contract. |
+
+## Dependency Inversion Principle
+
+**Verdict: violation** (two points).
+
+Correct application: `Main` (lines 41–63) is the composition root. It is the place that has to
+know and create the concrete repositories and services with `new`, and connect them; the
+classes inside the system are the ones that should depend on abstractions.
+
+| Field | Content |
+|---|---|
+| ID | V-06 |
+| Principle | Dependency Inversion |
+| Module | Sales (Taller 1), integrations of R1, R2, R4 |
+| Evidence | `SaleService` declares six fields with concrete classes (lines 44–49): `SaleRepository`, `ProductService`, `PersonService`, `AccessoryService`, `PromotionService` and `WarrantyService`. Only `inventoryCatalogs` (line 52) uses an abstraction. |
+| Explanation | A high level service depends on the concrete classes of the storage and of the other modules instead of on abstractions. |
+| Consequence | A change in any of those six classes is a reason to recompile and retest `SaleService`, and the service cannot be used with another implementation. |
+| Proposed solution | Small interfaces built from what `SaleService` needs (store sales, find people, find and update items, find the best promotion, assign warranties), not copies of every method of each service, so the correction does not create a new Interface Segregation violation. |
+| Other member's code | Yes: the services that would implement the interfaces belong to Developer 1 (`ProductService`) and Developer 2 (`PersonService`, `AccessoryService`, `PromotionService`, `WarrantyService`). Developer 2 reports the same kind of problem in `ReturnService` (his V-06). |
+
+| Field | Content |
+|---|---|
+| ID | V-07 |
+| Principle | Dependency Inversion |
+| Module | User interface (R7) |
+| Evidence | `ConsoleMenu` creates its collaborators with `new`: `new ConsoleInput()` and the seven submenus (lines 46–53). |
+| Explanation | `ConsoleMenu` is not the composition root. By creating the submenus itself it depends on all their concrete classes and their constructors. |
+| Consequence | Any change in how a submenu is built forces a change in `ConsoleMenu`, and the main menu cannot be built with other submenus. |
+| Proposed solution | Build the submenus in `Main`, the composition root, and pass them to `ConsoleMenu` through its constructor. `ConsoleMenu` only coordinates the navigation between the submenus it receives. |
+| Other member's code | No. |
+
+## Summary
+
+| Principle | Verdict | Findings |
+|---|---|---|
+| Single Responsibility | Violation | V-01, V-02 |
+| Open/Closed | Violation | V-03 |
+| Liskov Substitution | Correct | — |
+| Interface Segregation | Violation | V-04, V-05 |
+| Dependency Inversion | Violation | V-06, V-07 |
+
+Boundary findings for the consolidation: V-02 (Developer 1, his V-03), V-04 (Developer 2, his
+V-05), V-05 and V-06 (services of Developers 1 and 2).
