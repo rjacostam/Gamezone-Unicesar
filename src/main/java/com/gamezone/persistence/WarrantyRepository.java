@@ -1,7 +1,6 @@
 package com.gamezone.persistence;
 
 import com.gamezone.exceptions.PersistenceException;
-import com.gamezone.model.BasicWarranty;
 import com.gamezone.model.Warranty;
 
 import java.io.BufferedReader;
@@ -61,12 +60,6 @@ public class WarrantyRepository {
 
     /** Number of columns of a record, including the header layout. */
     private static final int COLUMN_COUNT = 5;
-
-    /** Type discriminator of a basic warranty record. */
-    private static final String TYPE_BASIC = "BASIC";
-
-    /** Type discriminator of an extended warranty record. */
-    private static final String TYPE_EXTENDED = "EXTENDED";
 
     /** Location of the file where the warranties are stored. */
     private final Path filePath;
@@ -145,7 +138,7 @@ public class WarrantyRepository {
      */
     private String serialize(Warranty warranty) {
         return String.join(DELIMITER,
-                getTypeOf(warranty),
+                warranty.getTypeCode(),
                 warranty.getId(),
                 warranty.getProduct().getId(),
                 warranty.getSale().getId(),
@@ -195,22 +188,6 @@ public class WarrantyRepository {
         } catch (java.time.format.DateTimeParseException e) {
             return null;
         }
-    }
-
-    /**
-     * Returns the type marker stored in the first column of the file for a
-     * warranty. The marker is derived from the concrete class instead of using
-     * {@code getWarrantyType()}, because that method returns the name shown to
-     * the user, {@code "Garantía Básica"}, and not the marker of the file.
-     *
-     * @param warranty warranty to inspect
-     * @return the type marker of the warranty
-     */
-    private String getTypeOf(Warranty warranty) {
-        if (warranty instanceof BasicWarranty) {
-            return TYPE_BASIC;
-        }
-        return TYPE_EXTENDED;
     }
 
     /**
