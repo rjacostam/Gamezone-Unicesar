@@ -107,3 +107,24 @@ a guarantee.
 3. The final run, after every correction is merged, is repeated from a clean `data/` folder
    to show that the system also starts empty.
 4. The ten menu operations are executed once in front of the room during the oral defence.
+
+---
+
+## Question 5 — Order of the corrections
+
+*Answered by the Technical Leader.*
+
+The violations are corrected following their dependencies. The member who has to add a new
+abstraction, interface or method works first, and the members who need to use it work after.
+This order avoids pushing changes that do not compile or leaving the shared branch broken for
+a while.
+
+For example, to correct how the stock is restored, Andrés first adds
+`Product.increaseStock(quantity)`. Once that change is available, I can modify
+`ProductService.restoreStock` so it delegates the increase of the stock to the new method.
+
+The team works on the same branch, `feature/grasp-refactor`. Before starting a change, each
+member runs `git pull` to get the latest changes. After finishing and checking their part,
+they commit and run `git push`. Since each member mainly changes the classes assigned to them
+and the order between dependent changes is respected, conflicts are reduced and the shared
+branch stays compilable during the whole process.
