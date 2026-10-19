@@ -101,7 +101,7 @@ public class PersonRepository {
      */
     public List<Customer> loadCustomers() {
         List<Customer> customers = new ArrayList<>();
-        for (String record : readRecords(customersFile)) {
+        for (String record : readQuietly(customersFile)) {
             String[] fields = record.split(DELIMITER, -1);
             if (fields.length == CUSTOMER_FIELD_COUNT && hasContent(fields)) {
                 customers.add(new Customer(
@@ -149,7 +149,7 @@ public class PersonRepository {
      */
     public List<Seller> loadSellers() {
         List<Seller> sellers = new ArrayList<>();
-        for (String record : readRecords(sellersFile)) {
+        for (String record : readQuietly(sellersFile)) {
             String[] fields = record.split(DELIMITER, -1);
             if (fields.length == SELLER_FIELD_COUNT && hasContent(fields)) {
                 sellers.add(new Seller(
@@ -209,6 +209,22 @@ public class PersonRepository {
      * @return the records contained in the file
      * @throws IOException if the file cannot be read
      */
+    /**
+     * Reads every record of a file and turns a failure of the disk into the
+     * typed exception of the project, naming the file that could not be read.
+     *
+     * @param file file to read
+     * @return the records contained in the file
+     * @throws PersistenceException if the file cannot be read
+ */
+    private List<String> readQuietly(Path file) {
+        try {
+            return readRecords(file);
+        } catch (IOException e) {
+            throw new PersistenceException("Error de lectura en el archivo " + file, e);
+        }
+    }
+
     private List<String> readRecords(Path file) throws IOException {
         List<String> records = new ArrayList<>();
         if (!Files.exists(file)) {
