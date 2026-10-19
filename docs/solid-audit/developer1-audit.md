@@ -193,3 +193,38 @@ again:
 - **Dependency Inversion**, because the domain, which is the high level, is the one that knows
   the column layout of the file, which is the low level detail. See the Dependency Inversion
   section.
+## Dependency Inversion Principle
+
+**Verdict: violation** (one point, V-01, registered under the Interface Segregation Principle).
+
+Correct applications:
+
+- `Accessory` holds `private List<String> compatibleConsoleIds` (line 16) instead of a list of
+  `Console` objects, and `isCompatibleWith` (line 78) compares identifiers. The domain therefore
+  never depends on the catalogue's object graph, and a console that is not loaded can still be
+  named as a compatible one.
+- The seven validators depend on `model` and on `exceptions` only. They never import
+  `persistence`, `service` or `ui`, so replacing the way the store is saved, or writing a second
+  interface, does not touch a single validation.
+- The exceptions of `com.gamezone.exceptions` depend on nothing inside the project, and the menu
+  catches `GameZoneException` (line 10), the abstract type, instead of one concrete failure. That
+  is the dependency pointing the right way: from the interface to the detail.
+- `ReturnReceiptFormatter` and `WarrantyCertificateFormatter` depend on `Return`, `Warranty`,
+  `Product` and `Sale`, all of which are domain policy, and on nothing else. They do not import a
+  repository, a service or a file, so the documents can be printed without any storage being
+  present.
+- `Return` (line 135 `getSale`) and `Warranty` (line 103 `getSale`) hold a `Sale`, which is
+  another part of the same policy, not a mechanism underneath it.
+
+Violation V-01 as it breaks this principle:
+
+| Field | Content |
+|---|---|
+| ID | V-01 |
+| Principle | Dependency Inversion Principle |
+| Module | Catalogue (Taller 1), promotions (R2) |
+| Evidence | The high level knows the details of the low level. `Product.getExtraFields` (line 54) is declared by the model and answered by the model, and what it returns is the column layout of `products.csv`: `VideoGame` line 65 returns platform, genre and age rating, `Console` line 74 returns brand, model and generation, which are the exact columns and the exact order of that file. `Promotion.getExtraFields` (line 66) does the same for `promotions.csv`, with the percentage and the type specific value. |
+| Explanation | The dependency should go from the storage towards the policy, not the other way round. Here the policy has been made to depend on the storage format: the order and the number of the columns are decided by the domain classes, because the domain classes are the ones answering. `ProductRepository` is supposed to be the class that knows the file, and after this change it is the class that knows the least about it. |
+| Consequence | Reordering, renaming or adding a column of `products.csv` is a change to `Product`, `VideoGame` and `Console`, reviewed as a change to the business model. The domain can no longer be reused by anything that stores the catalogue somewhere else, because its shape is fixed by one file. It is also what makes the Interface Segregation defect of V-01 possible: because the domain owns the layout, the two hierarchies were forced into a single method. |
+| Proposed solution | Invert it: the persistence layer declares the layout and the domain does not know about it. A mapper in `persistence` per hierarchy, or the `CatalogRow` interface named in V-01 that the repositories consume and that the domain classes answer with attributes rather than with an ordered column list, moves the detail back to where it belongs. This is the same edit as the one proposed in V-01, so it is one correction and not two. |
+| Other member's code | Yes. The `ProductRepository` and `PromotionRepository` that would own the layout belong to Developer 2. |
