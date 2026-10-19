@@ -52,3 +52,23 @@ Correct applications:
 | Consequence | Receipts and other screens can show amounts with different formats, and changing the format means editing many classes. |
 | Proposed solution | A common component that formats money, used by every place. It must keep the current output of each place: it must not force `Locale.US` on the receipt, because on a computer configured in Spanish that would change what the user sees, which Requirement 8 forbids. |
 | Other member's code | Yes, Developer 1: his V-03 reports the same format in his classes, so it is registered once in the consolidation and each member corrects his own classes. |
+
+## Open/Closed Principle
+
+**Verdict: violation** (one point).
+
+Correct application: the `switch` of `ConsoleMenu.start` (lines 73–80) turns the option chosen
+by the user into the submenu to open. Adding an eighth module means adding one option to the
+main menu, which is the expected change of a navigation class; it does not choose a business
+rule by the type of an object, and no unrelated class has to be edited.
+
+| Field | Content |
+|---|---|
+| ID | V-03 |
+| Principle | Open/Closed |
+| Module | Exception handling (R6), moved to `Submenu` in R7 |
+| Evidence | `Submenu.runSafely` catches the four exceptions one by one: `ResourceNotFoundException` (line 43), `BusinessRuleException` (line 45), `InvalidDataException` (line 47) and `PersistenceException` (line 49). It never catches `GameZoneException`, the abstract root they already extend. |
+| Explanation | A new kind of system error is added as a new subclass of `GameZoneException`, but `runSafely` has to be edited to handle it. The class is not closed for that change. |
+| Consequence | If a fifth exception is created and nobody edits `Submenu`, the error is not turned into a message and the user sees a stack trace. |
+| Proposed solution | Keep the four catch blocks and add at the end `catch (GameZoneException e)` with a general message. The four current messages do not change, and a new exception is handled without editing `Submenu`. |
+| Other member's code | No. Reported also by Developer 1 for the consolidation. |
