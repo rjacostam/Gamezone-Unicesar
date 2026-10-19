@@ -256,6 +256,24 @@ Correct applications:
 
 ---
 
+## Indirection
+
+**Verdict: correct.**
+
+Correct applications:
+
+- The repository layer as a whole is indirection that pays for itself: the services ask for
+  objects and never learn that a file is involved, so the storage can be replaced without
+  touching a single rule of the business.
+- `WarrantyService.toWarranty` (lines 137-146) converts a record into a warranty in one
+  obvious place, instead of spreading the construction over the loop of `loadWarranties`.
+- `ReturnService.restoreStock` (lines 310-323) groups the units and then calls the service
+  that owns each group, instead of repeating the call inside the loop.
+- `PromotionRepository.deserialize` and `toRecord` keep the parsing of a line out of
+  `loadAll`, so reading the file and understanding a line are two different steps.
+
+---
+
 ## Findings reported for the consolidation
 
 These problems were found while auditing my own code, but the fix is not mine alone. They
