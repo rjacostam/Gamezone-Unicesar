@@ -124,3 +124,73 @@ already read, each one answers a single question, returns nothing and never deci
 operation should run, so giving them a controller role would mean giving them decisions that
 are not theirs. The leader found the real controller defect of the system in `ConsoleMenu`
 and in `SaleService`, both outside my scope.
+## Low Coupling
+
+**Verdict: violation** (one point, V-02, registered under Polymorphism).
+
+Correct applications:
+
+- `CategoryDiscount.calculateDiscount` (line 55) asks each product for its category with
+  `getCategory()` and never mentions `VideoGame` or `Console`, so a promotion does not depend on
+  the concrete products it can be applied to.
+- `AccessoryValidator.validateCompatibleConsole` (line 62) identifies a console through the
+  behaviour of `getCategory()` instead of importing the class `Console`, so the validation layer
+  does not need to know the concrete type of a product.
+- The seven validators depend on `model` and `exceptions` only. None of them imports
+  `persistence`, `service` or `ui`, so a change in the storage or in the menu does not reach the
+  validations and a new interface would reuse them without change.
+- `GameZoneException` and its subclasses depend on nothing inside the project, so the failures of
+  any module can be caught by catching the base type.
+- `Promotion.calculateDiscount` (line 39) receives a `Sale` and works only through its public
+  interface, and the three promotions never import each other.
+- `Return.discountRatio` (line 99) reads `sale.getSubtotal()` and `sale.getDiscountAmount()`
+  through getters instead of manipulating the fields of `Sale`, which belong to the Technical
+  Leader.
+
+The only violation is the same defect of V-02, and it is registered once, under Polymorphism,
+because the edit that introduces polymorphism in the repository is also the one that removes the
+dependency on concrete classes. Only the coupling evidence is repeated here.
+
+| Field | Content |
+|---|---|
+| ID | V-02 |
+| Pattern | Low Coupling |
+| Module | Catalogue persistence (Taller 1) |
+| Evidence | `ProductRepository` imports the two concrete classes `com.gamezone.model.Console` (line 4) and `com.gamezone.model.VideoGame` (line 6), and casts to them inside `saveAll` (lines 51 and 61). The persistence layer cannot be read or changed without knowing the concrete types of the catalogue. |
+| Explanation | A repository should depend on the abstraction it stores. Here it depends on the two implementations that exist today, so the file format and the hierarchy of products are tied to each other in the same class. |
+| Consequence | Every new product type forces an import and a cast, and every change in a product hierarchy reaches the persistence layer. |
+| Proposed solution | Same edit of V-02: let `Product` answer with its own row, so the repository works with the base type and no longer imports any concrete product. |
+| Other member's code | No. `AccessoryRepository` has the same coupling with the accessory types and belongs to Developer 2. |
+
+Explanation and consequence of this defect are written once, in the finding V-02 of the
+Polymorphism section.
+
+## High Cohesion
+
+**Verdict: violation** (one point, V-03).
+
+Correct applications:
+
+- Each of the three promotions has exactly one reason to change: the rule of its own discount.
+  `PercentageDiscount` only knows a percentage, `CategoryDiscount` only knows a category and
+  `BulkPurchaseDiscount` only knows a minimum quantity.
+- `ProductService` groups operations on the catalogue: registering products, finding them by
+  identifier and updating their stock. Its `restoreStock` is audited by the Technical Leader.
+- The seven validators each answer one family of questions: `ProductValidator` the eight checks
+  of a product, `PromotionValidator` those of a promotion and its code, `WarrantyValidator` the
+  date rules of a warranty. None of them checks something that belongs to another module.
+- `GameZoneException` and its subclasses carry only a failure: a code, a message and a cause.
+- `BasicWarranty` and `ExtendedWarranty` answer only with their own duration, type and cost.
+
+Violation V-03:
+
+| Field | Content |
+|---|---|
+| ID | V-03 |
+| Pattern | High Cohesion |
+| Module | Catalogue (Taller 1), returns (Requirement 3), warranties (Requirement 4) |
+| Evidence | Four classes of the `model` package build the text that the user reads: `Product.getDescription` (line 33, abstract, answered by `VideoGame.getDescription`, line 37, and by `Console`), `Accessory.getDescription` (line 65), `Return.generateReturnReceipt` (line 119, which writes lines 125–145) and `Warranty.generateWarrantyCertificate` (line 123, which writes lines 126–145). The last two also compose the text with `StringBuilder` and `String.format(Locale.US, ...)`, and decide the layout of the document with `if (product != null)`, `if (sale != null)` and `if (active)`. |
+| Explanation | A description, a receipt and a certificate are presentation. A model class that owns data and rules now also owns the wording and the layout of what the user reads, so it changes for two unrelated reasons: a new business rule and a new wording. The three kinds of document are different responsibilities that happen to share the same classes. |
+| Consequence | Every change in the wording of the menu reaches the domain classes. A second interface, for example a web one, would have to carry the Spanish text of the console inside the model. The layout of a receipt and the layout of a certificate also grow inside the classes that should only know the numbers. |
+| Proposed solution | Move the wording to the presentation layer: a formatter per document, next to `ConsoleMenu`, that receives the model objects and reads their getters, the way the receipt formatter already proposed by the leader would do for `Sale`. The model keeps the numbers and the rules and stops composing sentences. |
+| Other member's code | Partly. The same defect exists in `Sale.generateReceipt`, which belongs to the Technical Leader, and the correction covers both, so both should be registered once in the consolidation instead of twice. |
