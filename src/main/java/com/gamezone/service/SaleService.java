@@ -43,7 +43,7 @@ public class SaleService implements SaleFinder {
 
     private final SaleStore repository;
     private final StoreCatalog catalog;
-    private final PersonService personService;
+    private final PersonFinder people;
     private final PromotionChooser promotions;
     private final WarrantyAssigner warranties;
     private final List<Sale> sales;
@@ -57,22 +57,22 @@ public class SaleService implements SaleFinder {
      * @param repository       storage of the sales
      * @param catalog          catalogue of everything the store sells
      * @param stockUpdaters    catalogues that update the stock of what is sold, products first
-     * @param personService    service that manages customers and sellers
+     * @param people           finder of the customers and sellers
      * @param promotions       chooser of the best promotion of each sale
      * @param warranties       assigner of the warranties of the consoles sold
      * @throws PersistenceException if the sales file cannot be read
      */
     public SaleService(SaleStore repository, StoreCatalog catalog, List<StockUpdater> stockUpdaters,
-                       PersonService personService, PromotionChooser promotions,
+                       PersonFinder people, PromotionChooser promotions,
                        WarrantyAssigner warranties) {
         this.repository = repository;
         this.catalog = catalog;
         this.stockUpdaters = List.copyOf(stockUpdaters);
-        this.personService = personService;
+        this.people = people;
         this.promotions = promotions;
         this.warranties = warranties;
         this.sales = repository.loadAll(catalog.listAll(),
-                personService.listCustomers(), personService.listSellers());
+                people.listCustomers(), people.listSellers());
     }
 
     /**
@@ -193,7 +193,7 @@ public class SaleService implements SaleFinder {
      * @return sales registered by that seller, empty if the seller does not exist
      */
     public List<Sale> findSalesBySeller(String sellerId) {
-        Seller seller = personService.findSellerById(sellerId);
+        Seller seller = people.findSellerById(sellerId);
         List<Sale> result = new ArrayList<>();
         if (seller == null) {
             return result;
@@ -214,7 +214,7 @@ public class SaleService implements SaleFinder {
      * @throws ResourceNotFoundException if no customer uses that identification
      */
     private Customer requireCustomer(String customerId) {
-        Customer customer = personService.findCustomerById(customerId);
+        Customer customer = people.findCustomerById(customerId);
         PersonValidator.validatePersonExists(customer, customerId);
         return customer;
     }
@@ -227,7 +227,7 @@ public class SaleService implements SaleFinder {
      * @throws ResourceNotFoundException if no seller uses that identification
      */
     private Seller requireSeller(String sellerId) {
-        Seller seller = personService.findSellerById(sellerId);
+        Seller seller = people.findSellerById(sellerId);
         PersonValidator.validatePersonExists(seller, sellerId);
         return seller;
     }
