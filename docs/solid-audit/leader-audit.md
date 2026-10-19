@@ -87,3 +87,29 @@ rule by the type of an object, and no unrelated class has to be edited.
   Segregation section (V-05).
 - The verdict is *correct* and not *not applicable*, because the hierarchy exists and was
   checked.
+
+## Interface Segregation Principle
+
+**Verdict: violation** (two points).
+
+| Field | Content |
+|---|---|
+| ID | V-04 |
+| Principle | Interface Segregation |
+| Module | Correction of R7 (V-07), sales |
+| Evidence | `SaleService` holds `List<InventoryCatalog> inventoryCatalogs` (line 52) and only calls `findById` (line 337, in `catalogOf`) and `updateStock` (line 324). It never calls `restoreStock`, which the interface also declares. |
+| Explanation | `SaleService` depends on an operation it does not use. |
+| Consequence | Any change in `restoreStock` or a new operation added for the return module also reaches the sale module. |
+| Proposed solution | Split the interface into smaller contracts (one to find items, one to update the stock, one to restore it), so `SaleService` depends only on the operations it uses. |
+| Other member's code | Yes, Developer 2: `InventoryCatalog` is his and his V-05 reports the same problem from the return side, so it is registered once in the consolidation. |
+
+| Field | Content |
+|---|---|
+| ID | V-05 |
+| Principle | Interface Segregation |
+| Module | User interface (R7) |
+| Evidence | `SaleMenu` receives a whole `ProductService` (line 19) and only calls `findById` (line 80). It also receives a concrete `PersonMenu` (line 20) only to call `listSellers()` (line 64). |
+| Explanation | The menu depends on two classes that offer much more than it uses. |
+| Consequence | A change in any method of `ProductService` or `PersonMenu` is a reason to review `SaleMenu`, even when the two operations it uses did not change. |
+| Proposed solution | Let `SaleMenu` depend on small contracts with only the operations it uses, for example a product finder with `findById` and a seller lister with `listSellers`. |
+| Other member's code | Yes, Developer 1: `ProductService` is his and would implement the small contract. |
