@@ -1,6 +1,7 @@
 package com.gamezone.ui;
 
 import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.GameZoneException;
 import com.gamezone.exceptions.InvalidDataException;
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.exceptions.ResourceNotFoundException;
@@ -33,7 +34,9 @@ public abstract class Submenu {
 
     /**
      * Runs one operation and turns any error of the system into a clear message for the
-     * user, with a different text for each kind of error.
+     * user, with a different text for each kind of error. A kind of error added later, as a new
+     * subclass of {@link GameZoneException}, is caught by the last block with a general message,
+     * so this method does not have to change.
      *
      * @param action operation chosen by the user
      */
@@ -48,6 +51,8 @@ public abstract class Submenu {
             System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
         } catch (PersistenceException e) {
             System.out.println("Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador.");
+        } catch (GameZoneException e) {
+            System.out.println("No se pudo completar la operación: " + e.getMessage());
         }
     }
 }
