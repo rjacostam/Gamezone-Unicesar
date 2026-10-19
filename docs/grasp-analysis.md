@@ -102,6 +102,115 @@ without duplicating the violation.
 
 ---
 
+## Question 3 — Code that breaks more than one pattern
+
+*Answered by Developer 1.*
+
+In this answer `dev1 V-nn` is the identifier in my own report,
+`docs/grasp-audit/developer1-audit.md`, and `V-nn` alone is the identifier of the same defect
+in `docs/grasp-audit/consolidated-audit.md`. The consolidated audit renumbered everything, so
+both names are given where they differ.
+
+### Yes, and four of them do
+
+The audit did find fragments that break more than one pattern at the same time. They were not
+rare and they were not a coincidence: the patterns of GRASP describe the same decisions seen
+from different sides, so a piece of code that gets one decision wrong usually gets the
+neighbouring decisions wrong too.
+
+| Defect | Patterns it breaks | Reported as | Consolidated as |
+|---|---|---|---|
+| `ProductRepository` decides by `instanceof` and derives the type marker itself | Polymorphism, Low Coupling, Protected Variations | dev1 V-02, also raised by Developer 2 | V-08 |
+| `AccessoryRepository`, `PromotionRepository` and `WarrantyRepository` do the same with the other three hierarchies | Polymorphism, Low Coupling, Protected Variations | dev2 V-04, dev2 R-05 | V-08 |
+| The services decide who owns the stock of an item by checking the type of the object | Polymorphism, Low Coupling | dev2 V-02 | V-07 |
+| The rule "only consoles can have an extended warranty" is decided by comparing the category as text in five classes | Controller, Protected Variations | dev1 V-05 and the Technical Leader's V-02 | V-04 |
+| The model classes build the Spanish text of the receipts and the certificates | High Cohesion, and a responsibility that belongs to the presentation layer | dev1 V-03 and the Technical Leader's V-03 | V-05 |
+
+### How they were registered without duplicating them
+
+The rule was one line: **one defect, one identifier.** The other three mechanisms exist only to
+make that one line usable.
+
+1. **The defect is registered once, under the pattern that guides its correction.** The other
+   patterns it breaks are not dropped, they are named inside the same finding, in its
+   Explanation. `V-08` says that the repositories "restate the class hierarchy as a chain of
+   tests" and, in the same cell, that "it also breaks Low Coupling and Protected Variations,
+   because the persistence layer depends on every concrete type". One entry, three patterns.
+2. **The summary table lists the identifier in every pattern it breaks**, so a reader who starts
+   from any pattern finds the defect without reading the other reports. That is why `V-08`
+   appears in the Low Coupling row and in the Polymorphism row of the team verdict, and `V-04`
+   appears in the Controller row and in the Protected Variations row.
+3. **Each finding records its origin.** The `Origin` cell of `V-08` reads
+   `dev1 V-02, dev2 V-04, dev2 R-05`, which is how the three reports were merged without
+   discarding the work or inventing a new finding. Thirteen violations were reported; the nine
+   that remain are those nine.
+
+### How we decided which pattern guides the correction
+
+Four criteria, applied in this order. The first one decided almost every case.
+
+1. **The pattern that says where the responsibility should live is the one that guides it.**
+   This is the decisive criterion, because a guiding pattern has to dictate the edit.
+   Polymorphism guided `V-08`, since its correction is "each hierarchy publishes its own marker
+   and the repository writes it without asking": polymorphism is the pattern that explains why
+   asking is wrong. Controller guided `V-04`, since its correction is "one single place decides
+   the rule and everyone else delegates". Information Expert guided the finding of my report on
+   the subtotal (dev1 V-01, consolidated as V-02), since its correction is "read the number from
+   the class that owns it".
+2. **Among the remaining patterns, the one closest to the class that owns the information wins**,
+   because that keeps the correction inside the domain instead of pushing it to every caller.
+   For the warranty coverage (dev1 V-04, consolidated as V-09) the candidates were Polymorphism
+   and High Cohesion; Polymorphism won, and the agreed solution is to make the coverage an
+   abstract method of each subclass, which is a change in the hierarchy and nothing else.
+3. **If two patterns are equally good guides, the one that fixes the order of the work wins.**
+   Phase 2 uses a single shared branch with several members, so a guiding pattern that forces a
+   dependency has to be named explicitly. That is why `V-08` is not registered under Protected
+   Variations, even though it breaks it: the marker methods on `Product`, `Accessory`,
+   `Promotion` and `Warranty` have to exist before any repository can use them, and that
+   sequence is what the correction needs to state. Protected Variations is kept as the pattern
+   of `V-04`, whose correction really does start with one place deciding the rule.
+4. **A second pattern never produces a second correction.** If the edit that the guiding pattern
+   demands already removes the problem that another pattern reports, that other pattern is
+   named in the finding and not registered. This is what keeps a single defect from becoming
+   two activities in Phase 2 and two chances to correct the same lines twice.
+
+### The example worked through
+
+`ProductRepository` is the clearest case, because one method breaks three patterns at once.
+`saveAll` asks what type each product is with `if (product instanceof VideoGame)` (line 50) and
+`else if (product instanceof Console)` (line 60), casts the object at lines 51 and 61, and
+derives the `VIDEOGAME` or `CONSOLE` marker itself; `loadAll` compares the marker it wrote
+before (lines 116 and 119). The same twelve lines are three different findings depending on the
+lens:
+
+- **Polymorphism**, because the repository restates the hierarchy instead of letting each class
+  answer for itself.
+- **Low Coupling**, because the persistence layer now imports `Console` and `VideoGame`
+  (lines 4 and 6) and cannot be read without knowing the concrete types of the catalogue.
+- **Protected Variations**, because a new product type cannot be added without editing this
+  class, and there is nothing in `Product` for the compiler to point at.
+
+Following the first criterion, it is registered once as **V-08, Polymorphism**, because
+Polymorphism is the pattern that dictates the edit: let `Product` publish its own type marker.
+Low Coupling and Protected Variations are named inside the same finding, and their rows in the
+team verdict table point to `V-08`. Following the fourth criterion, no second correction is
+planned for it: once each model publishes its own marker, the import disappears and a new
+product type stops being an edit of the repository, so both secondary problems are removed by
+the edit that Polymorphism already demands. One defect, one identifier, one activity in
+Phase 2, and the two other patterns are already satisfied by it.
+
+### What this achieved
+
+Six of the nine consolidated violations are boundary findings that belong to more than one
+member. Because each of them has exactly one identifier and one guiding pattern, the
+consolidation could assign an order of correction per violation instead of per report: for
+`V-08`, Developer 1 adds the marker methods on the four hierarchies and corrects
+`ProductRepository`, and Developer 2 then corrects the other three repositories. Without the
+rule, `V-08` would have been three findings in three reports, and the same twelve lines would
+have been corrected three times by two people in an order nobody had agreed on.
+
+---
+
 ## Question 4 — Preserving the external behaviour of the system
 
 The audit found four violations in the code of Developer 2 and five more problems that
