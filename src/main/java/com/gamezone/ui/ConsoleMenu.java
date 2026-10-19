@@ -194,7 +194,7 @@ public class ConsoleMenu {
         int option = readInt("Seleccione una opción: ");
         runSafely(() -> {
             switch (option) {
-                case 1 -> registerCustomerOrFail();
+                case 1 -> registerCustomer();
                 case 2 -> listCustomers();
                 case 3 -> listSellers();
                 case 0 -> { }
@@ -203,17 +203,7 @@ public class ConsoleMenu {
         });
     }
 
-    private void registerCustomerOrFail() {
-        // Temporary: PersonService still declares IOException until its repository throws
-        // PersistenceException.
-        try {
-            registerCustomer();
-        } catch (IOException e) {
-            throw new PersistenceException("Error de escritura en el archivo de clientes", e);
-        }
-    }
-
-    private void registerCustomer() throws IOException {
+    private void registerCustomer() {
         String id = readText("Identificación: ");
         String name = readText("Nombre: ");
         String phone = readText("Teléfono: ");
