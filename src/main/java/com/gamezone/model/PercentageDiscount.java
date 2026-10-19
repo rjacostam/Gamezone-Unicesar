@@ -36,10 +36,7 @@ public class PercentageDiscount extends Promotion {
         if (sale == null || !isActive(sale.getDate())) {
             return 0;
         }
-        double base = 0;
-        for (Product product : sale.getProducts()) {
-            base += product.getPrice();
-        }
+        double base = sale.getSubtotal();
         return base * percentage / 100.0;
     }
 
