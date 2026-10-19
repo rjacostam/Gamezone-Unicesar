@@ -39,7 +39,7 @@ import java.util.Map;
  * store is broken, always with a message in Spanish that the menu can show to
  * the user.
  */
-public class SaleService {
+public class SaleService implements SaleFinder {
 
     private final SaleRepository repository;
     private final ProductService productService;
@@ -151,6 +151,7 @@ public class SaleService {
      *
      * @return copy of the sale list
      */
+    @Override
     public List<Sale> listAllSales() {
         return new ArrayList<>(sales);
     }
@@ -161,6 +162,7 @@ public class SaleService {
      * @param saleId sale identifier
      * @return the sale, or {@code null} if it does not exist
      */
+    @Override
     public Sale findById(String saleId) {
         for (Sale sale : sales) {
             if (sale.getId().equalsIgnoreCase(saleId)) {
