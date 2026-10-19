@@ -94,3 +94,118 @@ implementations against the single question of the principle, which is a substit
 Thirenteen findings became thirteen after four merges. A violation that breaks several principles
 was registered once, under the principle that dictates its correction, and the other principles
 were named inside it, so no defect was counted twice and no defect was fixed twice.
+
+## Question 3 — How this audit relates to the GRASP audit of Requirement 7
+
+*Answered by Developer 1.*
+
+The short answer is that the two requirements are related in both directions, and that neither
+direction is visible from inside a single requirement. A GRASP correction can create a SOLID
+problem, and a GRASP correction can also close a SOLID problem without anyone naming SOLID. Both
+happened in this project, in my own code.
+
+The awkward part of saying this is that **the SOLID audit could not see either one.** It ran on
+`develop` at `675e61c`, which is already after all the Requirement 7 corrections. The auditors saw
+only the result of those corrections, not the trade-off each one made. That is the main reason the
+relation is worth writing down at all.
+
+### Direction one: a GRASP correction created a SOLID violation
+
+The example is my own finding, registered as V-01 in `docs/solid-audit/developer1-audit.md` and as
+**V-08 in the consolidated audit**.
+
+GRASP violation **V-08 of Requirement 7** was a Polymorphism violation: the repositories restated
+the class hierarchies as chains of `instanceof` tests, so adding a product type meant editing four
+repositories. The agreed solution was that each hierarchy publishes its own type marker and the
+repositories write it without asking for the type. The correction added `Product.getCategory()` as
+the marker where it already existed and created `getTypeCode()` on `Promotion` and `Warranty`, and
+in this project `getExtraFields()` on `Product`, `Accessory`, `Promotion` and the accessories.
+
+It removed every `instanceof` from the four repositories. It also moved the **column layout of the
+data files into the model**, because the class that publishes the marker also has to say which
+columns are its own. That produced a SOLID violation with four faces:
+
+- **Interface Segregation**, consolidated V-08: `Product.getExtraFields` (line 54) is one contract
+  about the columns of a file, and `Accessory extends Product` (line 14), so the accessories are
+  forced to answer it. `VideoGame` and `Console` answer with the columns of `products.csv`;
+  `Controller`, `Cable` and `Memory` answer with the columns of `accessories.csv`. A caller that
+  holds a `Product` cannot tell which file the returned columns belong to.
+- **Liskov Substitution**: the signature is satisfied and the meaning is not, so a substitutable
+  type quietly hands back the columns of the wrong file.
+- **Single Responsibility**: `Product` and `Promotion` now change when the layout of a CSV file
+  changes, which is a reason that has nothing to do with a rule of the store.
+- **Dependency Inversion**: the domain, which is the high level, is the part that knows the
+  details of the storage format.
+
+The consolidated audit registered it as a new violation and not as a part of GRASP V-08, with the
+reason written in the finding itself: the principle is different, but its cause is the GRASP
+correction. That is the honest classification, and it is worth being explicit about it because the
+tempting thing to do is to say the GRASP correction "broke" something. It did not. It solved the
+problem it was asked to solve and it moved knowledge to a place that does not belong there, and
+both of those are true at the same time.
+
+The practical lesson is a question to ask on every correction that moves a decision: **where does
+the knowledge go, and does the class that receives it already own the data it needs to answer?**
+Moving a type test out of a repository and into the model is not free; the decision does not
+disappear, it lands somewhere, and the audit has to look at where it landed.
+
+### Direction two: a GRASP correction closed a SOLID violation in passing
+
+Two cases, both in my code, both verified against the commits that changed them. In both, the
+Requirement 7 finding was a GRASP Information Expert violation, and in both the SOLID violation that
+was also present was never registered, because by the time the SOLID audit started the code was
+already correct on that point.
+
+#### The stock increase, GRASP V-01
+
+GRASP violation **V-01** was Information Expert: `ProductService.restoreStock` (lines 162–168)
+increased the stock with `product.setStock(product.getStock() + quantity)`, while `Product` already
+decreased it in its own `decreaseStock`. The agreed solution was to add `Product.increaseStock` and
+make the service call it.
+
+The SOLID problem that was there at the same time was never named by anyone: the **rule of the
+stock was split between two classes**. `Product` enforced "a product never goes below zero units"
+for selling and nothing at all for receiving, and `ProductService` carried the second half of the
+same rule inline. So there were two reasons to change `ProductService`, the catalogue operations
+and the way a returned unit joins the stock, and any new stock rule had to be written in two
+places and checked in both.
+
+The GRASP correction removed that. After it, `Product` owns the increase (line 103) and the
+decrease (line 84), `restoreStock` calls the product, and `ProductService` has one reason to
+change. That is a Single Responsibility violation closed by an edit that was argued and approved as
+an Information Expert correction, and the SOLID audit could only record `ProductService` as a
+correct application of Single Responsibility, because on the audited commit the violation was
+already gone.
+
+#### The base of the discount, GRASP V-02
+
+GRASP violation **V-02** was Information Expert: `PercentageDiscount.calculateDiscount` and
+`BulkPurchaseDiscount.calculateDiscount` each walked `sale.getProducts()` and added
+`product.getPrice()`, rebuilding a number that `Sale.calculateSubtotal` already owns and publishes
+through `getSubtotal`. The agreed solution was to read `sale.getSubtotal()` instead.
+
+The SOLID problem there was the same kind. Each of the two promotions carried its own copy of **how
+a sale is totalled**, so each had two reasons to change: its own discount rule, and the way the
+store adds up a sale. If the store ever added a shipping line or a tax to the total, three classes
+would have to change, when only one of them owns the sum. After the correction, only `Sale` knows
+how a sale is totalled, and the two promotions know only their own percentage. Again a Single
+Responsibility violation closed by a correction argued under a different principle, and again
+nothing for the SOLID audit to register.
+
+`CategoryDiscount` was deliberately left out of that correction and it shows why the distinction
+matters: its loop filters by category, so its base is not the sale subtotal. Replacing it would
+have changed the promotion. A correction that is right under Information Expert can still be wrong
+under other readings, which is the same lesson as the one above, seen from the other side.
+
+### What the team should take from the two directions
+
+1. **A correction that moves a decision has to be checked in both requirements, not only in the one
+   that ordered it.** Requirement 7 moved type markers and column layouts into the model, and
+   Requirement 8 found it there.
+2. **A violation that a previous requirement already fixed must be recorded as fixed, with the
+   commit that fixed it.** Two of my correct verdicts in the SOLID audit are only correct because
+   of Requirement 7, and neither of them said so in the report, which is the gap this answer
+   closes.
+3. **The audit has to run on a known commit, and the reports have to say which one.** All of this
+   was invisible because `675e61c` already contained the corrections of `675e61c`'s predecessor.
+   An audit that runs after the corrections can only see the corrections, never their cost.
