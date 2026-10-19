@@ -119,9 +119,6 @@ public class ConsoleMenu {
             System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
         } catch (PersistenceException e) {
             System.out.println("Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador.");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            // Temporary: services not yet migrated to the validators still throw these.
-            System.out.println("Error: " + e.getMessage());
         }
     }
 
