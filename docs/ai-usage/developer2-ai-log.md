@@ -1,6 +1,6 @@
-# AI Usage Log â€” Developer 2
+# AI Usage Log — Developer 2
 
-Owner: JosÃ© David Cervantes Solano
+Owner: José David Cervantes Solano
 
 Each interaction with an AI tool is recorded as one entry with the fields below.
 
@@ -19,7 +19,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 001 â€” Implementation of the people module
+## Entry 001 — Implementation of the people module
 
 | Field | Content |
 |---|---|
@@ -34,7 +34,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 002 â€” Improvements to the people module
+## Entry 002 — Improvements to the people module
 
 | Field | Content |
 |---|---|
@@ -49,13 +49,13 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 
 ---
 
-## Entry 003 â€” Accessory module repository and service
+## Entry 003 — Accessory module repository and service
 
 | Field | Content |
 |---|---|
 | Date | 2026-10-18 |
 | Tool | OpenCode with the free model `nemotron-3.5-super-vl-free` |
-| Phase and branch | Requerimiento 1 del Parcial Primer Corte (mÃ³dulo de accesorios). Branch `feature/accessory-module`, taken from the updated `develop` with the model classes of Developer 1 already merged. |
+| Phase and branch | Requerimiento 1 del Parcial Primer Corte (módulo de accesorios). Branch `feature/accessory-module`, taken from the updated `develop` with the model classes of Developer 1 already merged. |
 | Goal | Implement the two classes of the accessory module assigned to Developer 2 in `docs/accessory-class-diagram.md`: `AccessoryRepository` and `AccessoryService`, together with `data/accessories.csv`, following the specification of the Technical Leader exactly. |
 | Query | "Create `data/accessories.csv` with the header and the three preloaded accessories." / "Implement `AccessoryRepository` with `saveAll` and `loadAll` that declare `throws IOException`, rebuild the right subclass from the first column, return an empty list when the file is missing, skip the header and ignore damaged lines." / "Implement `AccessoryService` with the constructor loading the accessories and turning an `IOException` into an `IllegalStateException` like `ProductService` does." / "Add the three register methods, the four queries and `updateStock`, saving after every change." / "Reject invalid data with `IllegalArgumentException` and a Spanish message." |
 | Answer | The model read the accessory class diagram and the model classes of Developer 1 to use their exact API, read `ProductService` to copy the `IllegalStateException` pattern, and implemented the two classes and the data file with one commit per logical unit, six commits in total, each pushed right after it was created. Because the machine has no Java 17 and no Maven, the code could not be compiled, so it was verified statically: brace and parenthesis balance on every file, detection of unused imports, and confirmation of the twelve signatures and three attributes against the class diagram. The preload file was also checked to have eight columns per line and to be saved in UTF-8. |
