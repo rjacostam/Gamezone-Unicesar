@@ -194,3 +194,48 @@ Violation V-03:
 | Consequence | Every change in the wording of the menu reaches the domain classes. A second interface, for example a web one, would have to carry the Spanish text of the console inside the model. The layout of a receipt and the layout of a certificate also grow inside the classes that should only know the numbers. |
 | Proposed solution | Move the wording to the presentation layer: a formatter per document, next to `ConsoleMenu`, that receives the model objects and reads their getters, the way the receipt formatter already proposed by the leader would do for `Sale`. The model keeps the numbers and the rules and stops composing sentences. |
 | Other member's code | Partly. The same defect exists in `Sale.generateReceipt`, which belongs to the Technical Leader, and the correction covers both, so both should be registered once in the consolidation instead of twice. |
+## Polymorphism
+
+**Verdict: violation** (two points, V-02 and V-04). The pattern is applied correctly in the
+rest of the audited code.
+
+Correct applications:
+
+- `Warranty` declares three abstract methods (lines 45, 52 and 58) and `BasicWarranty` and
+  `ExtendedWarranty` answer each one with its own value. The base class computes the end date with
+  `getDurationInMonths()` (line 36) and prints the cost with `getAdditionalCost()` (line 143)
+  without ever asking what type of warranty it has.
+- `Promotion` declares `calculateDiscount` (line 39) and `getDescription` (line 46) abstract, and
+  `SaleService`, audited by the Technical Leader, applies a promotion through the base type.
+- `Product.getDescription` (line 33) and `Product.getCategory` (line 41) are abstract, and
+  `VideoGame` and `Console` answer both, so the catalogue is used through the base type.
+- `Accessory.getAccessoryType` (line 55) is abstract and `Controller`, `Cable` and `Memory` answer
+  it, which is what lets `ConsoleMenu` select an accessory without a case per subclass.
+- `Return.calculateRefundAmount` (line 71) works with any `Product` and never asks for its type,
+  so a new product is returned like the existing ones.
+
+Violation V-02:
+
+| Field | Content |
+|---|---|
+| ID | V-02 |
+| Pattern | Polymorphism |
+| Module | Catalogue persistence (Taller 1) |
+| Evidence | `ProductRepository.saveAll` decides with `if (product instanceof VideoGame)` (line 50) and `else if (product instanceof Console)` (line 60), and casts the object at lines 51 and 61. `ProductRepository.loadAll` decides with `if ("VIDEOGAME".equalsIgnoreCase(fields[0].trim()))` (line 116) and `else if ("CONSOLE".equalsIgnoreCase(fields[0].trim()))` (line 119). The repository imports both concrete classes (lines 4 and 6) and writes the columns of each type itself (lines 52–58 and 62–69). |
+| Explanation | The repository asks what type each product is and then extracts the columns of that type, instead of asking the product to write and read its own row. The knowledge of the extra columns of a video game and of a console lives in the persistence layer, not in the product that owns that data. The same defect also produces the coupling of V-02 in Low Coupling and the cost of variation described in Protected Variations. |
+| Consequence | A new product type does not fit without opening the repository: there is nothing in `Product` to implement, so the change is not local and no compiler error points at it. A mistake in the file format is made in the repository and the product cannot protect itself from it, because it does not know the format. |
+| Proposed solution | Give `Product` the knowledge of its own row, with an abstract method that writes it and a construction that reads it, so each subclass answers for its own columns and `ProductRepository` only walks the list and writes what each product returns. Polymorphism is the pattern that guides this correction; the improvement in coupling and in the cost of variations is a consequence of the same edit. |
+| Other member's code | No. `AccessoryRepository` has the same shape with the accessory types and belongs to Developer 2; it is mentioned here only so the consolidation can decide whether the two repositories are corrected together. |
+
+Violation V-04:
+
+| Field | Content |
+|---|---|
+| ID | V-04 |
+| Pattern | Polymorphism |
+| Module | Warranties (Requirement 4) |
+| Evidence | `Warranty.coverageDescription` (line 155) is a private method of the base class whose body compares texts, `if ("Garantía Extendida".equals(getWarrantyType()))` (line 156), and it is used by `generateWarrantyCertificate` (line 141) to write the line "Cobertura: ...". |
+| Explanation | The base class discovers the type of the object by comparing the text the subclass returns. The behaviour is chosen by the name of the type, so it does not travel with the behaviour of the subclass: `ExtendedWarranty` knows how long it lasts and how much it costs, but the base class has to recognise its name to know what it covers. |
+| Consequence | A warranty whose name is written differently, with another accent or in another language, silently receives the coverage of the basic warranty and the certificate is wrong with no error and no exception. A third warranty type needs a new `if` inside `Warranty`, so a change in a subclass becomes a change in its parent. |
+| Proposed solution | Move the coverage to the subclass. `coverageDescription()` becomes abstract in `Warranty` next to `getWarrantyType`, and `BasicWarranty` and `ExtendedWarranty` answer with their own text, so the certificate keeps calling the method without knowing the type. |
+| Other member's code | No. |
