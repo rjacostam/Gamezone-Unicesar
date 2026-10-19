@@ -81,6 +81,29 @@ Five findings: V-01 to V-05, plus five problems reported for the consolidation.
 
 ---
 
+## Creator
+
+**Verdict: correct.**
+
+Correct applications:
+
+- `PersonRepository` creates the `Customer` and `Seller` objects when it reads
+  `data/customers.csv` and `data/sellers.csv`. The repository owns the format of those two
+  files, so it is the class that knows how to rebuild them.
+- `AccessoryRepository.deserialize` creates `Controller`, `Cable` and `Memory` from the type
+  marker of each record. It owns the column layout of `data/accessories.csv`, therefore it
+  knows which subclass a line means.
+- `PromotionRepository.deserialize` creates the three promotion types for the same reason.
+- `WarrantyService` creates `BasicWarranty` and `ExtendedWarranty` in
+  `assignBasicWarranty` and `assignExtendedWarranty`, and it generates their identifiers with
+  `nextWarrantyId`. The service owns the rule of which warranty the store grants, so it is
+  the right place to decide that a new warranty is a basic one.
+- `ReturnService` creates `Return` objects in `registerReturn`, including the identifier with
+  `nextReturnId` and the date of the day. It also creates the plain collections it needs
+  (`ArrayList`, `LinkedHashMap`), which is the cheapest choice when no behaviour is wanted.
+
+---
+
 ## Findings reported for the consolidation
 
 These problems were found while auditing my own code, but the fix is not mine alone. They
