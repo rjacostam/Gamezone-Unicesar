@@ -85,3 +85,42 @@ Violation V-01:
 | Proposed solution | Have the three promotions read `sale.getSubtotal()` instead of walking the products, so the base of a discount is computed once, in the class that owns it. The rule of Requirement 2 is preserved: `getSubtotal()` returns the sum before discounts, so a promotion still never sees a discount already applied. |
 | Other member's code | No. `Sale.calculateSubtotal` and `Sale.getSubtotal` belong to the Technical Leader, but the correction is entirely inside the three promotion classes and does not change them. |
 
+
+## Creator
+
+**Verdict: correct.**
+
+Correct applications:
+
+- `ProductService.registerVideoGame` (lines 61–66) creates the `VideoGame` and
+  `ProductService.registerConsole` (lines 89–94) creates the `Console`. The service is the
+  class that receives every value of the new product from the caller and the one that has to
+  add it to the catalogue it keeps in memory, so it is the right creator: it knows everything
+  the constructor needs and it is the only class interested in the new object.
+- No model class creates another model class. `Product`, `Accessory`, `Promotion`, `Warranty`
+  and `Return` receive their collaborators already built and never build one, which keeps each
+  of them from deciding the shape of a product it does not own.
+- `GameZoneException` and its subclasses do not create exceptions; they are created by the code
+  that detects the failure. That is the correct direction, because only the code that knows the
+  problem can name it.
+- The seven validators create nothing at all. They receive products, promotions, sales and
+  returns already built and only answer whether they are acceptable, so none of them becomes a
+  creator that should belong to a service.
+- `Accessory.addCompatibleConsole` (line 106) creates only the entry it needs inside its own
+  list, which is inside its own data and not an object of another class.
+
+## Controller
+
+**Verdict: not applicable.**
+
+The pattern does not apply to any class in my scope. A controller receives an event from
+outside the system, decides which use case has to run and delegates it to the objects that
+know how. In the audited code no class receives an event: the only entry from the user is
+`ConsoleMenu`, audited by the Technical Leader, and it delegates to `SaleService` and to
+`registerVideoGame` and `registerConsole` of `ProductService`.
+
+The validators of `com.gamezone.validation` are not controllers. They are called with values
+already read, each one answers a single question, returns nothing and never decides which
+operation should run, so giving them a controller role would mean giving them decisions that
+are not theirs. The leader found the real controller defect of the system in `ConsoleMenu`
+and in `SaleService`, both outside my scope.
