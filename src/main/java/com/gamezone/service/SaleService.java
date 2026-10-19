@@ -5,7 +5,6 @@ import com.gamezone.exceptions.InvalidDataException;
 import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Accessory;
-import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Product;
 import com.gamezone.model.Promotion;
@@ -308,7 +307,7 @@ public class SaleService {
 
     private void assignWarranties(Sale sale, List<String> extendedRequests) {
         for (Product product : sale.getProducts()) {
-            if (product instanceof Console) {
+            if (product.isConsole()) {
                 warrantyService.assignBasicWarranty(product, sale, sale.getDate());
                 if (containsIgnoreCase(extendedRequests, product.getId())) {
                     Warranty extended = warrantyService.assignExtendedWarranty(product, sale, sale.getDate());
