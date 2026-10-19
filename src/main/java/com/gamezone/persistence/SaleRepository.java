@@ -28,7 +28,7 @@ import java.util.List;
  * When loading, those ids are matched against the objects already loaded by the other
  * modules, so this repository only depends on the model layer.
  */
-public class SaleRepository {
+public class SaleRepository implements SaleStore {
 
     private static final String SEPARATOR = ";";
     private static final String ID_SEPARATOR = ",";
@@ -51,6 +51,7 @@ public class SaleRepository {
      * @param sales sales to save
      * @throws PersistenceException if the file cannot be written
      */
+    @Override
     public void saveAll(List<Sale> sales) {
         try {
             if (filePath.getParent() != null) {
@@ -78,6 +79,7 @@ public class SaleRepository {
      * @return stored sales, or an empty list if the file does not exist
      * @throws PersistenceException if the file cannot be read
      */
+    @Override
     public List<Sale> loadAll(List<Product> products, List<Customer> customers, List<Seller> sellers) {
         List<Sale> sales = new ArrayList<>();
         if (!Files.exists(filePath)) {
