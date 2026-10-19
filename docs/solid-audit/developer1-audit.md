@@ -83,6 +83,7 @@ Violation V-03:
 | Consequence | Changing the money format, for example adding a currency code, moving the symbol or asking for more decimals, means editing ten lines spread over six classes in three packages. A line that is forgotten produces a document that shows one format right next to another, and nothing fails: the code still compiles and the store still runs. The copy without a locale is already inconsistent today: on a machine whose default locale separates the thousands with a dot, as `es_CO` does, the sale receipt prints `$2.500.000,00` while the return receipt and the warranty certificate print `$2,500,000.00` for the same amount, with no error and no test failure. |
 | Proposed solution | One small fabricated class with the two decisions in it, for example `Money.format(double)` and `Percent.format(double)`, and the ten call sites use it. The locale belongs inside that class, so the ten copies cannot disagree about it either and `ReceiptGenerator` stops depending on the machine it runs on. It has no state and no dependency, it is exactly the Pure Fabrication case of the GRASP audit, and it gives the format a single owner. |
 | Other member's code | Yes. `ReceiptGenerator`, which is the copy without a locale, is in `com.gamezone.ui` and belongs to the Technical Leader, so the same correction covers it and it should be registered once in the consolidation rather than twice. |
+
 ## Open/Closed Principle
 
 **Verdict: violation** (one point, V-02).
@@ -112,6 +113,7 @@ Violation V-02:
 | Consequence | A new kind of console, for example a portable console that belongs to the catalogue, has to be changed in two places instead of one, and nothing warns when only one of them was done. The rules that ask "is this a console" and the rules that filter by category can then answer differently about the same product, which is the exact defect that V-04 was registered to remove, reappearing one level below. |
 | Proposed solution | Keep one answer and derive the other. The category cannot disappear, because `ProductRepository` writes it as the marker of the row, so the predicate should be derived from the same constant the subclass uses for its category, instead of a second hard-coded literal. Then a rename of the category or a new console type is a single change and the two answers cannot disagree. |
 | Other member's code | Partly. The six call sites include `SaleService`, `SaleMenu` and `AccessoryMenu`, which belong to the Technical Leader, but the two literals that have to agree are both in `Product` and `Console`, which are mine, so the correction is mine. |
+
 ## Liskov Substitution Principle
 
 **Verdict: violation** (one point, V-01, registered under the Interface Segregation Principle).
@@ -130,21 +132,13 @@ Correct applications:
 - `Promotion.calculateDiscount` (line 40) can be answered with zero: a promotion that is not
   active returns zero, and a caller handles that the same way for the three types.
 - `GameZoneException` and its subclasses keep the same contract: every one of them builds a
-  message and offers `getErrorCode`, so catching the base type is enough and no subclass needs a
-  special case.
+  message and answers `getErrorCode` the same way, so a caller can treat the four of them
+  interchangeably once it has decided which one it wants to distinguish.
 
-Violation V-01 as it breaks this principle:
+See V-01 in the Interface Segregation section: it is the same contract, which satisfies
+the signature and not the meaning, so a substitutable type can quietly hand back the columns of the wrong
+file. The evidence, the consequence and the correction are written once, there.
 
-| Field | Content |
-|---|---|
-| ID | V-01 |
-| Principle | Liskov Substitution Principle |
-| Module | Catalogue (Taller 1), accessories (R1, R7) |
-| Evidence | `Product` declares `public abstract List<String> getExtraFields();` (line 54) and `Accessory extends Product` (line 14 in `Accessory`), so the three accessories inherit the contract. `VideoGame` (line 65) and `Console` (line 74) answer with the three columns of `products.csv`, while `Controller` (line 43), `Cable` (line 46) and `Memory` (line 47) answer with the one or two columns of `accessories.csv`. Both answers satisfy the signature and both are read through the base type: `ProductRepository` line 56 and `AccessoryRepository` line 141. |
-| Explanation | Substitution asks whether a subclass can be used wherever its parent is used, and here it can be, because the method exists and returns a list of strings. What it cannot do is return the *same meaning*. A caller that holds a `Product` and calls `getExtraFields()` receives columns, and there is nothing in the answer that says which file those columns belong to. The two hierarchies share one contract with two different meanings, which is the case where a substitutable type quietly hands back the wrong thing. |
-| Consequence | A repository written for one file can be pointed at the other hierarchy: it compiles, because the signature is satisfied, and it writes a row with the columns of the other file. Nothing detects it at compile time and nothing fails at run time either, because the row is still a syntactically valid row. |
-| Proposed solution | The correction is the one of V-01, written in the Interface Segregation section: stop making the two hierarchies share one contract for two files, either by publishing a marker that names the file next to the columns, or by declaring the column contract in the hierarchy that owns the file. |
-| Other member's code | Partly. `ProductRepository` and `Product`, which publishes the layout, are both mine, so the catalogue half of V-01 can be corrected without anyone else. `AccessoryRepository` (line 141), the other caller of the same contract, belongs to Developer 2 and is the half that has to be agreed with him. |
 ## Interface Segregation Principle
 
 **Verdict: violation** (one point, V-01).
@@ -191,6 +185,7 @@ again:
 - **Dependency Inversion**, because the domain, which is the high level, is the one that knows
   the column layout of the file, which is the low level detail. See the Dependency Inversion
   section.
+
 ## Dependency Inversion Principle
 
 **Verdict: violation** (one point, V-01, registered under the Interface Segregation Principle).
@@ -215,18 +210,12 @@ Correct applications:
 - `Return` (line 135 `getSale`) and `Warranty` (line 103 `getSale`) hold a `Sale`, which is
   another part of the same policy, not a mechanism underneath it.
 
-Violation V-01 as it breaks this principle:
+See V-01 in the Interface Segregation section: it is the same defect seen from the other
+side, because the domain that publishes the column layout of the file is the one that should not
+know it, so the dependency runs from the policy towards the storage detail instead of
+from the storage towards the policy. The evidence, the consequence and the correction are
+written once, there.
 
-| Field | Content |
-|---|---|
-| ID | V-01 |
-| Principle | Dependency Inversion Principle |
-| Module | Catalogue (Taller 1), promotions (R2) |
-| Evidence | The high level knows the details of the low level. `Product.getExtraFields` (line 54) is declared by the model and answered by the model, and what it returns is the column layout of `products.csv`: `VideoGame` line 65 returns platform, genre and age rating, `Console` line 74 returns brand, model and generation, which are the exact columns and the exact order of that file. `Promotion.getExtraFields` (line 66) does the same for `promotions.csv`, with the percentage and the type specific value. |
-| Explanation | The dependency should go from the storage towards the policy, not the other way round. Here the policy has been made to depend on the storage format: the order and the number of the columns are decided by the domain classes, because the domain classes are the ones answering. `ProductRepository` is supposed to be the class that knows the file, and after this change it is the class that knows the least about it. |
-| Consequence | Reordering, renaming or adding a column of `products.csv` is a change to `Product`, `VideoGame` and `Console`, reviewed as a change to the business model. The domain can no longer be reused by anything that stores the catalogue somewhere else, because its shape is fixed by one file. It is also what makes the Interface Segregation defect of V-01 possible: because the domain owns the layout, the two hierarchies were forced into a single method. |
-| Proposed solution | Invert it: the persistence layer declares the layout and the domain does not know about it. A mapper in `persistence` per hierarchy, or the `CatalogRow` interface named in V-01 that the repositories consume and that the domain classes answer with attributes rather than with an ordered column list, moves the detail back to where it belongs. This is the same edit as the one proposed in V-01, so it is one correction and not two. |
-| Other member's code | Partly. `ProductRepository` and `Product`, which is the class that publishes the layout, are both mine, so the catalogue half of this defect can be corrected without anyone else. `PromotionRepository` is the class that would own the layout of the promotion file and belongs to Developer 2, and `AccessoryRepository` is the other half of the two-meanings problem. |
 ## Findings registered for the consolidation
 
 These are not new defects. They are findings of this audit that touch code of another member,
