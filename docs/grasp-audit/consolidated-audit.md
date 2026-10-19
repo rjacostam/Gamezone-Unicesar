@@ -168,3 +168,41 @@ code that is his.
 | Agreed solution | Make the coverage an abstract method answered by each subclass. |
 | Origin | dev1 V-04 |
 | Responsible | Developer 1. |
+
+## Boundary findings
+
+These violations involve the code of more than one member. Each one is registered once, and
+the members correct their part in the order shown, because the later parts use what the
+earlier ones add.
+
+| Violation | Members | Order of the correction |
+|---|---|---|
+| V-01 | Developer 1, Technical Leader | `Product.increaseStock` first, then `restoreStock`. |
+| V-03 | Technical Leader, Developer 2 | The two methods of `Sale` first, then `ReturnService` and `ReturnRepository`. |
+| V-04 | Developer 1, Technical Leader, Developer 2 | The method on `Product` first, then the validators, the menu, `SaleService` and `ReturnService`. |
+| V-05 | Technical Leader, Developer 1 | Independent parts; the menu is changed after each formatter exists. |
+| V-07 | Developer 2, Developer 1, Technical Leader | The interface first, then `AccessoryService` and `ProductService`, then `SaleService` and `ReturnService`. |
+| V-08 | Developer 1, Developer 2 | The marker methods first, then the four repositories. |
+
+### Reported findings that were not registered
+
+- **dev2 R-02, `Return.comesFromSale`** and **dev2 R-03, `Warranty.covers`.** Both helpers
+  only read a link that the object already publishes through a getter (`Return.getSale()`,
+  the product and sale of `Warranty`). They are one-line comparisons inside the service of
+  Developer 2, and no foreseeable change of the store would have to be made in more than one
+  place because of them. Registering them would add work to Phase 2 without protecting the
+  system from any change, so they are discarded.
+
+## Out of scope findings
+
+These are functional defects. They are not corrected in Requirement 7, because correcting
+them would change what the user sees.
+
+### OOS-01 — A damaged line in `data/sales.csv` stops the program with a stack trace
+
+| Field | Content |
+|---|---|
+| Evidence | `SaleRepository.fromLine` (lines 113–129) reads `parts[3]` and `parts[4]` without checking the number of columns, and parses the date (line 121) and the amounts (lines 123 and 126) without checking them. `loadAll` only catches `IOException` (line 93). |
+| Reproduction | With an existing customer, each of these lines in `data/sales.csv` stops the program at startup: `S0001;2026-10-18;123` gives `ArrayIndexOutOfBoundsException`; a date `fecha-mala` gives `DateTimeParseException`; a discount `abc` gives `NumberFormatException`. |
+| Consequence | The user sees a stack trace instead of the message of Requirement 6. |
+| Deferred correction | Check the columns and the values in `fromLine` and throw the `PersistenceException` that `invalidFormat` already builds. It changes the output on a damaged file, so it is left for a later requirement. |
