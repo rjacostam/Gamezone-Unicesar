@@ -5,19 +5,19 @@
 
 ## Answers by member
 
-| Question | Answer |
-|---|---|
-| 1 | Assigned in each individual report: `docs/grasp-audit/leader-audit.md`, `developer1-audit.md`, `developer2-audit.md` |
-| 2 | Assigned in each individual report |
-| 3 | Assigned in each individual report |
-| 4 | This document |
-| 5 | Answered together once the consolidated audit is merged, in `docs/grasp-analysis.md` |
+| Question | Who answers | Where |
+|---|---|---|
+| 1 | Developer 1 (Andrés) | `docs/grasp-analysis.md` |
+| 2 | Technical Leader (Rafael) | `docs/grasp-analysis.md` |
+| 3 | Developer 1 (Andrés) | `docs/grasp-analysis.md` |
+| 4 | Developer 2 (José) | This document, below |
+| 5 | Technical Leader (Rafael) | `docs/grasp-analysis.md` |
 
 ---
 
 ## Question 4 — Preserving the external behaviour of the system
 
-The audit found five violations in the code of Developer 2 and five more problems that
+The audit found four violations in the code of Developer 2 and five more problems that
 belong to the Technical Leader or to Developer 1. None of them is a change of behaviour,
 but a refactor can break the system without ever failing to compile, so the team agreed on
 a strategy before starting the correction phase.
@@ -88,12 +88,3 @@ a guarantee.
 3. The final run, after every correction is merged, is repeated from a clean `data/` folder
    to show that the system also starts empty.
 4. The ten menu operations are executed once in front of the room during the oral defence.
-
-### Order of the corrections
-
-The order is decided once the consolidated audit exists, because the order depends on which
-violations are assigned to each member. The criterion the team proposes is: correct the
-violations that other members depend on first, then the ones that remove duplicated logic,
-then the ones that only move code. The two violations that touch code of another member
-(V-01 and V-02, which would add methods to `Sale`) need the agreement of the Technical
-Leader before Phase 2 starts, and they are the ones most likely to need a shared branch.
