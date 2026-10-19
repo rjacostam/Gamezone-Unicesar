@@ -138,18 +138,7 @@ public class PromotionRepository {
         builder.append(promotion.getName()).append(DELIMITER);
         builder.append(promotion.getStartDate()).append(DELIMITER);
         builder.append(promotion.getEndDate()).append(DELIMITER);
-        if (promotion instanceof CategoryDiscount) {
-            CategoryDiscount discount = (CategoryDiscount) promotion;
-            builder.append(discount.getPercentage()).append(DELIMITER)
-                    .append(valueOf(discount.getTargetCategory()));
-        } else if (promotion instanceof BulkPurchaseDiscount) {
-            BulkPurchaseDiscount discount = (BulkPurchaseDiscount) promotion;
-            builder.append(discount.getPercentage()).append(DELIMITER)
-                    .append(discount.getMinimumQuantity());
-        } else if (promotion instanceof PercentageDiscount) {
-            builder.append(((PercentageDiscount) promotion).getPercentage())
-                    .append(DELIMITER).append("");
-        }
+        builder.append(String.join(DELIMITER, promotion.getExtraFields()));
         return builder.toString();
     }
 
