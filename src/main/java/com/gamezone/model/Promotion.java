@@ -46,6 +46,14 @@ public abstract class Promotion {
     public abstract String getDescription();
 
     /**
+     * Returns the marker of this promotion type, which is the text the promotion
+     * writes in the data file. Each promotion type declares its own marker, so
+     * the repository does not have to find out which type it is holding.
+     * @return type marker of this promotion
+     */
+    public abstract String getTypeCode();
+
+    /**
      * Tells whether the promotion applies on the given date, which happens when
      * the date is between the start date and the end date, both included.
      * @param date date to check

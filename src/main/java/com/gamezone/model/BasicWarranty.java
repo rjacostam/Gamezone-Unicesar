@@ -47,4 +47,14 @@ public class BasicWarranty extends Warranty {
     public double getAdditionalCost() {
         return 0.0;
     }
+
+    /**
+     * Returns the marker of this warranty type, the one already written in the
+     * warranty file.
+     * @return BASIC
+     */
+    @Override
+    public String getTypeCode() {
+        return "BASIC";
+    }
 }

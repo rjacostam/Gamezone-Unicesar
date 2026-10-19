@@ -51,4 +51,14 @@ public class ExtendedWarranty extends Warranty {
         }
         return covered.getPrice() * 0.10;
     }
+
+    /**
+     * Returns the marker of this warranty type, the one already written in the
+     * warranty file.
+     * @return EXTENDED
+     */
+    @Override
+    public String getTypeCode() {
+        return "EXTENDED";
+    }
 }

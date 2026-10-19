@@ -56,6 +56,16 @@ public class PercentageDiscount extends Promotion {
     }
 
     /**
+     * Returns the marker of this promotion type, the one already written in the
+     * promotion file.
+     * @return PERCENTAGE
+     */
+    @Override
+    public String getTypeCode() {
+        return "PERCENTAGE";
+    }
+
+    /**
      * Returns the discount percentage of this promotion.
      * @return percentage applied to the sale
      */

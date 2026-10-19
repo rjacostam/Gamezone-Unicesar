@@ -73,6 +73,16 @@ public class CategoryDiscount extends Promotion {
     }
 
     /**
+     * Returns the marker of this promotion type, the one already written in the
+     * promotion file.
+     * @return CATEGORY
+     */
+    @Override
+    public String getTypeCode() {
+        return "CATEGORY";
+    }
+
+    /**
      * Returns the discount percentage of this promotion.
      * @return percentage applied to the target category
      */

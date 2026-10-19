@@ -58,6 +58,15 @@ public abstract class Warranty {
     public abstract double getAdditionalCost();
 
     /**
+     * Returns the marker of this warranty type, which is the text the warranty
+     * writes in the data file. Each warranty type declares its own marker, so the
+     * repository does not have to find out which type it is holding. It is not the
+     * name the user reads: {@link #getWarrantyType()} answers that one.
+     * @return type marker of this warranty
+     */
+    public abstract String getTypeCode();
+
+    /**
      * Tells whether the warranty is in force on the given date, which happens
      * when the date is between the start date and the end date, both included.
      * It returns false when the date is missing or when the warranty has no

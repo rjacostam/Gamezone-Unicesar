@@ -65,6 +65,16 @@ public class BulkPurchaseDiscount extends Promotion {
     }
 
     /**
+     * Returns the marker of this promotion type, the one already written in the
+     * promotion file.
+     * @return BULK
+     */
+    @Override
+    public String getTypeCode() {
+        return "BULK";
+    }
+
+    /**
      * Returns how many units the sale must have for the discount to apply.
      * @return minimum quantity of units
      */
