@@ -1,5 +1,6 @@
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.BulkPurchaseDiscount;
 import com.gamezone.model.CategoryDiscount;
 import com.gamezone.model.PercentageDiscount;
@@ -79,9 +80,9 @@ public class PromotionRepository {
      * header line is written first so the file keeps its documented layout.
      *
      * @param promotions promotions to persist
-     * @throws IOException if the file cannot be written
+     * @throws PersistenceException if the file cannot be written
      */
-    public void saveAll(List<Promotion> promotions) throws IOException {
+    public void saveAll(List<Promotion> promotions) {
         List<String> lines = new ArrayList<>();
         lines.add(String.join(DELIMITER,
                 "type", "id", "name", "startDate", "endDate", "percentage", "extra"));
@@ -89,10 +90,15 @@ public class PromotionRepository {
             lines.add(serialize(promotion));
         }
         Path parent = filePath.getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
+        try {
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.write(filePath, lines, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de escritura en el archivo " + filePath, e);
         }
-        Files.write(filePath, lines, StandardCharsets.UTF_8);
     }
 
     /**
@@ -101,15 +107,20 @@ public class PromotionRepository {
      * The header line and the damaged records are ignored.
      *
      * @return list of the stored promotions, empty when the file does not exist
-     * @throws IOException if the file cannot be read
+     * @throws PersistenceException if the file cannot be read
      */
-    public List<Promotion> loadAll() throws IOException {
+    public List<Promotion> loadAll() {
         List<Promotion> promotions = new ArrayList<>();
-        for (String record : readRecords()) {
-            Promotion promotion = deserialize(record);
-            if (promotion != null) {
-                promotions.add(promotion);
+        try {
+            for (String record : readRecords()) {
+                Promotion promotion = deserialize(record);
+                if (promotion != null) {
+                    promotions.add(promotion);
+                }
             }
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de lectura en el archivo " + filePath, e);
         }
         return promotions;
     }

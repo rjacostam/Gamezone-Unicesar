@@ -21,7 +21,6 @@ import com.gamezone.service.ReturnService;
 import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -120,9 +119,6 @@ public class ConsoleMenu {
             System.out.println("Los datos ingresados no son válidos: " + e.getMessage());
         } catch (PersistenceException e) {
             System.out.println("Ocurrió un problema al acceder a los datos del sistema. Contacte al administrador.");
-        } catch (IllegalArgumentException | IllegalStateException e) {
-            // Temporary: services not yet migrated to the validators still throw these.
-            System.out.println("Error: " + e.getMessage());
         }
     }
 
@@ -194,7 +190,7 @@ public class ConsoleMenu {
         int option = readInt("Seleccione una opción: ");
         runSafely(() -> {
             switch (option) {
-                case 1 -> registerCustomerOrFail();
+                case 1 -> registerCustomer();
                 case 2 -> listCustomers();
                 case 3 -> listSellers();
                 case 0 -> { }
@@ -203,17 +199,7 @@ public class ConsoleMenu {
         });
     }
 
-    private void registerCustomerOrFail() {
-        // Temporary: PersonService still declares IOException until its repository throws
-        // PersistenceException.
-        try {
-            registerCustomer();
-        } catch (IOException e) {
-            throw new PersistenceException("Error de escritura en el archivo de clientes", e);
-        }
-    }
-
-    private void registerCustomer() throws IOException {
+    private void registerCustomer() {
         String id = readText("Identificación: ");
         String name = readText("Nombre: ");
         String phone = readText("Teléfono: ");

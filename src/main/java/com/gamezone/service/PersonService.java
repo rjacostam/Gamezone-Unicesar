@@ -1,11 +1,14 @@
 package com.gamezone.service;
 
+import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.InvalidDataException;
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Customer;
 import com.gamezone.model.Person;
 import com.gamezone.model.Seller;
 import com.gamezone.persistence.PersonRepository;
+import com.gamezone.validation.PersonValidator;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,9 +22,11 @@ import java.util.List;
  * The data is loaded once when the service is built and it is persisted again
  * after every change, so the information survives between executions.
  * <p>
- * Every rejected operation throws an {@link IllegalArgumentException} whose
- * message is written in Spanish, because the console menu shows it directly to
- * the user. The validations are:
+ * Every rejected operation throws one of the typed exceptions of the project:
+ * {@link InvalidDataException} when a value is empty or malformed, and
+ * {@link BusinessRuleException} when the identification is already in use. Both build
+ * their message in Spanish, because the console menu shows it directly to the
+ * user. The rules themselves live in {@link PersonValidator}.
  * <ul>
  *   <li>the identification, the name, the phone and the e-mail cannot be empty;</li>
  *   <li>the phone can only contain digits;</li>
@@ -40,10 +45,7 @@ import java.util.List;
  */
 public class PersonService {
 
-    /** Pattern used to check that an e-mail address has a valid format. */
-    private static final String EMAIL_PATTERN = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
-
-    /** Repository used to persist and recover the people. */
+        /** Repository used to persist and recover the people. */
     private final PersonRepository repository;
 
     /** Customers currently registered in the store. */
@@ -60,17 +62,22 @@ public class PersonService {
  * it.
  *
  * @param repository repository in charge of the persistence
- * @throws IOException if the customers or the sellers file cannot be read
+ * @throws PersistenceException if the customers or the sellers file cannot be read
  */
-    public PersonService(PersonRepository repository) throws IOException {
+    public PersonService(PersonRepository repository) {
         this.repository = repository;
         this.customers.addAll(repository.loadCustomers());
         this.sellers.addAll(repository.loadSellers());
     }
 
     /**
-     * Registers a new customer, validates its information, adds it to the store
-     * and persists the change.
+     * Registers a new customer, validates its information, persists it and adds
+     * it to the store.
+     * <p>
+     * The customer is written to the file **before** it joins the list held in
+     * memory. If the write fails the exception leaves the service and the customer
+     * is not registered anywhere, instead of staying in memory while the file
+     * knows nothing about it.
      * <p>
      * Customers are the only people that are registered from the console menu.
      * Sellers come from the preload file and are not registered here.
@@ -80,29 +87,46 @@ public class PersonService {
      * @param phone contact phone of the customer, digits only
      * @param email e-mail address of the customer
      * @return the customer that was registered
-     * @throws IllegalArgumentException if any value is empty, if the phone
-     *                                  contains a character that is not a
-     *                                  digit, if the e-mail address has an
-     *                                  invalid format, or if the identification
-     *                                  is already in use
-     * @throws IOException              if the customers file cannot be written
+     * @throws InvalidDataException  if any value is empty, if the phone
+     *                              contains a character that is not a digit, or
+     *                              if the e-mail address has an invalid format
+     * @throws BusinessRuleException if the identification is already in use
+     * @throws PersistenceException  if the customers file cannot be written
      */
-    public Customer registerCustomer(String id, String name, String phone, String email)
-            throws IOException {
-        String validId = requireText(id, "La identificación del cliente no puede estar vacía.");
-        String validName = requireText(name, "El nombre del cliente no puede estar vacío.");
-        String validPhone = requirePhone(phone);
-        String validEmail = requireEmail(email);
+    public Customer registerCustomer(String id, String name, String phone, String email) {
+        PersonValidator.validatePersonData(id, name, email, phone);
+        String validId = id.trim();
+        PersonValidator.validateUniquePerson(people(), validId);
 
-        if (findPersonById(validId) != null) {
-            throw new IllegalArgumentException(
-                    "Ya existe una persona registrada con la identificación " + validId + ".");
-        }
-
-        Customer customer = new Customer(validId, validName, validPhone, validEmail);
+        Customer customer = new Customer(validId, name.trim(), phone.trim(), email.trim());
+        repository.saveCustomers(withCustomer(customer));
         customers.add(customer);
-        repository.saveCustomers(customers);
         return customer;
+    }
+
+    /**
+     * Returns every customer, the ones already registered and the one that is
+     * about to be registered, so the file receives the whole list at once.
+     *
+     * @param customer customer that is being registered
+     * @return list with the new customer already in it
+     */
+    private List<Customer> withCustomer(Customer customer) {
+        List<Customer> pending = new ArrayList<>(customers);
+        pending.add(customer);
+        return pending;
+    }
+
+    /**
+     * Returns every person of the store, customers and sellers, which is the
+     * population the identification check works on.
+     *
+     * @return list of the people held in memory
+     */
+    private List<Person> people() {
+        List<Person> all = new ArrayList<>(customers);
+        all.addAll(sellers);
+        return all;
     }
 
     /**
@@ -168,80 +192,4 @@ public class PersonService {
         return null;
     }
 
-    /**
-     * Searches a person of any role by its identification. It is used to verify
-     * that a new identification is not already in use.
-     *
-     * @param id identification to search
-     * @return the person found, or null when the identification is free
-     */
-    private Person findPersonById(String id) {
-        if (id == null || id.isBlank()) {
-            return null;
-        }
-        String searched = id.trim();
-        for (Customer customer : customers) {
-            if (customer.getId().equals(searched)) {
-                return customer;
-            }
-        }
-        return findSellerById(searched);
-    }
-
-    /**
-     * Checks that a required text value is neither null nor blank.
-     *
-     * @param value   value to check
-     * @param message message used when the value is not valid
-     * @return the trimmed value
-     * @throws IllegalArgumentException if the value is null or blank
-     */
-    private String requireText(String value, String message) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(message);
-        }
-        return value.trim();
-    }
-
-    /**
-     * Checks that a contact phone is written with digits only.
-     * <p>
-     * Every character is compared against the ASCII range {@code '0'} to
-     * {@code '9'} instead of using {@link Character#isDigit(char)}, because that
-     * method also accepts digits of other writing systems, which are not valid
-     * in a phone number of the store.
-     *
-     * @param phone value to check
-     * @return the trimmed value
-     * @throws IllegalArgumentException if the value is null, blank or contains
-     *                                  a character that is not a digit
-     */
-    private String requirePhone(String phone) {
-        String value = requireText(phone, "El teléfono del cliente no puede estar vacío.");
-        for (int index = 0; index < value.length(); index++) {
-            char character = value.charAt(index);
-            if (character < '0' || character > '9') {
-                throw new IllegalArgumentException(
-                        "El teléfono del cliente solo puede contener números: " + value);
-            }
-        }
-        return value;
-    }
-
-    /**
-     * Checks that an e-mail address has a valid format.
-     *
-     * @param email value to check
-     * @return the trimmed value
-     * @throws IllegalArgumentException if the value is null, blank or does not
-     *                                  follow the format of an e-mail address
-     */
-    private String requireEmail(String email) {
-        String value = requireText(email, "El correo electrónico del cliente no puede estar vacío.");
-        if (!value.matches(EMAIL_PATTERN)) {
-            throw new IllegalArgumentException(
-                    "El correo electrónico " + value + " no tiene un formato válido.");
-        }
-        return value;
-    }
 }

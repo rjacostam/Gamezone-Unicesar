@@ -1,10 +1,14 @@
 package com.gamezone.service;
 
+import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.InvalidDataException;
+import com.gamezone.exceptions.PersistenceException;
+import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Console;
 import com.gamezone.model.Product;
 import com.gamezone.model.VideoGame;
 import com.gamezone.persistence.ProductRepository;
-import java.io.IOException;
+import com.gamezone.validation.ProductValidator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +16,15 @@ import java.util.List;
  * Business rules of the product catalogue. It loads the catalogue when the
  * service is created, rejects duplicated identifiers, and saves the catalogue
  * after every change so the data survives between executions.
+ * <p>
+ * File errors do not reach the caller as a checked exception. The repository
+ * already turns them into a {@link PersistenceException}, because a failure of
+ * the disk is a failure of the application and not a mistake of the user.
+ * <p>
+ * Rejected data becomes an {@link InvalidDataException}, a
+ * {@link ResourceNotFoundException} when a searched product does not exist, or a
+ * {@link BusinessRuleException} when a rule of the store is broken, with a
+ * message in Spanish, because the console menu shows it directly to the user.
  */
 public class ProductService {
     private ProductRepository repository;
@@ -20,14 +33,11 @@ public class ProductService {
     /**
      * Creates the service and loads the catalogue stored in the repository.
      * @param repository repository used to read and write the catalogue
+     * @throws PersistenceException if the catalogue file cannot be read
      */
     public ProductService(ProductRepository repository) {
         this.repository = repository;
-        try {
-            this.products = new ArrayList<>(repository.loadAll());
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo cargar el catalogo de productos", e);
-        }
+        this.products = new ArrayList<>(repository.loadAll());
     }
 
     /**
@@ -41,13 +51,17 @@ public class ProductService {
      * @param genre genre of the game
      * @param ageRating recommended age rating
      * @return the registered video game
+     * @throws InvalidDataException  if the identifier or the title are empty, if
+     *                               the price is not greater than zero, or if
+     *                               the stock is negative
+     * @throws BusinessRuleException if the identifier is already used by another
+     *                               product
+     * @throws PersistenceException  if the catalogue file cannot be written
      */
     public VideoGame registerVideoGame(String id, String title, double price, int stock,
                                        String platform, String genre, String ageRating) {
         validateProductData(id, title, price, stock);
-        if (findById(id) != null) {
-            throw new IllegalArgumentException("Ya existe un producto con el identificador " + id);
-        }
+        ProductValidator.validateUniqueProduct(findById(id), id);
         VideoGame game = new VideoGame(id, title, price, stock, platform, genre, ageRating);
         products.add(game);
         saveCatalogue();
@@ -65,13 +79,17 @@ public class ProductService {
      * @param model model name of the console
      * @param generation generation of the console
      * @return the registered console
+     * @throws InvalidDataException  if the identifier or the title are empty, if
+     *                               the price is not greater than zero, or if
+     *                               the stock is negative
+     * @throws BusinessRuleException if the identifier is already used by another
+     *                               product
+     * @throws PersistenceException  if the catalogue file cannot be written
      */
     public Console registerConsole(String id, String title, double price, int stock,
                                    String brand, String model, String generation) {
         validateProductData(id, title, price, stock);
-        if (findById(id) != null) {
-            throw new IllegalArgumentException("Ya existe un producto con el identificador " + id);
-        }
+        ProductValidator.validateUniqueProduct(findById(id), id);
         Console console = new Console(id, title, price, stock, brand, model, generation);
         products.add(console);
         saveCatalogue();
@@ -84,20 +102,12 @@ public class ProductService {
      * @param title product title
      * @param price unit price
      * @param stock available stock
+     * @throws InvalidDataException if the identifier or the title are empty, if
+     *                              the price is not greater than zero or if the
+     *                              stock is negative
      */
     private void validateProductData(String id, String title, double price, int stock) {
-        if (id == null || id.isBlank()) {
-            throw new IllegalArgumentException("El identificador del producto es obligatorio");
-        }
-        if (title == null || title.isBlank()) {
-            throw new IllegalArgumentException("El titulo del producto es obligatorio");
-        }
-        if (price <= 0) {
-            throw new IllegalArgumentException("El precio debe ser mayor que cero.");
-        }
-        if (stock < 0) {
-            throw new IllegalArgumentException("El stock no puede ser negativo");
-        }
+        ProductValidator.validateProductData(id, title, price, stock);
     }
 
     /**
@@ -128,13 +138,14 @@ public class ProductService {
      * product itself rejects the update when the stock is not enough.
      * @param productId identifier of the product to update
      * @param quantity amount of units to remove from the stock
+     * @throws ResourceNotFoundException if the product does not exist
+     * @throws BusinessRuleException     if the quantity is negative or if the
+     *                                   stock is not enough
+     * @throws PersistenceException      if the catalogue file cannot be written
      */
     public void updateStock(String productId, int quantity) {
         Product product = findById(productId);
-        if (product == null) {
-            throw new IllegalArgumentException(
-                    "No existe un producto con el identificador " + productId);
-        }
+        ProductValidator.validateProductExists(product, productId);
         product.decreaseStock(quantity);
         saveCatalogue();
     }
@@ -144,25 +155,24 @@ public class ProductService {
      * It is used by the return module, so the inventory is only changed here.
      * @param productId identifier of the product to update
      * @param quantity amount of units to add to the stock
+     * @throws InvalidDataException      if the quantity is not greater than zero
+     * @throws ResourceNotFoundException if the product does not exist
+     * @throws PersistenceException      if the catalogue file cannot be written
      */
     public void restoreStock(String productId, int quantity) {
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("La cantidad a restaurar debe ser mayor que cero");
-        }
+        ProductValidator.validateQuantity(quantity);
         Product product = findById(productId);
-        if (product == null) {
-            throw new IllegalArgumentException(
-                    "No existe un producto con el identificador " + productId);
-        }
+        ProductValidator.validateProductExists(product, productId);
         product.setStock(product.getStock() + quantity);
         saveCatalogue();
     }
 
+    /**
+     * Saves the catalogue currently registered.
+     *
+     * @throws PersistenceException if the catalogue file cannot be written
+     */
     private void saveCatalogue() {
-        try {
-            repository.saveAll(products);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo guardar el catalogo de productos", e);
-        }
+        repository.saveAll(products);
     }
 }

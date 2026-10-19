@@ -1,5 +1,9 @@
 package com.gamezone.service;
 
+import com.gamezone.exceptions.BusinessRuleException;
+import com.gamezone.exceptions.InvalidDataException;
+import com.gamezone.exceptions.PersistenceException;
+import com.gamezone.exceptions.ResourceNotFoundException;
 import com.gamezone.model.Accessory;
 import com.gamezone.model.Console;
 import com.gamezone.model.Customer;
@@ -7,8 +11,9 @@ import com.gamezone.model.Product;
 import com.gamezone.model.Return;
 import com.gamezone.model.Sale;
 import com.gamezone.persistence.ReturnRepository;
+import com.gamezone.validation.ReturnValidator;
+import com.gamezone.validation.SaleValidator;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -29,13 +34,15 @@ import java.util.Map;
  * catalogue owns the stock of the products, and the accessory service owns the
  * stock of the accessories.
  * <p>
- * File errors do not reach the caller as a checked exception. They become an
- * {@link IllegalStateException}, the same way the other services do it, because
- * a failure of the disk is a failure of the application and not a mistake of the
- * user.
+ * File errors do not reach the caller as a checked exception. The repository
+ * already turns them into a {@link PersistenceException}, the same way the
+ * other services do it, because a failure of the disk is a failure of the
+ * application and not a mistake of the user.
  * <p>
- * Rejected data becomes an {@link IllegalArgumentException} with a message in
- * Spanish, because the console menu shows it directly to the user.
+ * Rejected data becomes an {@link InvalidDataException} for a bad value, a
+ * {@link ResourceNotFoundException} when the sale of a return does not exist, or
+ * a {@link BusinessRuleException} when a rule of the store is broken, with a
+ * message in Spanish, because the console menu shows it directly to the user.
  */
 public class ReturnService {
 
@@ -65,7 +72,7 @@ public class ReturnService {
      *                         stock of the returned accessories
      * @param warrantyService service of the warranties, needed to cancel the
      *                        warranties of the returned consoles
-     * @throws IllegalStateException if the returns file cannot be read
+     * @throws PersistenceException if the returns file cannot be read
      */
     public ReturnService(ReturnRepository repository, SaleService saleService,
                          ProductService productService, AccessoryService accessoryService,
@@ -75,11 +82,7 @@ public class ReturnService {
         this.productService = productService;
         this.accessoryService = accessoryService;
         this.warrantyService = warrantyService;
-        try {
-            this.returns = new ArrayList<>(repository.loadAll(saleService.listAllSales()));
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo cargar el historial de devoluciones", e);
-        }
+        this.returns = new ArrayList<>(repository.loadAll(saleService.listAllSales()));
     }
 
     /**
@@ -111,26 +114,19 @@ public class ReturnService {
  *                   identifier
  * @param reason    reason of the return
  * @return the registered return
- * @throws IllegalArgumentException if the sale does not exist, if it is outside
- *                                  the return window, if the request is empty,
- *                                  if a product does not belong to the sale, or
- *                                  if more units are returned than are still
- *                                  available
- * @throws IllegalStateException    if the returns file cannot be written
+ * @throws InvalidDataException      if the identifier of the sale is empty, if no
+ *                                   product is returned, or if the reason is empty
+ * @throws BusinessRuleException     if the sale is outside the return window, if a
+ *                                   product does not belong to the sale, or if
+ *                                   more units are returned than are still
+ *                                   available
+ * @throws ResourceNotFoundException if no sale uses that identifier
+ * @throws PersistenceException      if the returns file cannot be written
  */
     public Return registerReturn(String saleId, List<String> productIds, String reason) {
         Sale sale = findSale(saleId);
-        if (!sale.canBeReturned()) {
-            throw new IllegalArgumentException(
-                    "La venta " + sale.getId() + " supera los 30 días y ya no se puede devolver");
-        }
-        if (productIds == null || productIds.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "La devolución debe tener al menos un producto");
-        }
-        if (reason == null || reason.isBlank()) {
-            throw new IllegalArgumentException("El motivo de la devolución es obligatorio");
-        }
+        ReturnValidator.validateReturnWindow(sale);
+        ReturnValidator.validateReturnData(productIds, reason);
 
         List<Product> returnedProducts = resolveReturnedProducts(sale, productIds);
         double warrantyRefund = cancelWarrantiesOfConsoles(sale, returnedProducts);
@@ -149,18 +145,15 @@ public class ReturnService {
      *
      * @param saleId identifier of the sale
      * @return the sale found
-     * @throws IllegalArgumentException if the identifier is empty or no sale uses
-     *                                  that identifier
+     * @throws InvalidDataException      if the identifier is empty
+     * @throws ResourceNotFoundException if no sale uses that identifier
      */
     private Sale findSale(String saleId) {
         if (saleId == null || saleId.isBlank()) {
-            throw new IllegalArgumentException("La venta de la devolución es obligatoria");
+            throw new InvalidDataException("venta de la devolución", "es obligatoria");
         }
         Sale sale = saleService.findById(saleId.trim());
-        if (sale == null) {
-            throw new IllegalArgumentException(
-                    "No existe una venta con el identificador " + saleId.trim());
-        }
+        SaleValidator.validateSaleExists(sale, saleId.trim());
         return sale;
     }
 
@@ -203,20 +196,20 @@ public class ReturnService {
      * @param sale       sale the products are returned from
      * @param productIds identifiers of the units returned
      * @return the products to return, in the order they were requested
-     * @throws IllegalArgumentException if an identifier is not part of the sale
-     *                                  or if more units are requested than are
-     *                                  still available
+     * @throws InvalidDataException  if a requested identifier is empty
+     * @throws BusinessRuleException if a requested identifier is not part of the
+     *                               sale, or if more units are requested than are
+     *                               still available
      */
     private List<Product> resolveReturnedProducts(Sale sale, List<String> productIds) {
         List<Product> returnedProducts = new ArrayList<>();
         for (String requestedId : productIds) {
             if (requestedId == null || requestedId.isBlank()) {
-                throw new IllegalArgumentException(
-                        "El producto de la devolución es obligatorio");
+                throw new InvalidDataException("producto de la devolución", "es obligatorio");
             }
             String wanted = requestedId.trim();
             if (countUnits(sale, wanted) == 0) {
-                throw new IllegalArgumentException(
+                throw new BusinessRuleException(
                         "El producto " + wanted + " no pertenece a la venta " + sale.getId());
             }
             returnedProducts.add(findProduct(sale, wanted));
@@ -231,19 +224,16 @@ public class ReturnService {
      *
      * @param sale       sale the products are returned from
      * @param productIds identifiers of the units returned
-     * @throws IllegalArgumentException if more units are requested than are still
-     *                                  available
+     * @throws BusinessRuleException if more units are requested than are still
+     *                               available
      */
     private void validateAvailableUnits(Sale sale, List<String> productIds) {
         Map<String, Integer> requested = countById(productIds);
         for (Map.Entry<String, Integer> entry : requested.entrySet()) {
             String productId = entry.getKey();
-            int available = countUnits(sale, productId) - countReturnedUnits(sale, productId);
-            if (entry.getValue() > available) {
-                throw new IllegalArgumentException(
-                        "No se pueden devolver " + entry.getValue() + " unidades de " + productId
-                                + ", solo quedan " + available + " disponibles");
-            }
+            int alreadyReturned = countReturnedUnits(sale, productId);
+            ReturnValidator.validateUnitsAvailable(sale, productId, entry.getValue(),
+                    alreadyReturned);
         }
     }
 
@@ -469,7 +459,7 @@ public class ReturnService {
      * @param month number of the month, from 1 to 12
      * @param year  number of the year
      * @return total of the sales of that month
-     * @throws IllegalArgumentException if the month is not between 1 and 12
+     * @throws InvalidDataException if the month is not between 1 and 12
      */
     public double calculateMonthlySales(int month, int year) {
         validateMonth(month);
@@ -492,7 +482,7 @@ public class ReturnService {
      * @param month number of the month, from 1 to 12
      * @param year  number of the year
      * @return total of the refunds of that month
-     * @throws IllegalArgumentException if the month is not between 1 and 12
+     * @throws InvalidDataException if the month is not between 1 and 12
      */
     public double calculateMonthlyReturns(int month, int year) {
         validateMonth(month);
@@ -511,12 +501,10 @@ public class ReturnService {
      * month.
      *
      * @param month number of the month
-     * @throws IllegalArgumentException if the month is not between 1 and 12
+     * @throws InvalidDataException if the month is not between 1 and 12
      */
     private void validateMonth(int month) {
-        if (month < 1 || month > 12) {
-            throw new IllegalArgumentException("El mes debe estar entre 1 y 12");
-        }
+        ReturnValidator.validateMonth(month);
     }
 
     /**
@@ -536,7 +524,7 @@ public class ReturnService {
      * @param month number of the month, from 1 to 12
      * @param year  number of the year
      * @return the income of the month minus the refunds of the month
-     * @throws IllegalArgumentException if the month is not between 1 and 12
+     * @throws InvalidDataException if the month is not between 1 and 12
      */
     public double generateMonthlyBalance(int month, int year) {
         return calculateMonthlySales(month, year) - calculateMonthlyReturns(month, year);
@@ -567,13 +555,9 @@ public class ReturnService {
     /**
      * Saves the returns currently registered.
      *
-     * @throws IllegalStateException if the returns file cannot be written
+     * @throws PersistenceException if the returns file cannot be written
      */
     private void saveCatalogue() {
-        try {
-            repository.saveAll(returns);
-        } catch (IOException e) {
-            throw new IllegalStateException("No se pudo guardar el historial de devoluciones", e);
-        }
+        repository.saveAll(returns);
     }
 }

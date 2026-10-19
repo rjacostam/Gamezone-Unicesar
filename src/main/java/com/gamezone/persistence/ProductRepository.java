@@ -1,8 +1,10 @@
 package com.gamezone.persistence;
 
+import com.gamezone.exceptions.PersistenceException;
 import com.gamezone.model.Console;
 import com.gamezone.model.Product;
 import com.gamezone.model.VideoGame;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,9 +41,9 @@ public class ProductRepository {
      * content. Rows are written using the VIDEOGAME or CONSOLE marker in the
      * first column. Missing parent folders are created when needed.
      * @param products products to write
-     * @throws IOException when the file cannot be written
+     * @throws PersistenceException when the file cannot be written
      */
-    public void saveAll(List<Product> products) throws IOException {
+    public void saveAll(List<Product> products) {
         StringBuilder content = new StringBuilder();
         content.append("type;id;title;price;stock;extra1;extra2;extra3\n");
         for (Product product : products) {
@@ -67,11 +69,16 @@ public class ProductRepository {
                         .append("\n");
             }
         }
-        Path parent = filePath.getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
+        try {
+            Path parent = filePath.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+            Files.writeString(filePath, content.toString());
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de escritura en el archivo " + filePath, e);
         }
-        Files.writeString(filePath, content.toString());
     }
 
     /**
@@ -80,39 +87,45 @@ public class ProductRepository {
      * with an unknown marker are skipped, and an empty list is returned when
      * the file does not exist yet.
      * @return products stored in the file
-     * @throws IOException when the file cannot be read
+     * @throws PersistenceException when the file cannot be read
      */
-    public List<Product> loadAll() throws IOException {
+    public List<Product> loadAll() {
         List<Product> products = new ArrayList<>();
         if (!Files.exists(filePath)) {
             return products;
         }
-        for (String line : Files.readAllLines(filePath)) {
-            if (line.isBlank() || line.startsWith("type;")) {
-                continue;
+        try {
+            for (String line : Files.readAllLines(filePath)) {
+                if (line.isBlank() || line.startsWith("type;")) {
+                    continue;
+                }
+                String[] fields = line.split(";", -1);
+                if (fields.length < 8) {
+                    continue;
+                }
+                String id = fields[1];
+                String title = fields[2];
+                double price;
+                int stock;
+                try {
+                    price = Double.parseDouble(fields[3].trim());
+                    stock = Integer.parseInt(fields[4].trim());
+                } catch (NumberFormatException e) {
+                    continue;
+                }
+                if ("VIDEOGAME".equalsIgnoreCase(fields[0].trim())) {
+                    products.add(new VideoGame(id, title, price, stock,
+                            fields[5], fields[6], fields[7]));
+                } else if ("CONSOLE".equalsIgnoreCase(fields[0].trim())) {
+                    products.add(new Console(id, title, price, stock,
+                            fields[5], fields[6], fields[7]));
+                }
             }
-            String[] fields = line.split(";", -1);
-            if (fields.length < 8) {
-                continue;
-            }
-            String id = fields[1];
-            String title = fields[2];
-            double price;
-            int stock;
-            try {
-                price = Double.parseDouble(fields[3].trim());
-                stock = Integer.parseInt(fields[4].trim());
-            } catch (NumberFormatException e) {
-                continue;
-            }
-            if ("VIDEOGAME".equalsIgnoreCase(fields[0].trim())) {
-                products.add(new VideoGame(id, title, price, stock,
-                        fields[5], fields[6], fields[7]));
-            } else if ("CONSOLE".equalsIgnoreCase(fields[0].trim())) {
-                products.add(new Console(id, title, price, stock,
-                        fields[5], fields[6], fields[7]));
-            }
+        } catch (IOException e) {
+            throw new PersistenceException(
+                    "Error de lectura en el archivo " + filePath, e);
         }
         return products;
     }
 }
+

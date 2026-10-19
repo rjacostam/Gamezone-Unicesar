@@ -17,7 +17,6 @@ import com.gamezone.service.SaleService;
 import com.gamezone.service.WarrantyService;
 import com.gamezone.ui.ConsoleMenu;
 
-import java.io.IOException;
 
 /**
  * Entry point of the GameZone Unicesar application.
@@ -63,9 +62,6 @@ public class Main {
                     promotionService, warrantyService, returnService);
             menu.start();
         } catch (PersistenceException e) {
-            System.out.println("No fue posible cargar los datos del sistema. Contacte al administrador.");
-        } catch (IOException | IllegalStateException e) {
-            // Temporary: services not yet migrated still report load errors this way.
             System.out.println("No fue posible cargar los datos del sistema. Contacte al administrador.");
         }
     }
