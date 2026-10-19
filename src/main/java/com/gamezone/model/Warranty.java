@@ -156,15 +156,10 @@ public abstract class Warranty {
     }
 
     /**
-     * Returns the text describing what this warranty covers. It is read from the
-     * type name, so it stays correct without adding another abstract method to
-     * the class diagram: only the extended warranty covers accidental damage.
+     * Returns the text describing what this warranty covers. Each warranty type
+     * answers with its own coverage, so the certificate never has to find out the
+     * type by comparing names.
      * @return coverage of this warranty, in Spanish
      */
-    private String coverageDescription() {
-        if ("Garantía Extendida".equals(getWarrantyType())) {
-            return "defectos de fábrica y daños accidentales";
-        }
-        return "defectos de fábrica";
-    }
+    public abstract String coverageDescription();
 }
