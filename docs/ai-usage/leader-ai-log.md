@@ -9,7 +9,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-17 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Repository setup — `main`, `feature/project-setup` |
 | Goal | Set up the initial repository and Maven project structure for the four layers. |
 | Query | Asked for help reading the workshop statement and creating the repository skeleton (README, .gitignore, license, pom.xml, packages, data and docs folders, TEAM.md). |
@@ -22,7 +22,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-17 and 2026-10-18 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Taller 1 (`feature/sale-module` and integration), R1 `feature/accessory-module`, R2 `feature/promotion-module`, R4 `feature/warranty-module`, R3 `feature/return-module` |
 | Goal | Complete my part as Technical Leader in each requirement and coordinate the team. |
 | Query | Asked the tool to write my documents (analysis answers and class diagrams), my integration code in `Sale`, `SaleRepository`, `SaleService`, `ConsoleMenu` and `Main`, and the README; to compile and test the branches of the developers before I approved them; and to prepare the PR titles, descriptions and messages for the team. |
@@ -35,7 +35,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-18 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Requirement 5 — one `fix/` or `refactor/` branch per adjustment |
 | Goal | Resolve the nine integration adjustments (A1 to A9) without breaking the four modules. |
 | Query | Asked the tool to implement my adjustments, write `integration-analysis.md` and `integrated-class-diagram.md`, review the developers' adjustments and verify the demo scenario. |
@@ -48,7 +48,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-18 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Requirement 6 — `feature/exception-handling` |
 | Goal | Design the exception hierarchy and handle each error type in the menu. |
 | Query | Asked the tool to write `exception-analysis.md` and `exception-class-diagram.md`, the `runSafely` method of `ConsoleMenu`, the startup catch in `Main` and the README section, and to review the developers' branches. |
@@ -66,7 +66,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-18 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Requirement 7, Phase 1 — `feature/grasp-audit` |
 | Goal | Audit my own classes against the nine GRASP patterns. |
 | Query | Asked the tool to explain each pattern and to guide me with questions on fragments of my code instead of giving me the findings. |
@@ -79,7 +79,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-18 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Requirement 7, Phase 1 — reviews of PR #33 and PR #34 |
 | Goal | Validate the evidence of the developer reports before approving them. |
 | Query | Asked the tool to check both reports against the code: line numbers, owners of each class and duplicated findings. |
@@ -96,7 +96,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-18 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Requirement 7, Phase 2 — `feature/grasp-refactor` |
 | Goal | Prepare the no regression check, correct my part of the violations and verify the corrections of the developers. |
 | Query | Asked the tool to write the two menu scripts and the strategy of `grasp-refactor-log.md`, draw the before and after diagrams, implement my corrections (V-01, V-03, V-04, V-05, V-06 and V-07 in `ProductService`, `Sale`, `SaleService` and the `ui` package), update the README, and compile and test every commit of the developers. |
@@ -113,7 +113,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-19 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Requirement 8, Phase 1 (Audit) — `feature/solid-audit` |
 | Goal | Audit my own classes against the five SOLID principles. |
 | Query | Asked the tool to show me fragments of my classes and ask me one question per principle, instead of giving me the findings. |
@@ -126,7 +126,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-19 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Requirement 8, Phase 1 (Audit) — reviews of PRs #40 and #41, consolidation |
 | Goal | Validate the developer reports and consolidate the three audits. |
 | Query | Asked the tool to check the developer reports against the code, to list the findings that overlapped, and to write the consolidated audit and my answers to questions 2 and 5 from my decisions. |
@@ -143,7 +143,7 @@ Each interaction with an AI tool is recorded as one entry with the fields below.
 | Field | Content |
 |---|---|
 | Date | 2026-10-19 |
-| Tool | Claude Code (Claude Opus 5.5) |
+| Tool | Claude |
 | Phase and branch | Requirement 8, Phase 2 — `feature/solid-refactor` |
 | Goal | Prepare the no regression check, correct my part of the thirteen violations, coordinate the order of the corrections and verify the work of the developers. |
 | Query | Asked the tool to run the reference on `develop`, write `solid-refactor-log.md` and the before and after diagrams, implement my corrections (V-01, V-02, V-03, V-04, V-06, V-09, V-10, V-11 and V-13 in my classes), update the README, and compile and test every commit of the developers. |
